@@ -1,4 +1,4 @@
-import {Node, Nodes} from "../../model/Node";
+import {Node, Nodes} from "../../data/Node";
 import React from "react";
 
 export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React.Dispatch<React.SetStateAction<Node<T>[]>>) {

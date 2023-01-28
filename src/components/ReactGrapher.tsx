@@ -1,6 +1,6 @@
 import React from "react";
-import {Node, Nodes} from "../model/Node"
-import {Edge, Edges} from "../model/Edge";
+import {Node, Nodes} from "../data/Node"
+import {Edge, Edges} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useControlledGraph} from "../hooks/useControlledGraph";
 
@@ -25,8 +25,8 @@ export interface ControlledGraphProps<T> extends CommonGraphProps {
 }
 
 export interface UncontrolledGraphProps<T> extends CommonGraphProps {
-    defaultNodes: Node<T>[]
-    defaultEdges: Edge[]
+    defaultNodes?: Node<T>[]
+    defaultEdges?: Edge[]
 }
 
 const GraphDiv = styled.div<CommonGraphProps>`
@@ -34,16 +34,19 @@ const GraphDiv = styled.div<CommonGraphProps>`
   height: ${props => props.height ?? "100%"}
 `
 
-export function Graph<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
+export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
     let nodes: Nodes<T>
     let edges: Edges
 
+    // Controlled graphs use provided nodes & edges objects
+    if ("nodes" in props) ({nodes, edges} = props)
     // Uncontrolled Graphs manage their own state
-    if ("defaultNodes" in props) ({nodes, edges} = useControlledGraph(props.defaultNodes, props.defaultEdges))
-    // Otherwise, use provided nodes & edges objects
-    else ({nodes, edges} = props)
+    else ({nodes, edges} = useControlledGraph(props.defaultNodes, props.defaultEdges))
 
-    // Create Node elements from Nodes elements
+    // Create DefaultNode elements from Nodes elements
+    const nodeElements = nodes.map(node => {
+        return
+    })
 
     return <GraphDiv {...props}>
         {props.children}

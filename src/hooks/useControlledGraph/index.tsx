@@ -1,10 +1,10 @@
 import React, {useState} from "react";
-import {Node, Nodes} from "../../model/Node";
-import {Edge, Edges} from "../../model/Edge";
-import {Controller, useController} from "../../model/Controller";
+import {Node, Nodes} from "../../data/Node";
+import {Edge, Edges} from "../../data/Edge";
+import {Controller, useController} from "../../data/Controller";
 import attachNodeFunctions from "./attachNodeFunctions";
 import attachEdgeFunctions from "./attachEdgeFunctions";
-import {Graph, ControlledGraphProps} from "../../components/ControlledGraph";
+import {ReactGrapher, ControlledGraphProps} from "../../components/ReactGrapher";
 
 export interface GraphState<T> {
     nodes: Nodes<T>
@@ -30,7 +30,7 @@ export function useControlledGraph<T>(initialNodes?: Node<T>[], initialEdges?: E
         edges: e,
         controller,
         Graph(props: HookGraphProps<T>) {
-            return <Graph nodes={n} edges={e} {...props}/>
+            return <ReactGrapher nodes={n} edges={e} {...props}/>
         }
     }
 }

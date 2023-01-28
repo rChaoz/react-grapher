@@ -1,4 +1,5 @@
 import React from 'react';
+import {ReactGrapher} from "../../src";
 
 export default function App() {
     return <div style={{
@@ -8,7 +9,7 @@ export default function App() {
         <div style={{
             height: 400,
         }}>
-
+            <ReactGrapher defaultNodes={} defaultEdges={} />
         </div>
     </div>
 }

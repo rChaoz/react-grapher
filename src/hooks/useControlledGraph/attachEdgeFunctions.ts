@@ -1,5 +1,5 @@
 import React from "react";
-import {Edge, Edges} from "../../model/Edge";
+import {Edge, Edges} from "../../data/Edge";
 
 export default function attachEdgeFunctions(edges: Edge[], setEdges: React.Dispatch<React.SetStateAction<Edge[]>>) {
     const e = edges as Edges

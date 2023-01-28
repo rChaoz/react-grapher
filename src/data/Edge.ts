@@ -1,3 +1,5 @@
+import {randomID} from "../util/randomID";
+
 /**
  * An edge from a node with ID 'source' to another with ID 'target'
  */
@@ -5,6 +7,20 @@ export interface Edge {
     id: string
     source: string
     target: string
+}
+
+/**
+ * Create a new edge between 2 nodes
+ * @param source Source node ID
+ * @param target Target node ID
+ * @param id ID of this edge (defaults to random)
+ */
+export function createEdge(source: string, target: string, id?: string) {
+    return {
+        id: id ?? randomID(),
+        source,
+        target,
+    }
 }
 
 /**

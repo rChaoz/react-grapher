@@ -1,7 +1,7 @@
 import {useState} from "react";
 
 export interface Controller {
-    fitView(): void
+    fitView(): void,
 }
 
 export interface ControllerImpl extends Controller {

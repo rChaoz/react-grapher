@@ -1,9 +1,15 @@
+import {randomID} from "../util/randomID"
+import {GraphChange} from "./GraphChange";
+import {NodeProps} from "../components/DefaultNode";
+import React from "react";
+
 export interface Node<T> {
     id: string
+    Component?: React.ExoticComponent<NodeProps<T>>
     parent?: string | null
     data: T
     /**
-     * CSS classes that will be passed to the Node component function. Ultimately, the function decides what classes it adds to the DOM element.
+     * CSS classes that will be passed to the DefaultNode component function. Ultimately, the function decides what classes it adds to the DOM element.
      * By default, these classes are kept as-is.
      */
     classes: Set<string>
@@ -12,15 +18,47 @@ export interface Node<T> {
      * Whether this node has been selected by the user. You can access all selected nodes using `Nodes.selection`.
      */
     selected: boolean
+    /**
+     * Automatically set after rendering. DOM width of this node
+     */
+    width?: number
+    /**
+     * Automatically set after rendering. DOM height of this node
+     */
+    height?: number
 }
 
 export interface Position {
     /**
      * True if this node has a parent (i.e. belongs in a group), yet needs to have absolute positioning.
      */
-    isAbsolute: boolean
+    isAbsolute?: boolean
     x: number
     y: number
+}
+
+/**
+ * Create a node with provided data
+ * @param id ID of the node, defaults to random alfa-numerical sequence
+ * @param position Position of the Node, defaults to 0, 0
+ * @param data Data passed to Node component, default implementation just displays a label with value of `String(data)`
+ * @param classes Array of class names to be passed to the Node component
+ */
+export function createNode<T>({id, position, data, classes}: { id?: string, position?: Position, data: T, classes?: string[] }): Node<T> {
+    return {
+        id: id ?? randomID(),
+        position: position ?? {x: 0, y: 0},
+        data,
+        classes: new Set(classes ?? null),
+        selected: false,
+    }
+}
+
+/**
+ * Create a new node with random ID and given text as data
+ */
+export function createTextNode<T>(text: string): Node<string> {
+    return createNode({data: text})
 }
 
 /**
@@ -56,4 +94,9 @@ export interface Nodes<T> extends Array<Node<T>> {
      * @param replacement New node or function that returns a new node and receives the old node (null to remove)
      */
     replace(targetID: string, replacement?: Node<T> | null | ((node: Node<T>) => Node<T> | null | undefined)): void
+
+    /**
+     * Process given changes, updating this Nodes list (ignores EdgeChanges)
+     */
+    processChanges(changes: GraphChange[]): void
 }
