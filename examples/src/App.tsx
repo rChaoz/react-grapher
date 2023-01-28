@@ -1,9 +1,14 @@
 import React from 'react';
-import {BigIfTrue} from 'reactgrapher';
 
 export default function App() {
-  return <div>
-    HUGE IF TRUE??
-    <BigIfTrue/>
-  </div>
+    return <div style={{
+        width: "800px",
+        marginInline: "auto",
+    }}>
+        <div style={{
+            height: 400,
+        }}>
+
+        </div>
+    </div>
 }

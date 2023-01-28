@@ -1,3 +1,3 @@
-import BigIfTrue from "./Component";
+import {useControlledGraph} from "./hooks/useControlledGraph";
 
-export {BigIfTrue}
+export {useControlledGraph}
