@@ -33,7 +33,7 @@ const BaseDiv = styled.div<Pick<BaseNodeProps, "position">>`
   transform: translate(-50%, -50%);
 `
 
-export const BaseNode = memo<BaseNodeProps>((props => {
+export const BaseNode = memo<BaseNodeProps>(function BaseNode(props) {
     const ref = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -44,4 +44,4 @@ export const BaseNode = memo<BaseNodeProps>((props => {
     return <BaseDiv ref={ref} id={"node-" + props.id} position={props.position} className={cx(props.classes, "react-grapher-node")}>
         {props.children}
     </BaseDiv>
-}))
+})

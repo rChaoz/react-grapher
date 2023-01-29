@@ -43,13 +43,14 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     let edges: Edges
     let controller: Controller
 
+    // Ensure rules of hooks are always met - we never know when this component is uncontrolled one render and controlled the next render
+    const {nodes: ownNodes, edges: ownEdges} = useGraphState((props as UncontrolledGraphProps<T>).defaultNodes, (props as any).defaultEdges)
+    const ownController = useController()
+
     // Controlled graphs use provided nodes & edges objects
     if ("nodes" in props) ({nodes, edges, controller} = props)
     // Uncontrolled Graphs manage their own state
-    else {
-        ({nodes, edges} = useGraphState(props.defaultNodes, props.defaultEdges))
-        controller = useController()
-    }
+    else [nodes, edges, controller] = [ownNodes, ownEdges, ownController]
 
     // Create DefaultNode elements from Nodes elements
     const nodeElements = nodes.map(node => {

@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React from "react";
 import {Node, Nodes} from "../data/Node";
 import {Edge, Edges} from "../data/Edge";
 import {Controller, useController} from "../data/Controller";
@@ -13,8 +13,7 @@ export interface GraphState<T> {
     Graph(props: HookGraphProps<T>): React.ReactElement
 }
 
-export interface HookGraphProps<T> extends Omit<ControlledGraphProps<T>, "nodes" | "edges"> {
-}
+export type HookGraphProps<T> = Omit<ControlledGraphProps<T>, "nodes" | "edges">
 
 export function useControlledGraph<T>(initialNodes?: Node<T>[], initialEdges?: Edge[]): GraphState<T> {
     const {nodes, edges} = useGraphState(initialNodes, initialEdges)

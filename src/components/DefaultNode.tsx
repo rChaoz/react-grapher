@@ -6,7 +6,7 @@ export interface NodeProps<T> extends Omit<BaseNodeProps, "children" | "classes"
     data: T
 }
 
-export const DefaultNode = memo<NodeProps<any>>(props => {
+export const DefaultNode = memo<NodeProps<any>>(function DefaultNode(props) {
     return <BaseNode classes={[...props.classes]} position={props.position} id={props.id}>
         {String(props.data)}
     </BaseNode>

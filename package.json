@@ -19,6 +19,11 @@
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@types/react": "^18.0.27",
+    "@typescript-eslint/eslint-plugin": "^5.49.0",
+    "@typescript-eslint/parser": "^5.49.0",
+    "eslint": "^8.33.0",
+    "eslint-plugin-react": "^7.32.2",
+    "eslint-plugin-react-hooks": "^4.6.0",
     "postcss": "^8.4.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -35,6 +40,7 @@
   "scripts": {
     "prepublishOnly": "yarn run build",
     "build": "rollup -c && cp src/css/* dist/",
-    "watch": "rollup -c --watch"
+    "watch": "rollup -c --watch",
+    "lint": "eslint \"{**/*,*}.{js,ts,jsx,tsx}\""
   }
 }
