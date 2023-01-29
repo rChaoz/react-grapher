@@ -2,6 +2,7 @@ import React, {useRef} from "react";
 import {Controller} from "../data/Controller";
 import styled from "@emotion/styled";
 import {Viewport} from "../data/Viewport";
+import {NODES_CONTAINER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
 
 export interface GrapherViewportProps {
     children: React.ReactNode
@@ -19,7 +20,7 @@ const ContentDiv = styled.div<Viewport>`
   position: absolute;
   width: 100%;
   height: 100%;
-  transform: scale(${viewport => viewport.scale}) translate(${viewport => viewport.translateX}px, ${viewport => viewport.translateY}px);
+  transform: scale(${viewport => viewport.zoom}) translate(${viewport => viewport.centerX}px, ${viewport => viewport.centerY}px) translate(50%, 50%);
 `
 
 export function GrapherViewport(props: GrapherViewportProps) {
@@ -27,8 +28,8 @@ export function GrapherViewport(props: GrapherViewportProps) {
 
     // TODO Pointer events
 
-    return <BaseDiv ref={ref} className={"react-grapher-viewport"}>
-        <ContentDiv {...props.controller.getViewport()} className={"react-grapher-nodes"}>
+    return <BaseDiv ref={ref} className={VIEWPORT_CLASS}>
+        <ContentDiv {...props.controller.getViewport()} className={NODES_CONTAINER_CLASS}>
             {props.children}
         </ContentDiv>
     </BaseDiv>

@@ -1,7 +1,8 @@
-import React, {memo, useEffect, useRef} from "react";
+import React, {memo} from "react";
 import styled from "@emotion/styled";
 import {cx} from "@emotion/css";
 import {Position} from "../data/Node";
+import {NODE_CLASS, NODE_ID_PREFIX} from "../util/Constants";
 
 export interface BaseNodeProps {
     /**
@@ -34,14 +35,7 @@ const BaseDiv = styled.div<Pick<BaseNodeProps, "position">>`
 `
 
 export const BaseNode = memo<BaseNodeProps>(function BaseNode(props) {
-    const ref = useRef<HTMLDivElement>(null)
-
-    useEffect(() => {
-        if (ref.current == null) return
-        // TODO Pointer listeners
-    })
-
-    return <BaseDiv ref={ref} id={"node-" + props.id} position={props.position} className={cx(props.classes, "react-grapher-node")}>
+    return <BaseDiv id={NODE_ID_PREFIX + props.id} position={props.position} className={cx(props.classes, NODE_CLASS)}>
         {props.children}
     </BaseDiv>
 })

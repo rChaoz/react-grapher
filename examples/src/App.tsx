@@ -1,5 +1,5 @@
 import React from 'react';
-import {ReactGrapher, createNode} from "reactgrapher";
+import {ReactGrapher, createTextNode} from "reactgrapher";
 import "reactgrapher/dist/default-style.css"
 
 export default function App() {
@@ -12,10 +12,7 @@ export default function App() {
             height: 400,
         }}>
             <ReactGrapher defaultNodes={[
-                createNode({
-                    position: {x: 100, y: 100},
-                    data: "BIG",
-                })
+                createTextNode("BIG if true?")
             ]} defaultEdges={[]} />
         </div>
     </div>

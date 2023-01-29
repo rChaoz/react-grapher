@@ -1,6 +1,7 @@
 .react-grapher-node {
-    border-radius: 6px;
+    border-radius: 8px;
     border: 2px solid black;
-    padding: 5px;
+    padding: 8px;
     background: white;
+    user-select: none;
 }

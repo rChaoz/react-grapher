@@ -1,27 +1,35 @@
 // Data
+import {ReactGrapherConfig} from "./data/ReactGrapherConfig";
 import {Controller} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
-import {Node, Nodes, createNode} from "./data/Node";
+import {Node, Nodes, createNode, createTextNode} from "./data/Node";
 import {Edge, Edges, createEdge} from "./data/Edge";
 import {GraphChange, NodeChange, NodeDragChange} from "./data/GraphChange";
 // Hooks
 import {useControlledGraph} from "./hooks/useControlledGraph";
+import {useController} from "./hooks/useController";
+import {useGraphState} from "./hooks/useGraphState";
 // React Grapher
 import {ReactGrapher} from "./components/ReactGrapher";
 import {GrapherViewport} from "./components/GrapherViewport";
 // Sub-components
-import {DefaultNode} from "./components/DefaultNode";
+import {BaseNode, BaseNodeProps} from "./components/BaseNode";
+import {DefaultNode, NodeProps} from "./components/DefaultNode";
+// Other
+import {randomID} from "./util/randomID";
 
 export {
     // Data
-    Controller, Viewport,
-    Node, Nodes, createNode,
+    ReactGrapherConfig, Controller, Viewport,
+    Node, Nodes, createNode, createTextNode,
     Edge, Edges, createEdge,
     GraphChange, NodeChange, NodeDragChange,
     // Hooks
-    useControlledGraph,
+    useControlledGraph, useController, useGraphState,
     // React Grapher
     ReactGrapher, GrapherViewport,
     // Sub-components
-    DefaultNode,
+    BaseNode, BaseNodeProps, DefaultNode, NodeProps,
+    // Others
+    randomID,
 }

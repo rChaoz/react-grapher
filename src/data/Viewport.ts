@@ -1,5 +1,5 @@
 export interface Viewport {
-    translateX: number
-    translateY: number
-    scale: number
+    centerX: number
+    centerY: number
+    zoom: number
 }

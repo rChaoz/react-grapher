@@ -19,17 +19,21 @@ export interface Node<T> {
      */
     selected: boolean
     /**
-     * Automatically set after rendering. DOM width of this node
+     * Automatically set during rendering. DOM Element for this node.
+     */
+    element?: HTMLElement
+    /**
+     * Automatically set during rendering. DOM width of this node
      */
     width?: number
     /**
-     * Automatically set after rendering. DOM height of this node
+     * Automatically set during rendering. DOM height of this node
      */
     height?: number
     /**
-     * Automatically set after rendering. Used for calculation of Floating edges positions.
+     * Automatically set during rendering. Used for calculation of Floating edges positions.
      */
-    borderRadius?: [number, number, number, number]
+    borderRadius?: [[number, number], [number, number], [number, number], [number, number]]
 }
 
 export interface Position {
@@ -42,7 +46,7 @@ export interface Position {
 }
 
 /**
- * Create a node with provided data
+ * Create a node with provided data.
  * @param id ID of the node, defaults to random alfa-numerical sequence
  * @param position Position of the Node, defaults to 0, 0
  * @param data Data passed to Node component, default implementation just displays a label with value of `String(data)`
@@ -56,6 +60,13 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
         classes: new Set(classes ?? null),
         selected: false,
     }
+}
+
+/**
+ * Create a new Node with default values and provided string as its data.
+ */
+export function createTextNode(text: string): Node<string> {
+    return createNode({data: text})
 }
 
 /**

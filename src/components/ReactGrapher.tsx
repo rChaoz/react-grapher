@@ -2,10 +2,13 @@ import React, {useEffect, useRef} from "react";
 import {Node, Nodes} from "../data/Node"
 import {Edge, Edges} from "../data/Edge";
 import styled from "@emotion/styled";
+import {useController} from "../hooks/useController";
 import {useGraphState} from "../hooks/useGraphState";
 import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
-import {Controller, useController} from "../data/Controller";
+import {Controller} from "../data/Controller";
+import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS} from "../util/Constants";
+import {ReactGrapherConfig} from "../data/ReactGrapherConfig";
 
 export interface CommonGraphProps {
     /**
@@ -20,6 +23,21 @@ export interface CommonGraphProps {
      * Elements that will be placed inside the Graph div.
      */
     children?: React.ReactNode
+    /**
+     * Fine configuration for the Graph
+     */
+    config?: ReactGrapherConfig
+    /**
+     * Quick option to completely disable all controls. Check `ReactGrapherConfig` for finer tuning.
+     */
+    disableControls?: boolean
+    /**
+     * Automatic fit view function. You should not change the value of this prop across renders, it will likely lead to
+     * unexpected behaviour. Possible values:
+     * 'initial' - fit view after the first render
+     * 'always' - fit view every time nodes/edges are updated. You probably want to pair this with `disableControls`
+     * undefined - manual. You can fit view using the Controller returned by useController()/useControlledGraph()
+     */
 }
 
 export interface ControlledGraphProps<T> extends CommonGraphProps {
@@ -62,21 +80,78 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
     const ref = useRef<HTMLDivElement>(null)
 
-    // On effect, create edges and update node dimensions
+    // Listener functions
+    function onNodePointerDown(event: PointerEvent) {
+        console.log("PointerDown")
+    }
+
+    function onNodePointerMove(event: PointerEvent) {
+        console.log("PointerMove")
+
+    }
+
+    function onNodePointerUp(event: PointerEvent) {
+        console.log("PointerUp")
+
+    }
+
+    // On effect, create edges, update node dimensions and setup listeners
     useEffect(() => {
         if (ref.current == null) return
         // TODO Edges
-        // Set node dimensions
+        // For every node
         for (const node of nodes) {
-            const nodeElem = ref.current.querySelector<HTMLElement>(`#node-${node.id}`)
+            const nodeElem = ref.current.querySelector<HTMLElement>(`#${NODE_ID_PREFIX}${node.id}`)
             if (nodeElem == null) continue
+            node.element = nodeElem
+
+            function resolveValue(value: string, length: number): number {
+                // Resolve a percentage or pixel value to pixel value
+                if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
+                else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
+                else return 0
+            }
+
+            function resolveValues(strValue: string, width: number, height: number): [number, number] {
+                /* Computed border radius may be of form:
+                - 6px
+                - 2px 5px
+                - 20%
+                - 10% 5%
+                - <empty>
+                 */
+                const vals = strValue.split(" ")
+                if (vals.length === 0) return [0, 0]
+                else if (vals.length === 1) return [resolveValue(vals[0], width), resolveValue(vals[0], height)]
+                else return [resolveValue(vals[0], width), resolveValue(vals[1], height)]
+            }
+
+            // Set node dimensions
             node.width = nodeElem.offsetWidth
             node.height = nodeElem.offsetHeight
-            console.log(getComputedStyle(nodeElem).borderRadius)
+            const style = getComputedStyle(nodeElem)
+            node.borderRadius = [
+                resolveValues(style.borderTopLeftRadius, node.width, node.height),
+                resolveValues(style.borderTopRightRadius, node.width, node.height),
+                resolveValues(style.borderBottomRightRadius, node.width, node.height),
+                resolveValues(style.borderBottomLeftRadius, node.width, node.height),
+            ]
+
+            // Set listeners
+            node.element.removeEventListener("pointerdown", onNodePointerDown)
+        }
+
+        // Cleanup
+        return () => {
+            // Remove listeners
+            for (const node of nodes) {
+                if (node.element == null) continue
+                node.element.removeEventListener("pointerdown", onNodePointerDown)
+            }
         }
     })
 
-    return <GraphDiv ref={ref} width={props.width} height={props.height} className={"react-grapher"}>
+    return <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
         <GrapherViewport controller={controller}>
             {nodeElements}
         </GrapherViewport>
