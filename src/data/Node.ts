@@ -26,6 +26,10 @@ export interface Node<T> {
      * Automatically set after rendering. DOM height of this node
      */
     height?: number
+    /**
+     * Automatically set after rendering. Used for calculation of Floating edges positions.
+     */
+    borderRadius?: [number, number, number, number]
 }
 
 export interface Position {
@@ -55,23 +59,21 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
 }
 
 /**
- * Create a new node with random ID and given text as data
- */
-export function createTextNode<T>(text: string): Node<string> {
-    return createNode({data: text})
-}
-
-/**
  * Represents a Graph's collection of Nodes. Provides array-like acces, but never use this to cause modifications - only
  * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
  * be registered. If you need complex array manipulation, use `.slice()` on this object to obtain a copy, modify it as you please,
  * then use `.set()` to update the Graph
  */
-export interface Nodes<T> extends Array<Node<T>> {
+export interface NodesFunctions<T> {
     /**
      * Remove all nodes
      */
     clear(): void
+
+    /**
+     * Finds the node with the given ID
+     */
+    get(id: string): Node<T> | undefined
 
     /**
      * Replaces all existing nodes
@@ -100,3 +102,5 @@ export interface Nodes<T> extends Array<Node<T>> {
      */
     processChanges(changes: GraphChange[]): void
 }
+
+export type Nodes<T> = NodesFunctions<T> & Node<T>[]

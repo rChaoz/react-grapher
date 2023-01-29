@@ -10,9 +10,12 @@
   "repository": "https://github.com/rChaoz/react-grapher",
   "author": "Matei Trandafir (rChaoz)",
   "license": "MIT",
-  "devDependencies": {
+  "dependencies": {
     "@emotion/css": "^11.10.5",
-    "@emotion/styled": "^11.10.5",
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5"
+  },
+  "devDependencies": {
     "@rollup/plugin-commonjs": "^24.0.1",
     "@rollup/plugin-node-resolve": "^15.0.1",
     "@types/react": "^18.0.27",
@@ -23,7 +26,6 @@
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-typescript2": "^0.34.1",
-    "sass": "^1.57.1",
     "typescript": "^4.9.4"
   },
   "peerDependencies": {
@@ -32,7 +34,7 @@
   },
   "scripts": {
     "prepublishOnly": "yarn run build",
-    "build": "rollup -c",
+    "build": "rollup -c && cp src/css/* dist/",
     "watch": "rollup -c --watch"
   }
 }

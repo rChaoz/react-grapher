@@ -16,7 +16,7 @@ export interface NodeChange<T> extends GraphChange {
  * dragging any of them.
  */
 export interface NodeDragChange<T> extends NodeChange<T> {
-    type: "node-manipulation"
+    type: "node-drag"
     /**
      * The node being dragged by the pointer will have the "move-pointer" event, while all others will receive "selected"
      */

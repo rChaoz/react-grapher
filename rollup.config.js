@@ -25,6 +25,6 @@ export default {
         resolve(),
         commonjs(),
         typescript(),
-        postcss()
+        postcss(),
     ]
 };

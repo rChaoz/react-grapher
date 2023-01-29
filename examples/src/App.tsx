@@ -1,5 +1,6 @@
 import React from 'react';
-import {ReactGrapher} from "../../src";
+import {ReactGrapher, createNode} from "reactgrapher";
+import "reactgrapher/dist/default-style.css"
 
 export default function App() {
     return <div style={{
@@ -7,9 +8,15 @@ export default function App() {
         marginInline: "auto",
     }}>
         <div style={{
+            outline: "1px red solid",
             height: 400,
         }}>
-            <ReactGrapher defaultNodes={} defaultEdges={} />
+            <ReactGrapher defaultNodes={[
+                createNode({
+                    position: {x: 100, y: 100},
+                    data: "BIG",
+                })
+            ]} defaultEdges={[]} />
         </div>
     </div>
 }

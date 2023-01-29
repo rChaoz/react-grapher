@@ -1,7 +1,8 @@
 import React, {memo} from "react";
 import {BaseNode, BaseNodeProps} from "./BaseNode";
 
-export interface NodeProps<T> extends Omit<BaseNodeProps, "children"> {
+export interface NodeProps<T> extends Omit<BaseNodeProps, "children" | "classes"> {
+    classes: Set<string>
     data: T
 }
 

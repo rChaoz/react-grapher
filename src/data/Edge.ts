@@ -28,7 +28,7 @@ export function createEdge(source: string, target: string, id?: string) {
  * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
  * be registered.
  */
-export interface Edges extends Array<Edge> {
+export interface EdgesFunctions {
     /**
      * Remove all edges
      */
@@ -56,3 +56,5 @@ export interface Edges extends Array<Edge> {
      */
     replace(targetID: string, replacement?: Edge | null | ((edge: Edge) => Edge | null | undefined)): void
 }
+
+export type Edges = EdgesFunctions & Edge[]
