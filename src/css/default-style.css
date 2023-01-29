@@ -1,7 +1,19 @@
+.react-grapher {
+    background: #f1f1f5;
+    --react-grapher-node-background: #ce4c13;
+    --react-grapher-node-border: #ff550a;
+    --react-grapher-node-color: white;
+}
+
 .react-grapher-node {
-    border-radius: 8px;
-    border: 2px solid black;
-    padding: 8px;
-    background: white;
+    border-radius: 16px;
+    border: 2px solid;
+    padding: 16px;
     user-select: none;
+    font-weight: bold;
+    box-shadow: 1px 1px 6px -2px black;
+
+    background: var(--react-grapher-node-background);
+    border-color: var(--react-grapher-node-border);
+    color: var(--react-grapher-node-color);
 }

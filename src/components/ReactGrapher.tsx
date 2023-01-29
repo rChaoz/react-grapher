@@ -36,8 +36,18 @@ export interface CommonGraphProps {
      * unexpected behaviour. Possible values:
      * 'initial' - fit view after the first render
      * 'always' - fit view every time nodes/edges are updated. You probably want to pair this with `disableControls`
-     * undefined - manual. You can fit view using the Controller returned by useController()/useControlledGraph()
+     * undefined/'manual - you can fit view using the Controller returned by useController()/useControlledGraph()
      */
+    fitView?: "initial" | "always" | "manual"
+    /**
+     * Listen to events such as nodes being clicked, selected
+     */
+    onEvent?: void // TODO
+    /**
+     * Called whenever the graph would suffer changes, such as nodes being moved or deleted. You can modify the changes before they are committed
+     * or cancel them entirely.
+     */
+    onChange?: void // TODO
 }
 
 export interface ControlledGraphProps<T> extends CommonGraphProps {
@@ -78,21 +88,34 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         } classes={node.classes} />
     })
 
+    // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
 
+    // Ref for current node being clicked
+    const clickedNode = useRef<string | null>(null)
+
     // Listener functions
+
+    // Node level
     function onNodePointerDown(event: PointerEvent) {
-        console.log("PointerDown")
-    }
-
-    function onNodePointerMove(event: PointerEvent) {
-        console.log("PointerMove")
-
+        clickedNode.current = (event.currentTarget as HTMLElement).id.substring(NODE_ID_PREFIX.length)
     }
 
     function onNodePointerUp(event: PointerEvent) {
-        console.log("PointerUp")
+        const id = (event.currentTarget as HTMLElement).id.substring(NODE_ID_PREFIX.length)
+        if (id === clickedNode.current) {
+            // Node clicked
+            console.log("Node " + id + " clicked!")
+        }
+    }
 
+    // Document level
+    function onPointerMove(event: PointerEvent) {
+        console.log("Document PointerMove")
+    }
+
+    function onPointerUp(event: PointerEvent) {
+        clickedNode.current = null
     }
 
     // On effect, create edges, update node dimensions and setup listeners
@@ -138,16 +161,25 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             ]
 
             // Set listeners
-            node.element.removeEventListener("pointerdown", onNodePointerDown)
+            node.element.addEventListener("pointerdown", onNodePointerDown)
+            node.element.addEventListener("pointerup", onNodePointerUp)
         }
+
+        // Document-level listeners
+        document.addEventListener("pointermove", onPointerMove)
+        document.addEventListener("pointerup", onPointerUp)
 
         // Cleanup
         return () => {
-            // Remove listeners
+            // Remove node listeners
             for (const node of nodes) {
                 if (node.element == null) continue
                 node.element.removeEventListener("pointerdown", onNodePointerDown)
+                node.element.removeEventListener("pointerup", onNodePointerUp)
             }
+            // Remove document listeners
+            document.removeEventListener("pointermove", onPointerMove)
+            document.removeEventListener("pointerup", onPointerUp)
         }
     })
 
