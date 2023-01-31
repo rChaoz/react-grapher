@@ -1,5 +1,5 @@
 // Data
-import {ReactGrapherConfig} from "./data/ReactGrapherConfig";
+import {ReactGrapherConfig, ReactGrapherUserControls, ReactGrapherViewportControls} from "./data/ReactGrapherConfig";
 import {Controller} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
 import {Node, Nodes, createNode, createTextNode} from "./data/Node";
@@ -20,7 +20,8 @@ import {randomID} from "./util/randomID";
 
 export {
     // Data
-    ReactGrapherConfig, Controller, Viewport,
+    ReactGrapherConfig, ReactGrapherUserControls, ReactGrapherViewportControls,
+    Controller, Viewport,
     Node, Nodes, createNode, createTextNode,
     Edge, Edges, createEdge,
     GrapherChange, NodeChange, NodeMoveChange,

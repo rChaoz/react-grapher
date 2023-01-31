@@ -8,7 +8,7 @@ import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
-import {ReactGrapherConfig} from "../data/ReactGrapherConfig";
+import {ReactGrapherConfig, useDefaults} from "../data/ReactGrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
@@ -70,6 +70,7 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
 `
 
 export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
+    const config = useDefaults(props.config)
     let nodes: Nodes<T>
     let edges: Edges
     let controller: Controller
@@ -114,7 +115,6 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
     // Zoom the viewport
     function changeZoom(amount: number) {
-        console.log("amount: ", amount)
         const viewport = controller.getViewport()
         const zoom = viewport.zoom * (1 + amount)
         // TODO Take min, max zoom into account
