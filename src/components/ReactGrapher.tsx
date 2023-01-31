@@ -8,7 +8,7 @@ import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
-import {FitViewConfigSet, ReactGrapherConfig, withDefaultConfig} from "../data/ReactGrapherConfig";
+import {FitViewConfigSet, ReactGrapherConfig, ReactGrapherConfigSet, withDefaultConfig} from "../data/ReactGrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
@@ -167,7 +167,6 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 }
                 onEvent(upEvent)
 
-                console.log(grabbed)
                 if (grabbed.current === nodeID && !grabbed.hasMoved) {
                     const clickEvent: NodePointerEvent = {
                         type: "node",
@@ -232,7 +231,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 }
                 onEvent(grapherEvent)
             }
-            if (!prevent) changeZoom(-event.deltaY / 1000, controller)
+            if (!prevent && config.viewportControls.allowZooming) changeZoom(-event.deltaY / 1000, controller, config)
         }
 
         // Document level
@@ -325,8 +324,11 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         }
 
         // TODO Edges
-        // For every node
-        const nodesRect = new DOMRect()
+        // Calculate bounding rect and prevent forcing 0, 0 point to be included in the rect
+        const nodesRect = nodes.length > 0 ? new DOMRect(
+            nodes[0].position.x, nodes[0].position.y, 0, 0
+        ) : new DOMRect()
+
         for (const node of nodes) {
             const nodeElem = ref.current.querySelector<HTMLElement>(`#${NODE_ID_PREFIX}${node.id}`)
             if (nodeElem == null) continue
@@ -365,7 +367,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 nodesRect.width += delta
             }
             if (top < nodesRect.top) {
-                const delta = nodesRect.right - top
+                const delta = nodesRect.top - top
                 nodesRect.y -= delta
                 nodesRect.height += delta
             }
@@ -377,6 +379,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             node.element.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
+        console.log(nodesRect)
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
@@ -409,18 +412,18 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             document.removeEventListener("pointermove", onPointerMove)
             document.removeEventListener("pointerup", onPointerUp)
         }
-    }, [nodes, edges, onEvent, onChange, controller])
+    }, [nodes, edges, onEvent, onChange, controller, config])
 
     // Fit view
     useEffect(() => {
-        if (props.fitView === "always") fitView(config.fitViewConfig, controller, nodes.boundingRect!, ref.current!)
+        if (props.fitView === "always") fitView(config.fitViewConfig, config, controller, nodes.boundingRect!, ref.current!)
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [nodes, edges])
 
     const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
     useEffect(() => {
         if (controllerImpl.fitViewValue != needFitView.current) {
-            fitView(config.fitViewConfig, controller, nodes.boundingRect!, ref.current!)
+            fitView(config.fitViewConfig, config, controller, nodes.boundingRect!, ref.current!)
             needFitView.current = controllerImpl.fitViewValue
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -455,34 +458,31 @@ function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges, 
 }
 
 // Zoom the viewport
-function changeZoom(amount: number, controller: Controller) {
+function changeZoom(amount: number, controller: Controller, config: ReactGrapherConfigSet) {
     const viewport = controller.getViewport()
     const zoom = viewport.zoom * (1 + amount)
-    // TODO Take min, max zoom into account
-    controller.setViewport({
-        centerX: viewport.centerX,
-        centerY: viewport.centerY,
-        zoom,
+    controller.updateViewport({
+        zoom: Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
     })
 }
 
 // Fit the viewport
 // TODO Take edges into account as well
 // TODO Replace element from ReactGrapher to empty div made specially for this purpose
-function fitView(config: FitViewConfigSet, controller: Controller, nodesRect: DOMRect, element: HTMLElement) {
+function fitView(fitConfig: FitViewConfigSet, config: ReactGrapherConfigSet, controller: Controller, nodesRect: DOMRect, element: HTMLElement) {
     if (element == null || nodesRect == null || (nodesRect.width === 0 && nodesRect.height === 0)) return
     const w = element.offsetWidth, h = element.offsetHeight
 
     // Calculate zoom value for paddings
     const rect = new DOMRect(nodesRect.x, nodesRect.y, nodesRect.width, nodesRect.height)
     let zoom = Math.min(w / rect.width, h / rect.height)
+    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
 
     // Apply padding
-    element.style.padding = config.padding
+    element.style.padding = fitConfig.padding
     const comp = getComputedStyle(element)
     const pl = resolveValue(comp.paddingLeft, w) / zoom, pt = resolveValue(comp.paddingTop, h) / zoom,
         pr = resolveValue(comp.paddingRight, w) / zoom, pb = resolveValue(comp.paddingBottom, h) / zoom
-    console.log({zoom, pl, pt, pr, pb})
     element.style.padding = "0"
     rect.x -= pl
     rect.y -= pt
@@ -490,6 +490,7 @@ function fitView(config: FitViewConfigSet, controller: Controller, nodesRect: DO
     rect.height += pt + pb
     // Calculate final zoom value
     zoom = Math.min(w / rect.width, h / rect.height)
+    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
 
     // Update viewport
     controller.setViewport({

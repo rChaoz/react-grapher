@@ -18,7 +18,6 @@ export default function App() {
                 createTextNode("..small if true :(", {x: 0, y: 100, isAbsolute: true}),
             ]} defaultEdges={[]} fitView={"initial"} controller={controller} onEvent={event => {
                 if (event.type === "node" && event.action === "click") {
-                    console.log("CLICK")
                     controller.fitView()
                 }
             }}/>

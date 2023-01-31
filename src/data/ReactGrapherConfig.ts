@@ -51,6 +51,11 @@ export interface FitViewConfig {
      * the edges of the ReactGrapher. Defaults to "10%".
      */
     padding?: string,
+    /**
+     * Whether to take minZoom and maxZoom (from viewportControls) when fitting view. If false and user zooming is enabled, the zoom value might
+     * get a snap effect upon user zooming if the zoom value was outside limits. Defaults to true.
+     */
+    abideMinMaxZoom?: boolean
     // TODO Animation, other options
 }
 
@@ -93,7 +98,7 @@ export function withDefaultConfig(config: ReactGrapherConfig | undefined): React
             allowSelection: true, allowMovingNodes: true, allowDeletingNodes: false,
             allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
         },
-        fitViewConfig: {padding: "5%"}
+        fitViewConfig: withDefaultFitViewConfig(undefined),
     }; else return {
         viewportControls: config.viewportControls === false ? {
             minZoom: 1, maxZoom: 1, allowPanning: false, allowZooming: false
@@ -121,8 +126,9 @@ export function withDefaultConfig(config: ReactGrapherConfig | undefined): React
 }
 
 export function withDefaultFitViewConfig(config: FitViewConfig | undefined): FitViewConfigSet {
-    if (config == null) return {padding: "5%"}
+    if (config == null) return {padding: "5%", abideMinMaxZoom: true}
     else return {
         padding: config.padding ?? "5%",
+        abideMinMaxZoom: config.abideMinMaxZoom ?? true,
     }
 }

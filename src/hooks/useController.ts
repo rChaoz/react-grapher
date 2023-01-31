@@ -23,6 +23,13 @@ export function useController(): Controller {
         setViewport(newViewport: Viewport) {
             setViewport(newViewport)
         },
+        updateViewport(changes: Partial<Viewport>) {
+            setViewport({
+                zoom: changes.zoom ?? viewport.zoom,
+                centerX: changes.centerX ?? viewport.centerX,
+                centerY: changes.centerY ?? viewport.centerY,
+            })
+        }
     }
     return controller
 }
