@@ -10,7 +10,7 @@ import {Controller} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
 import {ReactGrapherConfig} from "../data/ReactGrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
-import {GrapherEvent, NodePointerEvent, UpEvent, ViewportPointerEvent} from "../data/GrapherEvent";
+import {GrapherEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
 
 export interface CommonGraphProps {
@@ -103,7 +103,6 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     grabbed.hasMoved = false
 
     // Send a change to the graph
-
     function sendChanges(changes: GrapherChange[]) {
         let c: GrapherChange[] | undefined = changes
         if (props.onChange != null) c = props.onChange(changes)
@@ -111,6 +110,19 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             nodes.processChanges(c)
             edges.processChanges(c)
         }
+    }
+
+    // Zoom the viewport
+    function changeZoom(amount: number) {
+        console.log("amount: ", amount)
+        const viewport = controller.getViewport()
+        const zoom = viewport.zoom * (1 + amount)
+        // TODO Take min, max zoom into account
+        controller.setViewport({
+            centerX: viewport.centerX,
+            centerY: viewport.centerY,
+            zoom,
+        })
     }
 
     // Listener functions
@@ -194,6 +206,23 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             }
             props.onEvent(grapherEvent)
         }
+    }
+
+    function onViewportWheel(event: WheelEvent) {
+        let prevent = false
+        if (props.onEvent != null) {
+            const grapherEvent: ViewportWheelEvent = {
+                type: "viewport",
+                action: "wheel",
+                grabbed: grabbed.current === "",
+                preventDefault() {
+                    prevent = true
+                },
+                wheelEvent: event,
+            }
+            props.onEvent(grapherEvent)
+        }
+        if (!prevent) changeZoom(-event.deltaY / 1000)
     }
 
     // Document level
@@ -336,6 +365,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         else {
             viewportElem.addEventListener("pointerdown", onViewportPointerDown)
             viewportElem.addEventListener("pointerup", onViewportPointerUp)
+            viewportElem.addEventListener("wheel", onViewportWheel)
         }
 
         // Document-level listeners
@@ -354,6 +384,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             if (viewportElem != null) {
                 viewportElem.removeEventListener("pointerdown", onViewportPointerDown)
                 viewportElem.removeEventListener("pointerup", onViewportPointerUp)
+                viewportElem.removeEventListener("wheel", onViewportWheel)
             }
             // Remove document listeners
             document.removeEventListener("pointermove", onPointerMove)

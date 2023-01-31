@@ -1,6 +1,6 @@
 import React from "react";
 import {Edge, Edges, EdgesFunctions} from "../../data/Edge";
-import {GrapherChange, isEdgeChange, isNodeChange} from "../../data/GrapherChange";
+import {GrapherChange, isEdgeChange} from "../../data/GrapherChange";
 
 export default function attachEdgeFunctions(edges: Edge[], setEdges: React.Dispatch<React.SetStateAction<Edge[]>>): Edges {
     const functions: EdgesFunctions = {

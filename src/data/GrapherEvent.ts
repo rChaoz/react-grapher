@@ -1,6 +1,6 @@
 import {Node} from "./Node"
 
-export type GrapherEvent = NodePointerEvent | ViewportPointerEvent | UpEvent
+export type GrapherEvent = NodePointerEvent | ViewportPointerEvent | ViewportWheelEvent | UpEvent
 
 export interface BaseGrapherEvent {
     /**
@@ -47,13 +47,28 @@ export interface ViewportPointerEvent extends BaseGrapherEvent {
      */
     action: "down" | "move" | "up" | "click"
     /**
-     * Relevant for the "up" event.
+     * Relevant for the "up" and "wheel" events.
      */
     grabbed: boolean
     /**
      * The PointerEvent that caused this event. Note that for the "click" event, this is actually a "pointerup" event.
      */
     pointerEvent: PointerEvent
+}
+
+/**
+ * This event occurs when the mouse wheel is actioned while the pointer is hovered.
+ * By default, the viewport zoom is changed.
+ */
+export interface ViewportWheelEvent extends BaseGrapherEvent {
+    type: "viewport"
+    /**
+     * This event occurs when the mouse wheel is actioned while the pointer is hovered.
+     * By default, the viewport zoom is changed.
+     */
+    action: "wheel"
+    grabbed: boolean
+    wheelEvent: WheelEvent
 }
 
 /**
