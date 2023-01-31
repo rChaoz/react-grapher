@@ -1,4 +1,6 @@
 import {randomID} from "../util/randomID";
+import {GrapherChange} from "./GrapherChange";
+import {emptyID} from "../util/errors";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'
@@ -16,6 +18,10 @@ export interface Edge {
  * @param id ID of this edge (defaults to random)
  */
 export function createEdge(source: string, target: string, id?: string) {
+    if (id === "") {
+        id = randomID()
+        emptyID(id)
+    }
     return {
         id: id ?? randomID(),
         source,
@@ -55,6 +61,11 @@ export interface EdgesFunctions {
      * @param replacement New edge or function that returns a new edge and receives the old edge (null to remove)
      */
     replace(targetID: string, replacement?: Edge | null | ((edge: Edge) => Edge | null | undefined)): void
+
+    /**
+     * Process given changes, updating this Edges list (ignores non-Edge changes)
+     */
+    processChanges(changes: GrapherChange[]): void
 }
 
 export type Edges = EdgesFunctions & Edge[]

@@ -4,7 +4,7 @@ import {Controller} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
 import {Node, Nodes, createNode, createTextNode} from "./data/Node";
 import {Edge, Edges, createEdge} from "./data/Edge";
-import {GraphChange, NodeChange, NodeDragChange} from "./data/GraphChange";
+import {GrapherChange, NodeChange, NodeMoveChange} from "./data/GrapherChange";
 // Hooks
 import {useControlledGraph} from "./hooks/useControlledGraph";
 import {useController} from "./hooks/useController";
@@ -23,7 +23,7 @@ export {
     ReactGrapherConfig, Controller, Viewport,
     Node, Nodes, createNode, createTextNode,
     Edge, Edges, createEdge,
-    GraphChange, NodeChange, NodeDragChange,
+    GrapherChange, NodeChange, NodeMoveChange,
     // Hooks
     useControlledGraph, useController, useGraphState,
     // React Grapher

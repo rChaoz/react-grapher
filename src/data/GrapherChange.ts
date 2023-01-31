@@ -1,24 +1,31 @@
 import {Node, Position} from "./Node";
 
-export interface GraphChange {
-    type: string
-}
+export type GrapherChange = NodeMoveChange
 
-export interface NodeChange<T> extends GraphChange {
+export interface NodeChange {
     /**
      * Node affected by the change
      */
-    node: Node<T>
+    node: Node<any>
+}
+
+export function isNodeChange(change: GrapherChange): change is NodeMoveChange {
+    return change.type.startsWith("node")
+}
+
+export function isEdgeChange(change: GrapherChange): boolean {
+    return false // TODO
 }
 
 /**
  * Used when the changes the node's position using a pointer. The user can move multiple nodes at once by selecting them and them
  * dragging any of them.
  */
-export interface NodeDragChange<T> extends NodeChange<T> {
-    type: "node-drag"
+export interface NodeMoveChange extends NodeChange {
+    type: "node-move"
     /**
-     * The node being dragged by the pointer will have the "move-pointer" event, while all others will receive "selected"
+     * The node being dragged by the pointer will have the "move-pointer" event, while all others will have "selected".
+     * If moved by keyboard, all moved nodes will have "selected".
      */
     event: "move-pointer" | "move-keyboard" | "selected"
     /**

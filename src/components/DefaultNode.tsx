@@ -1,13 +1,10 @@
 import React, {memo} from "react";
 import {BaseNode, BaseNodeProps} from "./BaseNode";
 
-export interface NodeProps<T> extends Omit<BaseNodeProps, "children" | "classes"> {
-    classes: Set<string>
-    data: T
-}
+export type NodeProps<T> = Omit<BaseNodeProps<T>, "children">
 
 export const DefaultNode = memo<NodeProps<any>>(function DefaultNode(props) {
-    return <BaseNode classes={[...props.classes]} position={props.position} id={props.id}>
+    return <BaseNode {...props}>
         {String(props.data)}
     </BaseNode>
 })

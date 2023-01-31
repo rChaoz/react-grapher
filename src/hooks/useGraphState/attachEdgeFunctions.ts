@@ -1,5 +1,6 @@
 import React from "react";
 import {Edge, Edges, EdgesFunctions} from "../../data/Edge";
+import {GrapherChange, isEdgeChange, isNodeChange} from "../../data/GrapherChange";
 
 export default function attachEdgeFunctions(edges: Edge[], setEdges: React.Dispatch<React.SetStateAction<Edge[]>>): Edges {
     const functions: EdgesFunctions = {
@@ -27,6 +28,16 @@ export default function attachEdgeFunctions(edges: Edge[], setEdges: React.Dispa
                     else return replacement
                 } else return edge
             })
+        },
+        processChanges(changes: GrapherChange[]) {
+            const e = edges.slice()
+            let changed = false
+            for (const change of changes) {
+                if (!isEdgeChange(change)) continue
+                changed = true
+                // TODO
+            }
+            if (changed) setEdges(e)
         }
     }
     return Object.assign(edges, functions)

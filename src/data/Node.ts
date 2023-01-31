@@ -1,7 +1,8 @@
 import {randomID} from "../util/randomID"
-import {GraphChange} from "./GraphChange";
+import {GrapherChange} from "./GrapherChange";
 import {NodeProps} from "../components/DefaultNode";
 import React from "react";
+import {emptyID} from "../util/errors";
 
 export interface Node<T> {
     id: string
@@ -53,6 +54,10 @@ export interface Position {
  * @param classes Array of class names to be passed to the Node component
  */
 export function createNode<T>({id, position, data, classes}: { id?: string, position?: Position, data: T, classes?: string[] }): Node<T> {
+    if (id === "") {
+        id = randomID()
+        emptyID(id)
+    }
     return {
         id: id ?? randomID(),
         position: position ?? {x: 0, y: 0},
@@ -65,8 +70,8 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
 /**
  * Create a new Node with default values and provided string as its data.
  */
-export function createTextNode(text: string): Node<string> {
-    return createNode({data: text})
+export function createTextNode(text: string, position?: Position, id?: string): Node<string> {
+    return createNode({data: text, position, id})
 }
 
 /**
@@ -109,9 +114,9 @@ export interface NodesFunctions<T> {
     replace(targetID: string, replacement?: Node<T> | null | ((node: Node<T>) => Node<T> | null | undefined)): void
 
     /**
-     * Process given changes, updating this Nodes list (ignores EdgeChanges)
+     * Process given changes, updating this Nodes list (ignores non-Node changes)
      */
-    processChanges(changes: GraphChange[]): void
+    processChanges(changes: GrapherChange[]): void
 }
 
 export type Nodes<T> = NodesFunctions<T> & Node<T>[]

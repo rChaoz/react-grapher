@@ -1,6 +1,6 @@
 import {Node, Nodes, NodesFunctions} from "../../data/Node";
 import React from "react";
-import {GraphChange, NodeChange, NodeDragChange} from "../../data/GraphChange";
+import {GrapherChange, isNodeChange} from "../../data/GrapherChange";
 
 export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React.Dispatch<React.SetStateAction<Node<T>[]>>): Nodes<T> {
     const functions: NodesFunctions<T> = {
@@ -32,22 +32,16 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
                 } else return node
             })
         },
-        processChanges(changes: GraphChange[]) {
+        processChanges(changes: GrapherChange[]) {
             const n = nodes.slice()
+            let changed = false
             for (const change of changes) {
                 if (!isNodeChange(change)) continue
-                if (isDragChange(change)) change.node.position = change.position
+                changed = true
+                if (change.type == "node-move") change.node.position = change.position
             }
-            setNodes(n)
+            if (changed) setNodes(n)
         },
     }
     return Object.assign(nodes, functions)
-}
-
-function isNodeChange(change: GraphChange): change is NodeChange<any> {
-    return "node" in change
-}
-
-function isDragChange(change: NodeChange<any>): change is NodeDragChange<any> {
-    return change.type === "node-drag"
 }

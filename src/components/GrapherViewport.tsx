@@ -20,7 +20,7 @@ const ContentDiv = styled.div<Viewport>`
   position: absolute;
   width: 100%;
   height: 100%;
-  transform: scale(${viewport => viewport.zoom}) translate(${viewport => viewport.centerX}px, ${viewport => viewport.centerY}px) translate(50%, 50%);
+  transform: scale(${viewport => viewport.zoom}) translate(${viewport => -viewport.centerX}px, ${viewport => -viewport.centerY}px) translate(50%, 50%);
 `
 
 export function GrapherViewport(props: GrapherViewportProps) {

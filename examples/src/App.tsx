@@ -12,7 +12,8 @@ export default function App() {
             height: 400,
         }}>
             <ReactGrapher defaultNodes={[
-                createTextNode("BIG if true?")
+                createTextNode("BIG if true?"),
+                createTextNode("..small if true :(", { x: 0, y: 100, isAbsolute: true }),
             ]} defaultEdges={[]} />
         </div>
     </div>
