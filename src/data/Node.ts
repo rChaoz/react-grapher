@@ -82,6 +82,11 @@ export function createTextNode(text: string, position?: Position, id?: string): 
  */
 export interface NodesFunctions<T> {
     /**
+     * Automatically set during rendering. Bounding box of nodes, used when fitting view.
+     */
+    boundingRect?: DOMRect
+
+    /**
      * Remove all nodes
      */
     clear(): void

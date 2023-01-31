@@ -1,4 +1,4 @@
-import React, {useEffect, useRef} from "react";
+import React, {useEffect, useMemo, useRef} from "react";
 import {Node, Nodes, Position} from "../data/Node"
 import {Edge, Edges} from "../data/Edge";
 import styled from "@emotion/styled";
@@ -6,9 +6,9 @@ import {useController} from "../hooks/useController";
 import {useGraphState} from "../hooks/useGraphState";
 import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
-import {Controller} from "../data/Controller";
+import {Controller, ControllerImpl} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
-import {ReactGrapherConfig, useDefaults} from "../data/ReactGrapherConfig";
+import {FitViewConfigSet, ReactGrapherConfig, withDefaultConfig} from "../data/ReactGrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
@@ -22,6 +22,10 @@ export interface CommonGraphProps {
      * The height of the root div element. Defaults to '100%'.
      */
     height?: string
+    /**
+     * Used to control the viewport
+     */
+    controller?: Controller
     /**
      * Elements that will be placed inside the Graph div.
      */
@@ -41,22 +45,25 @@ export interface CommonGraphProps {
      * 'always' - fit view every time nodes/edges are updated. You probably want to pair this with `disableControls`
      * undefined/'manual - you can fit view using the Controller returned by useController()/useControlledGraph()
      */
-    fitView?: "initial" | "always" | "manual"
+    fitView?: "initial" | "always" | "manual" // TODO
+    /**
+     * Fit view when the DOM element's size changes
+     */
+    fitViewOnResize?: boolean, // TODO
     /**
      * Listen to events such as nodes being clicked, selected
      */
-    onEvent?: (event: GrapherEvent) => GrapherChange[] | undefined // TODO
+    onEvent?: (event: GrapherEvent) => GrapherChange[] | undefined | void
     /**
      * Called whenever the graph would suffer changes, such as nodes being moved or deleted. You can modify the changes before they are committed
      * or cancel them entirely.
      */
-    onChange?: (changes: GrapherChange[]) => GrapherChange[] | undefined
+    onChange?: (changes: GrapherChange[]) => GrapherChange[] | undefined | void
 }
 
 export interface ControlledGraphProps<T> extends CommonGraphProps {
     nodes: Nodes<T>
     edges: Edges
-    controller: Controller
 }
 
 export interface UncontrolledGraphProps<T> extends CommonGraphProps {
@@ -70,27 +77,29 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
 `
 
 export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
-    const config = useDefaults(props.config)
+    const config = withDefaultConfig(props.config)
     let nodes: Nodes<T>
     let edges: Edges
-    let controller: Controller
 
     // Ensure rules of hooks are always met - we never know when this component is uncontrolled one render and controlled the next render
     const {nodes: ownNodes, edges: ownEdges} = useGraphState((props as UncontrolledGraphProps<T>).defaultNodes, (props as any).defaultEdges)
     const ownController = useController()
+    const controller = props.controller ?? ownController
 
     // Controlled graphs use provided nodes & edges objects
-    if ("nodes" in props) ({nodes, edges, controller} = props)
+    if ("nodes" in props) ({nodes, edges} = props)
     // Uncontrolled Graphs manage their own state
-    else [nodes, edges, controller] = [ownNodes, ownEdges, ownController]
+    else [nodes, edges] = [ownNodes, ownEdges]
+
+    const controllerImpl = controller as ControllerImpl
 
     // Create DefaultNode elements from Nodes elements
-    const nodeElements = nodes.map(node => {
+    const nodeElements = useMemo(() => nodes.map(node => {
         const Component = node.Component ?? DefaultNode
         return <Component key={node.id} id={node.id} data={node.data} position={node.position} parentPosition={
             node.parent == null ? undefined : nodes.get(node.parent)?.position
         } classes={node.classes} selected={node.selected}/>
-    })
+    }), [nodes])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -101,233 +110,227 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     }
 
     const grabbed = useRef<string | null>(null) as ClickedNode
-    grabbed.hasMoved = false
+    if (!("hasMoved" in grabbed)) (grabbed as any).hasMoved = false
 
-    // Send a change to the graph
-    function sendChanges(changes: GrapherChange[]) {
-        let c: GrapherChange[] | undefined = changes
-        if (props.onChange != null) c = props.onChange(changes)
-        if (c != null) {
-            nodes.processChanges(c)
-            edges.processChanges(c)
-        }
-    }
+    // On effect, create edges, update node dimensions and setup listeners
+    const onEvent = props.onEvent
+    const onChange = props.onChange
+    useEffect(() => {
+        if (ref.current == null) return
+        // Listener functions
 
-    // Zoom the viewport
-    function changeZoom(amount: number) {
-        const viewport = controller.getViewport()
-        const zoom = viewport.zoom * (1 + amount)
-        // TODO Take min, max zoom into account
-        controller.setViewport({
-            centerX: viewport.centerX,
-            centerY: viewport.centerY,
-            zoom,
-        })
-    }
-
-    // Listener functions
-
-    // Node level
-    function onNodePointerDown(event: PointerEvent) {
-        const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(NODE_ID_PREFIX.length)
-        const node = nodeID != null ? nodes.get(nodeID) : null
-        if (node == null) {
-            domNodeID(event.currentTarget, nodeID)
-            return
-        }
-        let prevent = false
-        if (props.onEvent != null) {
-            const grapherEvent: NodePointerEvent = {
-                type: "node",
-                action: "down",
-                grabbed: false,
-                preventDefault() {
-                    prevent = true
-                },
-                target: node,
-                pointerEvent: event,
-            }
-            props.onEvent(grapherEvent)
-        }
-        // "Grab" the node
-        if (!prevent && grabbed.current == null) grabbed.current = nodeID!
-    }
-
-    function onNodePointerUp(event: PointerEvent) {
-        const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(NODE_ID_PREFIX.length)
-        const node = nodeID ? nodes.get(nodeID) : null
-        if (node == null) {
-            domNodeID(event.currentTarget, nodeID)
-            return
-        }
-        if (props.onEvent != null) {
-            const grapherEvent: NodePointerEvent = {
-                type: "node",
-                action: "up",
-                grabbed: grabbed.current === nodeID,
-                preventDefault() {
-                    //empty
-                },
-                target: node,
-                pointerEvent: event,
-            }
-            props.onEvent(grapherEvent)
-        }
-    }
-
-    // Viewport level
-    function onViewportPointerDown(event: PointerEvent) {
-        let prevent = false
-        if (props.onEvent != null) {
-            const grapherEvent: ViewportPointerEvent = {
-                type: "viewport",
-                action: "down",
-                grabbed: false,
-                preventDefault() {
-                    prevent = true
-                },
-                pointerEvent: event,
-            }
-            props.onEvent(grapherEvent)
-        }
-        if (!prevent && grabbed.current == null) grabbed.current = ""
-    }
-
-    function onViewportPointerUp(event: PointerEvent) {
-        if (props.onEvent != null) {
-            const grapherEvent: ViewportPointerEvent = {
-                type: "viewport",
-                action: "up",
-                grabbed: grabbed.current === "",
-                preventDefault() {
-                    //empty
-                },
-                pointerEvent: event,
-            }
-            props.onEvent(grapherEvent)
-        }
-    }
-
-    function onViewportWheel(event: WheelEvent) {
-        let prevent = false
-        if (props.onEvent != null) {
-            const grapherEvent: ViewportWheelEvent = {
-                type: "viewport",
-                action: "wheel",
-                grabbed: grabbed.current === "",
-                preventDefault() {
-                    prevent = true
-                },
-                wheelEvent: event,
-            }
-            props.onEvent(grapherEvent)
-        }
-        if (!prevent) changeZoom(-event.deltaY / 1000)
-    }
-
-    // Document level
-    function onPointerMove(event: PointerEvent) {
-        if (grabbed.current === "") {
-            // User is moving the viewport (panning the graph)
-            // Send event
-            let prevent = false
-            if (props.onEvent != null) {
-                const grapherEvent: ViewportPointerEvent = {
-                    type: "viewport",
-                    action: "move",
-                    grabbed: true,
-                    preventDefault() {
-                        prevent = true
-                    },
-                    pointerEvent: event,
-                }
-                props.onEvent(grapherEvent)
-            }
-            if (prevent) return
-            // Calculate how the viewport should be moved
-            const deltaX = event.movementX / controller.getViewport().zoom
-            const deltaY = event.movementY / controller.getViewport().zoom
-            const viewport = controller.getViewport()
-            controller.setViewport({
-                zoom: viewport.zoom,
-                centerX: viewport.centerX - deltaX,
-                centerY: viewport.centerY - deltaY,
-            })
-        } else if (grabbed.current != null) {
-            // User is currently moving a node
-            const node = nodes.get(grabbed.current)
+        // Node level
+        function onNodePointerDown(event: PointerEvent) {
+            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(NODE_ID_PREFIX.length)
+            const node = nodeID != null ? nodes.get(nodeID) : null
             if (node == null) {
-                unknownNode(grabbed.current)
+                domNodeID(event.currentTarget, nodeID)
                 return
             }
-            // Send event
             let prevent = false
-            if (props.onEvent != null) {
+            if (onEvent != null) {
                 const grapherEvent: NodePointerEvent = {
                     type: "node",
-                    action: "move",
-                    grabbed: true,
+                    action: "down",
+                    grabbed: false,
                     preventDefault() {
                         prevent = true
                     },
                     target: node,
                     pointerEvent: event,
                 }
-                props.onEvent(grapherEvent)
+                onEvent(grapherEvent)
             }
-            if (prevent) return
-            // Calculate where the node should arrive
-            const newPosition: Position = {
-                isAbsolute: node.position.isAbsolute,
-                x: node.position.x + event.movementX / controller.getViewport().zoom,
-                y: node.position.y + event.movementY / controller.getViewport().zoom,
+            // "Grab" the node
+            if (!prevent && grabbed.current == null) {
+                grabbed.current = nodeID!
+                grabbed.hasMoved = false
             }
-            // Send the change
-            sendChanges([
-                {
-                    type: "node-move",
-                    event: "move-pointer",
-                    oldPosition: node.position,
-                    position: newPosition,
-                    selected: node.selected,
-                    node: node,
-                } // TODO Allow multiple nodes to be selected
-            ])
         }
-    }
 
-    function onPointerUp(event: PointerEvent) {
-        let prevent = false;
-        if (props.onEvent != null) {
-            const grapherEvent: UpEvent = {
-                type: "up",
-                grabbed: grabbed.current,
-                preventDefault() {
-                    prevent = true
-                },
-                pointerEvent: event,
+        function onNodePointerUp(event: PointerEvent) {
+            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(NODE_ID_PREFIX.length)
+            const node = nodeID ? nodes.get(nodeID) : null
+            if (node == null) {
+                domNodeID(event.currentTarget, nodeID)
+                return
             }
-            props.onEvent(grapherEvent)
-        }
-        if (!prevent) grabbed.current = null
-    }
+            if (onEvent != null) {
+                const upEvent: NodePointerEvent = {
+                    type: "node",
+                    action: "up",
+                    grabbed: grabbed.current === nodeID,
+                    preventDefault() { //empty
+                    },
+                    target: node,
+                    pointerEvent: event,
+                }
+                onEvent(upEvent)
 
-    // On effect, create edges, update node dimensions and setup listeners
-    useEffect(() => {
-        if (ref.current == null) return
+                console.log(grabbed)
+                if (grabbed.current === nodeID && !grabbed.hasMoved) {
+                    const clickEvent: NodePointerEvent = {
+                        type: "node",
+                        action: "click",
+                        grabbed: true,
+                        preventDefault() { //empty
+                        },
+                        target: node,
+                        pointerEvent: event,
+                    }
+                    onEvent(clickEvent)
+                }
+            }
+        }
+
+        // Viewport level
+        function onViewportPointerDown(event: PointerEvent) {
+            let prevent = false
+            if (onEvent != null) {
+                const grapherEvent: ViewportPointerEvent = {
+                    type: "viewport",
+                    action: "down",
+                    grabbed: false,
+                    preventDefault() {
+                        prevent = true
+                    },
+                    pointerEvent: event,
+                }
+                onEvent(grapherEvent)
+            }
+            if (!prevent && grabbed.current == null) {
+                grabbed.current = ""
+                grabbed.hasMoved = false
+            }
+        }
+
+        function onViewportPointerUp(event: PointerEvent) {
+            if (onEvent != null) {
+                const grapherEvent: ViewportPointerEvent = {
+                    type: "viewport",
+                    action: "up",
+                    grabbed: grabbed.current === "",
+                    preventDefault() { //empty
+                    },
+                    pointerEvent: event,
+                }
+                onEvent(grapherEvent)
+            }
+        }
+
+        function onViewportWheel(event: WheelEvent) {
+            let prevent = false
+            if (onEvent != null) {
+                const grapherEvent: ViewportWheelEvent = {
+                    type: "viewport",
+                    action: "wheel",
+                    grabbed: grabbed.current === "",
+                    preventDefault() {
+                        prevent = true
+                    },
+                    wheelEvent: event,
+                }
+                onEvent(grapherEvent)
+            }
+            if (!prevent) changeZoom(-event.deltaY / 1000, controller)
+        }
+
+        // Document level
+        function onPointerMove(event: PointerEvent) {
+            if (grabbed.current === "") {
+                // User is moving the viewport (panning the graph)
+                // Send event
+                let prevent = false
+                if (onEvent != null) {
+                    const grapherEvent: ViewportPointerEvent = {
+                        type: "viewport",
+                        action: "move",
+                        grabbed: true,
+                        preventDefault() {
+                            prevent = true
+                        },
+                        pointerEvent: event,
+                    }
+                    onEvent(grapherEvent)
+                }
+                if (prevent) return
+                grabbed.hasMoved = true
+                // Calculate how the viewport should be moved
+                const deltaX = event.movementX / controller.getViewport().zoom
+                const deltaY = event.movementY / controller.getViewport().zoom
+                const viewport = controller.getViewport()
+                controller.setViewport({
+                    zoom: viewport.zoom,
+                    centerX: viewport.centerX - deltaX,
+                    centerY: viewport.centerY - deltaY,
+                })
+            } else if (grabbed.current != null) {
+                // User is currently moving a node
+                const node = nodes.get(grabbed.current)
+                if (node == null) {
+                    unknownNode(grabbed.current)
+                    return
+                }
+                // Send event
+                let prevent = false
+                if (onEvent != null) {
+                    const grapherEvent: NodePointerEvent = {
+                        type: "node",
+                        action: "move",
+                        grabbed: true,
+                        preventDefault() {
+                            prevent = true
+                        },
+                        target: node,
+                        pointerEvent: event,
+                    }
+                    onEvent(grapherEvent)
+                }
+                if (prevent) return
+                grabbed.hasMoved = true
+                // Calculate where the node should arrive
+                const newPosition: Position = {
+                    isAbsolute: node.position.isAbsolute,
+                    x: node.position.x + event.movementX / controller.getViewport().zoom,
+                    y: node.position.y + event.movementY / controller.getViewport().zoom,
+                }
+                // Send the change
+                sendChanges([
+                    {
+                        type: "node-move",
+                        event: "move-pointer",
+                        oldPosition: node.position,
+                        position: newPosition,
+                        selected: node.selected,
+                        node: node,
+                    } // TODO Allow multiple nodes to be selected
+                ], nodes, edges, onChange)
+            }
+        }
+
+        function onPointerUp(event: PointerEvent) {
+            let prevent = false;
+            if (onEvent != null) {
+                const grapherEvent: UpEvent = {
+                    type: "up",
+                    grabbed: grabbed.current,
+                    preventDefault() {
+                        prevent = true
+                    },
+                    pointerEvent: event,
+                }
+                onEvent(grapherEvent)
+            }
+            if (!prevent) grabbed.current = null
+        }
+
         // TODO Edges
         // For every node
+        const nodesRect = new DOMRect()
         for (const node of nodes) {
             const nodeElem = ref.current.querySelector<HTMLElement>(`#${NODE_ID_PREFIX}${node.id}`)
             if (nodeElem == null) continue
             node.element = nodeElem
-
-            function resolveValue(value: string, length: number): number {
-                // Resolve a percentage or pixel value to pixel value
-                if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
-                else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
-                else return 0
-            }
 
             function resolveValues(strValue: string, width: number, height: number): [number, number] {
                 /* Computed border radius may be of form:
@@ -354,10 +357,26 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 resolveValues(style.borderBottomLeftRadius, node.width, node.height),
             ]
 
+            // Update bounding rect
+            const left = node.position.x - node.width / 2, top = node.position.y - node.height / 2, right = left + node.width, bottom = top + node.height
+            if (left < nodesRect.left) {
+                const delta = nodesRect.left - left
+                nodesRect.x -= delta
+                nodesRect.width += delta
+            }
+            if (top < nodesRect.top) {
+                const delta = nodesRect.right - top
+                nodesRect.y -= delta
+                nodesRect.height += delta
+            }
+            if (right > nodesRect.right) nodesRect.width += right - nodesRect.right
+            if (bottom > nodesRect.bottom) nodesRect.height += bottom - nodesRect.bottom
+
             // Set listeners
             node.element.addEventListener("pointerdown", onNodePointerDown)
             node.element.addEventListener("pointerup", onNodePointerUp)
         }
+        nodes.boundingRect = nodesRect
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
@@ -390,7 +409,22 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             document.removeEventListener("pointermove", onPointerMove)
             document.removeEventListener("pointerup", onPointerUp)
         }
-    })
+    }, [nodes, edges, onEvent, onChange, controller])
+
+    // Fit view
+    useEffect(() => {
+        if (props.fitView === "always") fitView(config.fitViewConfig, controller, nodes.boundingRect!, ref.current!)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [nodes, edges])
+
+    const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
+    useEffect(() => {
+        if (controllerImpl.fitViewValue != needFitView.current) {
+            fitView(config.fitViewConfig, controller, nodes.boundingRect!, ref.current!)
+            needFitView.current = controllerImpl.fitViewValue
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [controllerImpl])
 
     return <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
         <GrapherViewport controller={controller}>
@@ -398,4 +432,67 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         </GrapherViewport>
         {props.children}
     </GraphDiv>
+}
+
+// Utility functions
+
+// Convert a CSS computed value to pixel value
+function resolveValue(value: string, length: number): number {
+    // Resolve a percentage or pixel value to pixel value
+    if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
+    else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
+    else return 0
+}
+
+// Send a change to the graph
+function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {
+    let c: GrapherChange[] | undefined | void = changes
+    if (onChange != null) c = onChange(changes)
+    if (c != null) {
+        nodes.processChanges(c)
+        edges.processChanges(c)
+    }
+}
+
+// Zoom the viewport
+function changeZoom(amount: number, controller: Controller) {
+    const viewport = controller.getViewport()
+    const zoom = viewport.zoom * (1 + amount)
+    // TODO Take min, max zoom into account
+    controller.setViewport({
+        centerX: viewport.centerX,
+        centerY: viewport.centerY,
+        zoom,
+    })
+}
+
+// Fit the viewport
+// TODO Take edges into account as well
+// TODO Replace element from ReactGrapher to empty div made specially for this purpose
+function fitView(config: FitViewConfigSet, controller: Controller, nodesRect: DOMRect, element: HTMLElement) {
+    if (element == null || nodesRect == null || (nodesRect.width === 0 && nodesRect.height === 0)) return
+    const w = element.offsetWidth, h = element.offsetHeight
+
+    // Calculate zoom value for paddings
+    const rect = new DOMRect(nodesRect.x, nodesRect.y, nodesRect.width, nodesRect.height)
+    let zoom = Math.min(w / rect.width, h / rect.height)
+
+    // Apply padding
+    element.style.padding = config.padding
+    const comp = getComputedStyle(element)
+    const pl = resolveValue(comp.paddingLeft, w) / zoom, pt = resolveValue(comp.paddingTop, h) / zoom,
+        pr = resolveValue(comp.paddingRight, w) / zoom, pb = resolveValue(comp.paddingBottom, h) / zoom
+    console.log({zoom, pl, pt, pr, pb})
+    element.style.padding = "0"
+    rect.x -= pl
+    rect.y -= pt
+    rect.width += pl + pr
+    rect.height += pt + pb
+    // Calculate final zoom value
+    zoom = Math.min(w / rect.width, h / rect.height)
+
+    // Update viewport
+    controller.setViewport({
+        centerX: (rect.left + rect.right) / 2, centerY: (rect.top + rect.bottom) / 2, zoom
+    })
 }

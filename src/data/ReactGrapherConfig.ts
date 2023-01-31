@@ -1,16 +1,20 @@
 export interface ReactGrapherViewportControls {
     /**
-     * Minimum zoom allowed by user input. If minZoom == maxZoom, user cannot use the zoom function. Defaults to .25
+     * Minimum zoom allowed by user input. Defaults to .25
      */
     minZoom?: number
     /**
-     * Maximum zoom allowed by user input. If minZoom == maxZoom, user cannot use the zoom function. Defaults to 4
+     * Maximum zoom allowed by user input. Defaults to 4
      */
     maxZoom?: number
     /**
      * Whether the user can pan the viewport. Defaults to true
      */
     allowPanning?: boolean
+    /**
+     * Whether the user can zoom the viewport. Defaults to true
+     */
+    allowZooming?: boolean
 }
 
 export interface ReactGrapherUserControls {
@@ -41,6 +45,15 @@ export interface ReactGrapherUserControls {
     allowCreatingEdges?: boolean
 }
 
+export interface FitViewConfig {
+    /**
+     * Any CSS string applicable to the "padding" CSS property. This padding will be resolved and used when fitting view to space the nodes/edges away from
+     * the edges of the ReactGrapher. Defaults to "10%".
+     */
+    padding?: string,
+    // TODO Animation, other options
+}
+
 export interface ReactGrapherConfig {
     /**
      * Whether the user can control the viewport (panning, zoom in & out). Possible values:
@@ -56,29 +69,41 @@ export interface ReactGrapherConfig {
      * - object to fine tune the controls. Note that (almost) all options listed here can be individually overridden for each Node/Edge.
      */
     userControls?: false | ReactGrapherUserControls
+    /**
+     * Settings used to control how fit view happens. Note that, the controller's `fitView()` also takes a `FitViewConfig` argument, where you can
+     * override, if needed, the configuration set here.
+     */
+    fitViewConfig?: FitViewConfig
 }
 
 export interface ReactGrapherConfigSet {
     viewportControls: Required<ReactGrapherViewportControls>
     userControls: Required<ReactGrapherUserControls>
+    fitViewConfig: FitViewConfigSet
 }
 
-export function useDefaults(config: ReactGrapherConfig | undefined): ReactGrapherConfigSet {
+export type FitViewConfigSet = Required<Omit<FitViewConfig, "padding">> & {
+    padding: string
+}
+
+export function withDefaultConfig(config: ReactGrapherConfig | undefined): ReactGrapherConfigSet {
     if (config == null) return {
-        viewportControls: {minZoom: .25, maxZoom: 4, allowPanning: true},
+        viewportControls: {minZoom: .25, maxZoom: 4, allowPanning: true, allowZooming: true},
         userControls: {
             allowSelection: true, allowMovingNodes: true, allowDeletingNodes: false,
             allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
-        }
+        },
+        fitViewConfig: {padding: "5%"}
     }; else return {
         viewportControls: config.viewportControls === false ? {
-            minZoom: 1, maxZoom: 1, allowPanning: false
+            minZoom: 1, maxZoom: 1, allowPanning: false, allowZooming: false
         } : typeof config.viewportControls === "object" ? {
             minZoom: config.viewportControls.minZoom ?? .25,
             maxZoom: config.viewportControls.maxZoom ?? 4,
             allowPanning: config.viewportControls.allowPanning ?? true,
+            allowZooming: config.viewportControls.allowZooming ?? true,
         } : {
-            minZoom: .25, maxZoom: 4, allowPanning: true
+            minZoom: .25, maxZoom: 4, allowPanning: true, allowZooming: true
         },
         userControls: config.userControls === false ? {
             allowSelection: false, allowMovingNodes: false, allowDeletingNodes: false,
@@ -90,6 +115,14 @@ export function useDefaults(config: ReactGrapherConfig | undefined): ReactGraphe
             allowEditingEdges: config.userControls?.allowEditingEdges ?? false,
             allowDeletingEdges: config.userControls?.allowDeletingEdges ?? false,
             allowCreatingEdges: config.userControls?.allowCreatingEdges ?? false,
-        }
+        },
+        fitViewConfig: withDefaultFitViewConfig(config.fitViewConfig)
+    }
+}
+
+export function withDefaultFitViewConfig(config: FitViewConfig | undefined): FitViewConfigSet {
+    if (config == null) return {padding: "5%"}
+    else return {
+        padding: config.padding ?? "5%",
     }
 }

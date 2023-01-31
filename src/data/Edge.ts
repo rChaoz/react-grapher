@@ -35,6 +35,8 @@ export function createEdge(source: string, target: string, id?: string) {
  * be registered.
  */
 export interface EdgesFunctions {
+    // TODO Bounding rect
+
     /**
      * Remove all edges
      */
