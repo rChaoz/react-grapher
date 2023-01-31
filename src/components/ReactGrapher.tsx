@@ -106,11 +106,12 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
     // Ref for current node being clicked
     interface ClickedNode extends React.MutableRefObject<string | null> {
+        startX: number
+        startY: number
         hasMoved: boolean
     }
 
     const grabbed = useRef<string | null>(null) as ClickedNode
-    if (!("hasMoved" in grabbed)) (grabbed as any).hasMoved = false
 
     // On effect, create edges, update node dimensions and setup listeners
     const onEvent = props.onEvent
@@ -145,6 +146,8 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             if (!prevent && grabbed.current == null) {
                 grabbed.current = nodeID!
                 grabbed.hasMoved = false
+                grabbed.startX = event.clientX
+                grabbed.startY = event.clientY
             }
         }
 
@@ -200,6 +203,8 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             if (!prevent && grabbed.current == null) {
                 grabbed.current = ""
                 grabbed.hasMoved = false
+                grabbed.startX = event.clientX
+                grabbed.startY = event.clientY
             }
         }
 
@@ -236,6 +241,9 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
         // Document level
         function onPointerMove(event: PointerEvent) {
+            // Allow small movement (5px) without beginning the move
+            if (grabbed.current != null && !grabbed.hasMoved
+                && Math.abs(event.clientX - grabbed.startX) ** 2 + Math.abs(event.clientY - grabbed.startY) ** 2 < 25) return;
             if (grabbed.current === "") {
                 // User is moving the viewport (panning the graph)
                 // Send event
@@ -379,7 +387,6 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             node.element.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
-        console.log(nodesRect)
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)

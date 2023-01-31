@@ -16,7 +16,7 @@ export default function App() {
             <ReactGrapher defaultNodes={[
                 createTextNode("BIG if true?"),
                 createTextNode("..small if true :(", {x: 0, y: 100, isAbsolute: true}),
-            ]} defaultEdges={[]} fitView={"initial"} controller={controller} onEvent={event => {
+            ]} defaultEdges={[]} controller={controller} onEvent={event => {
                 if (event.type === "node" && event.action === "click") {
                     controller.fitView()
                 }

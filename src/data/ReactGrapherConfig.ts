@@ -1,6 +1,6 @@
 export interface ReactGrapherViewportControls {
     /**
-     * Minimum zoom allowed by user input. Defaults to .25
+     * Minimum zoom allowed by user input. Defaults to .4
      */
     minZoom?: number
     /**
@@ -93,7 +93,7 @@ export type FitViewConfigSet = Required<Omit<FitViewConfig, "padding">> & {
 
 export function withDefaultConfig(config: ReactGrapherConfig | undefined): ReactGrapherConfigSet {
     if (config == null) return {
-        viewportControls: {minZoom: .25, maxZoom: 4, allowPanning: true, allowZooming: true},
+        viewportControls: {minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true},
         userControls: {
             allowSelection: true, allowMovingNodes: true, allowDeletingNodes: false,
             allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
@@ -101,14 +101,14 @@ export function withDefaultConfig(config: ReactGrapherConfig | undefined): React
         fitViewConfig: withDefaultFitViewConfig(undefined),
     }; else return {
         viewportControls: config.viewportControls === false ? {
-            minZoom: 1, maxZoom: 1, allowPanning: false, allowZooming: false
+            minZoom: .4, maxZoom: 4, allowPanning: false, allowZooming: false
         } : typeof config.viewportControls === "object" ? {
-            minZoom: config.viewportControls.minZoom ?? .25,
+            minZoom: config.viewportControls.minZoom ?? .4,
             maxZoom: config.viewportControls.maxZoom ?? 4,
             allowPanning: config.viewportControls.allowPanning ?? true,
             allowZooming: config.viewportControls.allowZooming ?? true,
         } : {
-            minZoom: .25, maxZoom: 4, allowPanning: true, allowZooming: true
+            minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true
         },
         userControls: config.userControls === false ? {
             allowSelection: false, allowMovingNodes: false, allowDeletingNodes: false,
