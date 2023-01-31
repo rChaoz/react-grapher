@@ -1,6 +1,6 @@
 import {Node} from "./Node"
 
-export type GrapherEvent = NodePointerEvent | ViewportPointerEvent | ViewportWheelEvent | UpEvent
+export type GrapherEvent = NodePointerEvent | ViewportPointerEvent | ViewportWheelEvent | UpEvent | KeyEvent
 
 export interface BaseGrapherEvent {
     /**
@@ -22,8 +22,11 @@ export interface NodePointerEvent extends NodeEvent {
     type: "node"
     /**
      * A down event occurs triggers when the node receives a 'pointerdown' event. By default, the node is "grabbed".
+     *
      * A move event occurs at the document level when the pointer is moved while the node is "grabbed". By default, a NodeMoveChange<T> is emitted for all the nodes.
+     *
      * An up event occurs when a pointer button is released inside the node.
+     *
      * A click event occurs if down and up events occur on the same node and no node move events occurred in-between. By default, the node is selected.
      */
     action: "down" | "move" | "up" | "click"
@@ -41,8 +44,11 @@ export interface ViewportPointerEvent extends BaseGrapherEvent {
     type: "viewport"
     /**
      * A down event occurs triggers when the viewport receives a 'pointerdown' event. By default, the viewport is "grabbed", if no node was grabbed.
+     *
      * A move event occurs at the document level when the pointer is moved while the viewport if "grabbed". By default, the viewport is updated (moved).
+     *
      * An up event occurs when the pointer button is released inside the viewport.
+     *
      * A click event occurs if down and up events occur on the viewport, no node is grabbed and no move events occurred in-between.
      */
     action: "down" | "move" | "up" | "click"
@@ -77,8 +83,20 @@ export interface ViewportWheelEvent extends BaseGrapherEvent {
 export interface UpEvent extends BaseGrapherEvent {
     type: "up"
     /**
-     * The currently grabbed object, if any. The node's ID, empty string for viewport and null if nothing is grabbed.
+     * The currently grabbed object, if any: the node's ID, empty string for viewport and null if nothing is grabbed.
      */
     grabbed: string | null
     pointerEvent: PointerEvent
+}
+
+/**
+ * This event occurs when a key is pressed while the viewport is focused.
+ */
+export interface KeyEvent extends BaseGrapherEvent {
+    type: "key"
+    /**
+     * The currently grabbed object, if any: the node's ID, empty string for viewport and null if nothing is grabbed.
+     */
+    grabbed: string | null
+    keyboardEvent: KeyboardEvent
 }

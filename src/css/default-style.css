@@ -4,6 +4,7 @@
     --react-grapher-node-background-hover: #e1581c;
     --react-grapher-node-background-active: #bb440f;
     --react-grapher-node-border: #ff550a;
+    --react-grapher-node-border-selected: white;
     --react-grapher-node-color: white;
 }
 
@@ -15,7 +16,7 @@
     font-weight: bold;
     box-shadow: 1px 1px 6px -2px black;
 
-    transition: background-color .1s;
+    transition: background-color .1s, opacity .2s;
 
     background: var(--react-grapher-node-background);
     border-color: var(--react-grapher-node-border);
@@ -30,6 +31,11 @@
     background: var(--react-grapher-node-background-active)
 }
 
+.react-grapher-node[data-grabbed=true] {
+    opacity: .9;
+}
+
 .react-grapher-node[data-selected=true] {
-    outline: 1px solid white;
+    border-color: var(--react-grapher-node-border-selected);
+    border-width: 3px;
 }

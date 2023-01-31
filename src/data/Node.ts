@@ -16,7 +16,8 @@ export interface Node<T> {
     classes: Set<string>
     position: Position
     /**
-     * Whether this node has been selected by the user. You can access all selected nodes using `Nodes.selection`.
+     * Whether this node has been selected by the user (read-only). You can access all selected nodes using `Nodes.selection`.
+     * You can modify the current selection using selection related functions on the Nodes object.
      */
     selected: boolean
     /**
@@ -85,6 +86,29 @@ export interface NodesFunctions<T> {
      * Automatically set during rendering. Bounding box of nodes, used when fitting view.
      */
     boundingRect?: DOMRect
+
+    /**
+     * Whether multiple selection is enabled (read-only). Change this using `config` prop of ReactGrapher
+     */
+    multipleSelection: boolean
+
+    /**
+     * Currently selected nodes IDs (read-only, use selection related functions to modify this).
+     */
+    selection: string[]
+
+    /**
+     * Sets currently selected nodes
+     */
+    setSelection(selected: string[]): void
+
+    /**
+     * Selects/deselects a node.
+     * @param node ID of the node
+     * @param selected Whether to select or unselect the node.
+     * @param newSelection If this parameter is true or `ReactGrapher` does not allow multiple selections and `selected` is true, previously selected nodes are unselected.
+     */
+    setSelected(node: string, selected: boolean, newSelection?: boolean): void
 
     /**
      * Remove all nodes

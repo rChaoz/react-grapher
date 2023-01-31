@@ -1,4 +1,4 @@
-import React, {useEffect, useMemo, useRef} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Node, Nodes, Position} from "../data/Node"
 import {Edge, Edges} from "../data/Edge";
 import styled from "@emotion/styled";
@@ -8,9 +8,9 @@ import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
-import {FitViewConfigSet, ReactGrapherConfig, ReactGrapherConfigSet, withDefaultConfig} from "../data/ReactGrapherConfig";
+import {GrapherFitViewConfigSet, GrapherConfig, GrapherConfigSet, withDefaultConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
-import {GrapherEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
+import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
 
 export interface CommonGraphProps {
@@ -33,9 +33,9 @@ export interface CommonGraphProps {
     /**
      * Fine configuration for the Graph
      */
-    config?: ReactGrapherConfig
+    config?: GrapherConfig
     /**
-     * Quick option to completely disable all controls. Check `ReactGrapherConfig` for finer tuning.
+     * Quick option to completely disable all controls. Check `GrapherConfig` for finer tuning.
      */
     disableControls?: boolean
     /**
@@ -90,29 +90,30 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     if ("nodes" in props) ({nodes, edges} = props)
     // Uncontrolled Graphs manage their own state
     else [nodes, edges] = [ownNodes, ownEdges]
+    nodes.multipleSelection = config.userControls.multipleSelection
 
     const controllerImpl = controller as ControllerImpl
 
     // Currently grabbed (being moved) node
-    const grabbed = useRef<string | null>(null) as ClickedNode
-
-    // Create DefaultNode elements from Nodes elements
-    const nodeElements = useMemo(() => nodes.map(node => {
-        const Component = node.Component ?? DefaultNode
-        return <Component key={node.id} id={node.id} data={node.data} position={node.position} grabbed={grabbed.current === node.id} parentPosition={
-            node.parent == null ? undefined : nodes.get(node.parent)?.position
-        } classes={node.classes} selected={node.selected}/>
-    }), [nodes])
-
-    // Ref to the ReactGrapher root div
-    const ref = useRef<HTMLDivElement>(null)
-
-    // Ref for current node being clicked
-    interface ClickedNode extends React.MutableRefObject<string | null> {
+    interface GrabbedNode {
+        id: string | null
+        // These properties don't cause a state update:
         startX: number
         startY: number
         hasMoved: boolean
     }
+    const [grabbed, setGrabbed] = useState<GrabbedNode>({id: null, startX: 0, startY: 0, hasMoved: false})
+    
+    // Create DefaultNode elements from Nodes elements
+    const nodeElements = useMemo(() => nodes.map(node => {
+        const Component = node.Component ?? DefaultNode
+        return <Component key={node.id} id={node.id} data={node.data} position={node.position} grabbed={grabbed.id === node.id} parentPosition={
+            node.parent == null ? undefined : nodes.get(node.parent)?.position
+        } classes={node.classes} selected={node.selected}/>
+    }), [nodes, grabbed])
+
+    // Ref to the ReactGrapher root div
+    const ref = useRef<HTMLDivElement>(null)
 
     // On effect, create edges, update node dimensions and setup listeners
     const onEvent = props.onEvent
@@ -144,12 +145,12 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 onEvent(grapherEvent)
             }
             // "Grab" the node
-            if (!prevent && grabbed.current == null) {
-                grabbed.current = nodeID!
-                grabbed.hasMoved = false
-                grabbed.startX = event.clientX
-                grabbed.startY = event.clientY
-            }
+            if (!prevent && grabbed.id == null) setGrabbed({
+                id: nodeID!,
+                hasMoved: false,
+                startX: event.clientX,
+                startY: event.clientY,
+            })
         }
 
         function onNodePointerUp(event: PointerEvent) {
@@ -163,26 +164,32 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 const upEvent: NodePointerEvent = {
                     type: "node",
                     action: "up",
-                    grabbed: grabbed.current === nodeID,
+                    grabbed: grabbed.id === nodeID,
                     preventDefault() { //empty
                     },
                     target: node,
                     pointerEvent: event,
                 }
                 onEvent(upEvent)
+            }
 
-                if (grabbed.current === nodeID && !grabbed.hasMoved) {
+            if (grabbed.id === nodeID && !grabbed.hasMoved) {
+                let prevent = false
+                if (onEvent != null) {
                     const clickEvent: NodePointerEvent = {
                         type: "node",
                         action: "click",
                         grabbed: true,
                         preventDefault() { //empty
+                            prevent = true;
                         },
                         target: node,
                         pointerEvent: event,
                     }
                     onEvent(clickEvent)
                 }
+                // Select the node
+                if (!prevent) nodes.setSelected(node.id, true, !event.shiftKey)
             }
         }
 
@@ -201,12 +208,12 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 }
                 onEvent(grapherEvent)
             }
-            if (!prevent && grabbed.current == null) {
-                grabbed.current = ""
-                grabbed.hasMoved = false
-                grabbed.startX = event.clientX
-                grabbed.startY = event.clientY
-            }
+            if (!prevent && grabbed.id == null) setGrabbed({
+                id: "",
+                hasMoved: false,
+                startX: event.clientX,
+                startY: event.clientY,
+            })
         }
 
         function onViewportPointerUp(event: PointerEvent) {
@@ -214,12 +221,30 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 const grapherEvent: ViewportPointerEvent = {
                     type: "viewport",
                     action: "up",
-                    grabbed: grabbed.current === "",
+                    grabbed: grabbed.id === "",
                     preventDefault() { //empty
                     },
                     pointerEvent: event,
                 }
                 onEvent(grapherEvent)
+            }
+
+            if (grabbed.id === "" && !grabbed.hasMoved) {
+                let prevent = false
+                if (onEvent != null) {
+                    const clickEvent: ViewportPointerEvent = {
+                        type: "viewport",
+                        action: "click",
+                        grabbed: true,
+                        preventDefault() { //empty
+                            prevent = true;
+                        },
+                        pointerEvent: event,
+                    }
+                    onEvent(clickEvent)
+                }
+                // Unselect all nodes
+                if (!prevent) nodes.setSelection([])
             }
         }
 
@@ -229,7 +254,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 const grapherEvent: ViewportWheelEvent = {
                     type: "viewport",
                     action: "wheel",
-                    grabbed: grabbed.current === "",
+                    grabbed: grabbed.id === "",
                     preventDefault() {
                         prevent = true
                     },
@@ -243,9 +268,9 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         // Document level
         function onPointerMove(event: PointerEvent) {
             // Allow small movement (5px) without beginning the move
-            if (grabbed.current != null && !grabbed.hasMoved
+            if (grabbed.id != null && !grabbed.hasMoved
                 && Math.abs(event.clientX - grabbed.startX) ** 2 + Math.abs(event.clientY - grabbed.startY) ** 2 < 25) return;
-            if (grabbed.current === "") {
+            if (grabbed.id === "") {
                 // User is moving the viewport (panning the graph)
                 // Send event
                 let prevent = false
@@ -272,11 +297,11 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                     centerX: viewport.centerX - deltaX,
                     centerY: viewport.centerY - deltaY,
                 })
-            } else if (grabbed.current != null) {
+            } else if (grabbed.id != null) {
                 // User is currently moving a node
-                const node = nodes.get(grabbed.current)
+                const node = nodes.get(grabbed.id)
                 if (node == null) {
-                    unknownNode(grabbed.current)
+                    unknownNode(grabbed.id)
                     return
                 }
                 // Send event
@@ -297,22 +322,48 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 if (prevent) return
                 grabbed.hasMoved = true
                 // Calculate where the node should arrive
+                const deltaX = event.movementX / controller.getViewport().zoom, deltaY = event.movementY / controller.getViewport().zoom
                 const newPosition: Position = {
                     isAbsolute: node.position.isAbsolute,
-                    x: node.position.x + event.movementX / controller.getViewport().zoom,
-                    y: node.position.y + event.movementY / controller.getViewport().zoom,
+                    x: node.position.x + deltaX,
+                    y: node.position.y + deltaY,
                 }
-                // Send the change
-                sendChanges([
-                    {
-                        type: "node-move",
-                        event: "move-pointer",
-                        oldPosition: node.position,
-                        position: newPosition,
-                        selected: node.selected,
-                        node: node,
-                    } // TODO Allow multiple nodes to be selected
-                ], nodes, edges, onChange)
+
+                // Move grabbed node
+                const changes: GrapherChange[] = [{
+                    type: "node-move",
+                    event: "move-pointer",
+                    oldPosition: node.position,
+                    position: newPosition,
+                    selected: node.selected,
+                    node: node,
+                }]
+
+                if (node.selected) {
+                    // And move all selected nodes
+                    for (const s of nodes.selection) {
+                        if (s === node.id) continue // grabbed node is already added
+                        const n = nodes.get(s)
+                        if (n == null) {
+                            unknownNode(s)
+                            continue
+                        }
+                        changes.push({
+                            type: "node-move",
+                            event: "selected",
+                            oldPosition: n.position,
+                            position: {
+                                isAbsolute: n.position.isAbsolute,
+                                x: n.position.x + deltaX,
+                                y: n.position.y + deltaY,
+                            },
+                            selected: n.selected,
+                            node: n,
+                        })
+                    }
+                } else nodes.setSelection([])
+
+                sendChanges(changes, nodes, edges, onChange)
             }
         }
 
@@ -321,7 +372,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             if (onEvent != null) {
                 const grapherEvent: UpEvent = {
                     type: "up",
-                    grabbed: grabbed.current,
+                    grabbed: grabbed.id,
                     preventDefault() {
                         prevent = true
                     },
@@ -329,7 +380,28 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 }
                 onEvent(grapherEvent)
             }
-            if (!prevent) grabbed.current = null
+            if (!prevent) setGrabbed({
+                id: null, startX: 0, startY: 0, hasMoved: false,
+            })
+        }
+
+        function onKeyDown(event: KeyboardEvent) {
+            // Send graph event
+            let prevent = false
+            if (onEvent != null) {
+                const grapherEvent: KeyEvent = {
+                    type: "key",
+                    grabbed: grabbed.id,
+                    preventDefault() {
+                        prevent = true
+                    },
+                    keyboardEvent: event,
+                }
+                onEvent(grapherEvent)
+            }
+            if (prevent) return
+            // On escape press, deselect all
+            if (event.code === "Escape") nodes.setSelection([])
         }
 
         // TODO Edges
@@ -401,6 +473,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         // Document-level listeners
         document.addEventListener("pointermove", onPointerMove)
         document.addEventListener("pointerup", onPointerUp)
+        document.addEventListener("keydown", onKeyDown)
 
         // Cleanup
         return () => {
@@ -419,8 +492,9 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             // Remove document listeners
             document.removeEventListener("pointermove", onPointerMove)
             document.removeEventListener("pointerup", onPointerUp)
+            document.removeEventListener("keydown", onKeyDown)
         }
-    }, [nodes, edges, onEvent, onChange, controller, config])
+    }, [nodes, edges, onEvent, onChange, controller, config, grabbed])
 
     // Fit view
     useEffect(() => {
@@ -466,7 +540,7 @@ function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges, 
 }
 
 // Zoom the viewport
-function changeZoom(amount: number, controller: Controller, config: ReactGrapherConfigSet) {
+function changeZoom(amount: number, controller: Controller, config: GrapherConfigSet) {
     const viewport = controller.getViewport()
     const zoom = viewport.zoom * (1 + amount)
     controller.updateViewport({
@@ -477,7 +551,7 @@ function changeZoom(amount: number, controller: Controller, config: ReactGrapher
 // Fit the viewport
 // TODO Take edges into account as well
 // TODO Replace element from ReactGrapher to empty div made specially for this purpose
-function fitView(fitConfig: FitViewConfigSet, config: ReactGrapherConfigSet, controller: Controller, nodesRect: DOMRect, element: HTMLElement) {
+function fitView(fitConfig: GrapherFitViewConfigSet, config: GrapherConfigSet, controller: Controller, nodesRect: DOMRect, element: HTMLElement) {
     if (element == null || nodesRect == null || (nodesRect.width === 0 && nodesRect.height === 0)) return
     const w = element.offsetWidth, h = element.offsetHeight
 

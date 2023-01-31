@@ -1,11 +1,11 @@
 // Data
-import {ReactGrapherConfig, ReactGrapherUserControls, ReactGrapherViewportControls} from "./data/ReactGrapherConfig";
+import {GrapherConfig, GrapherUserControls, GrapherViewportControls, GrapherFitViewConfig} from "./data/GrapherConfig";
 import {Controller} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
 import {Node, Nodes, createNode, createTextNode} from "./data/Node";
 import {Edge, Edges, createEdge} from "./data/Edge";
 import {GrapherChange, NodeChange, NodeMoveChange, isNodeChange} from "./data/GrapherChange";
-import {GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent} from "./data/GrapherEvent";
+import {GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent, KeyEvent} from "./data/GrapherEvent";
 // Hooks
 import {useControlledGraph} from "./hooks/useControlledGraph";
 import {useController} from "./hooks/useController";
@@ -21,12 +21,12 @@ import {randomID} from "./util/randomID";
 
 export {
     // Data
-    ReactGrapherConfig, ReactGrapherUserControls, ReactGrapherViewportControls,
+    GrapherConfig, GrapherUserControls, GrapherViewportControls, GrapherFitViewConfig,
     Controller, Viewport,
     Node, Nodes, createNode, createTextNode,
     Edge, Edges, createEdge,
     GrapherChange, NodeChange, NodeMoveChange, isNodeChange,
-    GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent,
+    GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent, KeyEvent,
     // Hooks
     useControlledGraph, useController, useGraphState,
     // React Grapher

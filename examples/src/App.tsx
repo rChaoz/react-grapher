@@ -1,10 +1,9 @@
 import React from 'react';
-import {createTextNode, ReactGrapher, useController} from "reactgrapher";
+import {createTextNode, ReactGrapher} from "reactgrapher";
 import "reactgrapher/dist/default-style.css"
 import "./App.css"
 
 export default function App() {
-    const controller = useController()
 
     return <div style={{
         width: "800px",
@@ -16,11 +15,7 @@ export default function App() {
             <ReactGrapher defaultNodes={[
                 createTextNode("BIG if true?"),
                 createTextNode("..small if true :(", {x: 0, y: 100, isAbsolute: true}),
-            ]} defaultEdges={[]} controller={controller} onEvent={event => {
-                if (event.type === "node" && event.action === "click") {
-                    controller.fitView()
-                }
-            }}/>
+            ]} defaultEdges={[]}/>
         </div>
     </div>
 }

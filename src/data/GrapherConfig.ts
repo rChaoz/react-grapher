@@ -1,4 +1,4 @@
-export interface ReactGrapherViewportControls {
+export interface GrapherViewportControls {
     /**
      * Minimum zoom allowed by user input. Defaults to .4
      */
@@ -17,11 +17,15 @@ export interface ReactGrapherViewportControls {
     allowZooming?: boolean
 }
 
-export interface ReactGrapherUserControls {
+export interface GrapherUserControls {
     /**
      * Allows the user to select nodes. Defaults to true
      */
     allowSelection?: boolean
+    /**
+     * Allows selecting multiple nodes. Defaults to true
+     */
+    multipleSelection?: boolean
     /**
      * Allow moving nodes around. Defaults to true
      */
@@ -45,7 +49,7 @@ export interface ReactGrapherUserControls {
     allowCreatingEdges?: boolean
 }
 
-export interface FitViewConfig {
+export interface GrapherFitViewConfig {
     /**
      * Any CSS string applicable to the "padding" CSS property. This padding will be resolved and used when fitting view to space the nodes/edges away from
      * the edges of the ReactGrapher. Defaults to "10%".
@@ -59,43 +63,43 @@ export interface FitViewConfig {
     // TODO Animation, other options
 }
 
-export interface ReactGrapherConfig {
+export interface GrapherConfig {
     /**
      * Whether the user can control the viewport (panning, zoom in & out). Possible values:
      * - undefined / true (all controls are allowed, with default values)
      * - false (no controls are allowed)
      * - object to fine tune the controls
      */
-    viewportControls?: true | false | ReactGrapherViewportControls
+    viewportControls?: true | false | GrapherViewportControls
     /**
      * Controls how the user may change the graph. Possible values:
      * - undefined - same as empty object (default values) - user may select and move nodes
      * - false - user cannot modify the graph (disable all controls)
      * - object to fine tune the controls. Note that (almost) all options listed here can be individually overridden for each Node/Edge.
      */
-    userControls?: false | ReactGrapherUserControls
+    userControls?: false | GrapherUserControls
     /**
      * Settings used to control how fit view happens. Note that, the controller's `fitView()` also takes a `FitViewConfig` argument, where you can
      * override, if needed, the configuration set here.
      */
-    fitViewConfig?: FitViewConfig
+    fitViewConfig?: GrapherFitViewConfig
 }
 
-export interface ReactGrapherConfigSet {
-    viewportControls: Required<ReactGrapherViewportControls>
-    userControls: Required<ReactGrapherUserControls>
-    fitViewConfig: FitViewConfigSet
+export interface GrapherConfigSet {
+    viewportControls: Required<GrapherViewportControls>
+    userControls: Required<GrapherUserControls>
+    fitViewConfig: GrapherFitViewConfigSet
 }
 
-export type FitViewConfigSet = Required<Omit<FitViewConfig, "padding">> & {
+export type GrapherFitViewConfigSet = Required<Omit<GrapherFitViewConfig, "padding">> & {
     padding: string
 }
 
-export function withDefaultConfig(config: ReactGrapherConfig | undefined): ReactGrapherConfigSet {
+export function withDefaultConfig(config: GrapherConfig | undefined): GrapherConfigSet {
     if (config == null) return {
         viewportControls: {minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true},
         userControls: {
-            allowSelection: true, allowMovingNodes: true, allowDeletingNodes: false,
+            allowSelection: true, multipleSelection: true, allowMovingNodes: true, allowDeletingNodes: false,
             allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
         },
         fitViewConfig: withDefaultFitViewConfig(undefined),
@@ -111,10 +115,11 @@ export function withDefaultConfig(config: ReactGrapherConfig | undefined): React
             minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true
         },
         userControls: config.userControls === false ? {
-            allowSelection: false, allowMovingNodes: false, allowDeletingNodes: false,
+            allowSelection: false, multipleSelection: false, allowMovingNodes: false, allowDeletingNodes: false,
             allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
         } : {
             allowSelection: config.userControls?.allowSelection ?? true,
+            multipleSelection: config.userControls?.multipleSelection ?? true,
             allowMovingNodes: config.userControls?.allowMovingNodes ?? true,
             allowDeletingNodes: config.userControls?.allowDeletingNodes ?? false,
             allowEditingEdges: config.userControls?.allowEditingEdges ?? false,
@@ -125,7 +130,7 @@ export function withDefaultConfig(config: ReactGrapherConfig | undefined): React
     }
 }
 
-export function withDefaultFitViewConfig(config: FitViewConfig | undefined): FitViewConfigSet {
+export function withDefaultFitViewConfig(config: GrapherFitViewConfig | undefined): GrapherFitViewConfigSet {
     if (config == null) return {padding: "5%", abideMinMaxZoom: true}
     else return {
         padding: config.padding ?? "5%",
