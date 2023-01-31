@@ -18,6 +18,10 @@ export interface BaseNodeProps<T> {
      */
     selected: boolean
     /**
+     * Whether this node is grabbed (being moved) or not
+     */
+    grabbed: boolean
+    /**
      * Position of the parent of this node
      */
     parentPosition?: Position
@@ -35,15 +39,17 @@ export interface BaseNodeProps<T> {
     data: T
 }
 
-const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position">>`
+const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position" | "selected" | "grabbed">>`
   position: absolute;
+  z-index: ${props => props.grabbed ? "1" : "auto"};
   left: ${props => props.position.x}px;
   top: ${props => props.position.y}px;
   transform: translate(-50%, -50%);
 `
 
 export const BaseNode = memo<BaseNodeProps<any>>(function BaseNode(props) {
-    return <BaseDiv id={NODE_ID_PREFIX + props.id} position={props.position} className={cx([...props.classes], NODE_CLASS)} data-selected={props.selected}>
+    return <BaseDiv id={NODE_ID_PREFIX + props.id} position={props.position} className={cx([...props.classes], NODE_CLASS)}
+                    selected={props.selected} data-selected={props.selected} grabbed={props.grabbed} data-grabbed={props.grabbed}>
         {props.children}
     </BaseDiv>
 })

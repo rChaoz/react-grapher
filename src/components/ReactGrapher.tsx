@@ -93,10 +93,13 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
     const controllerImpl = controller as ControllerImpl
 
+    // Currently grabbed (being moved) node
+    const grabbed = useRef<string | null>(null) as ClickedNode
+
     // Create DefaultNode elements from Nodes elements
     const nodeElements = useMemo(() => nodes.map(node => {
         const Component = node.Component ?? DefaultNode
-        return <Component key={node.id} id={node.id} data={node.data} position={node.position} parentPosition={
+        return <Component key={node.id} id={node.id} data={node.data} position={node.position} grabbed={grabbed.current === node.id} parentPosition={
             node.parent == null ? undefined : nodes.get(node.parent)?.position
         } classes={node.classes} selected={node.selected}/>
     }), [nodes])
@@ -110,8 +113,6 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         startY: number
         hasMoved: boolean
     }
-
-    const grabbed = useRef<string | null>(null) as ClickedNode
 
     // On effect, create edges, update node dimensions and setup listeners
     const onEvent = props.onEvent
