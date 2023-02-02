@@ -12,6 +12,7 @@ import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultCon
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
+import ShiftContext from "../context/BoundsContext";
 
 export interface CommonGraphProps {
     /**
@@ -110,13 +111,14 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     // Create DefaultNode elements from Nodes elements
     const nodeElements = useMemo(() => nodes.map(node => {
         const Component = node.Component ?? DefaultNode
-        return <Component key={node.id} id={node.id} data={node.data} position={node.position} grabbed={grabbed.id === node.id} parentPosition={
+        return <Component key={node.id} id={node.id} data={node.data} position={{
+            isAbsolute: node.position.isAbsolute,
+            x: node.position.x - config.viewportBounds.x,
+            y: node.position.y - config.viewportBounds.y,
+        }} grabbed={grabbed.id === node.id} parentPosition={
             node.parent == null ? undefined : nodes.get(node.parent)?.position
         } classes={node.classes} selected={node.selected}/>
-    }), [nodes, grabbed])
-
-    // Bounding rect state
-    const [boundingRect, setBoundingRect] = useState(new DOMRect())
+    }), [nodes, grabbed, config.viewportBounds])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -467,8 +469,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             node.element.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
-        // TODO Edges bounding rect
-        setBoundingRect(nodesRect)
+        // TODO Edges
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
@@ -520,12 +521,14 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controllerImpl])
 
-    return <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
-        <GrapherViewport controller={controller}>
-            {nodeElements}
-        </GrapherViewport>
-        {props.children}
-    </GraphDiv>
+    return <ShiftContext.Provider value={config.viewportBounds}>
+        <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
+            <GrapherViewport controller={controller}>
+                {nodeElements}
+            </GrapherViewport>
+            {props.children}
+        </GraphDiv>
+    </ShiftContext.Provider>
 }
 
 // Utility functions

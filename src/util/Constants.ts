@@ -10,5 +10,5 @@
 export const NODE_ID_PREFIX = "react-grapher-node-"
 export const REACT_GRAPHER_CLASS = "react-grapher"
 export const VIEWPORT_CLASS = "react-grapher-viewport"
-export const NODES_CONTAINER_CLASS = "react-grapher-nodes"
+export const CONTENT_CLASS = "react-grapher-content"
 export const NODE_CLASS = "react-grapher-node"

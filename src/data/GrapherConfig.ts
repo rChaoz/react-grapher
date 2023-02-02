@@ -83,18 +83,24 @@ export interface GrapherConfig {
      * override, if needed, the configuration set here.
      */
     fitViewConfig?: GrapherFitViewConfig
+
+    /**
+     * Bounds for the viewport (in pixels). Defaults to a 10000 by 10000 square with x=-5000px and y=-5000. For most cases this shouldn't be changed, but
+     * you can make this bigger if nodes are at positions outside this square and are getting clipped / hidden.
+     */
+    viewportRect?: DOMRect
 }
 
 export interface GrapherConfigSet {
     viewportControls: Required<GrapherViewportControls>
     userControls: Required<GrapherUserControls>
     fitViewConfig: GrapherFitViewConfigSet
+    viewportBounds: DOMRect
 }
 
-export type GrapherFitViewConfigSet = Required<Omit<GrapherFitViewConfig, "padding">> & {
-    padding: string
-}
+export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
 
+// TODO Replace this madness with Object.assign maybe?
 export function withDefaultConfig(config: GrapherConfig | undefined): GrapherConfigSet {
     if (config == null) return {
         viewportControls: {minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true},
@@ -103,6 +109,7 @@ export function withDefaultConfig(config: GrapherConfig | undefined): GrapherCon
             allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
         },
         fitViewConfig: withDefaultFitViewConfig(undefined),
+        viewportBounds: new DOMRect(-5000, -5000, 10000, 10000),
     }; else return {
         viewportControls: config.viewportControls === false ? {
             minZoom: .4, maxZoom: 4, allowPanning: false, allowZooming: false
@@ -126,7 +133,8 @@ export function withDefaultConfig(config: GrapherConfig | undefined): GrapherCon
             allowDeletingEdges: config.userControls?.allowDeletingEdges ?? false,
             allowCreatingEdges: config.userControls?.allowCreatingEdges ?? false,
         },
-        fitViewConfig: withDefaultFitViewConfig(config.fitViewConfig)
+        fitViewConfig: withDefaultFitViewConfig(config.fitViewConfig),
+        viewportBounds: new DOMRect(-5000, -5000, 10000, 10000),
     }
 }
 
