@@ -8,7 +8,7 @@ import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
-import {GrapherFitViewConfigSet, GrapherConfig, GrapherConfigSet, withDefaultConfig} from "../data/GrapherConfig";
+import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
@@ -77,7 +77,9 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
 `
 
 export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
-    const config = withDefaultConfig(props.config)
+    // Get default config and prevent config object from being created every re-render
+    const config = useMemo(() => withDefaultConfig(props.config), [props.config])
+
     let nodes: Nodes<T>
     let edges: Edges
 
@@ -102,8 +104,9 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         startY: number
         hasMoved: boolean
     }
+
     const [grabbed, setGrabbed] = useState<GrabbedNode>({id: null, startX: 0, startY: 0, hasMoved: false})
-    
+
     // Create DefaultNode elements from Nodes elements
     const nodeElements = useMemo(() => nodes.map(node => {
         const Component = node.Component ?? DefaultNode
@@ -111,6 +114,9 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             node.parent == null ? undefined : nodes.get(node.parent)?.position
         } classes={node.classes} selected={node.selected}/>
     }), [nodes, grabbed])
+
+    // Bounding rect state
+    const [boundingRect, setBoundingRect] = useState(new DOMRect())
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -380,7 +386,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 }
                 onEvent(grapherEvent)
             }
-            if (!prevent) setGrabbed({
+            if (!prevent && grabbed.id != null) setGrabbed({
                 id: null, startX: 0, startY: 0, hasMoved: false,
             })
         }
@@ -404,8 +410,9 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             if (event.code === "Escape") nodes.setSelection([])
         }
 
-        // TODO Edges
-        // Calculate bounding rect and prevent forcing 0, 0 point to be included in the rect
+        // Calculate bounding rect
+
+        // Prevent forcing 0, 0 point to be included in the rect
         const nodesRect = nodes.length > 0 ? new DOMRect(
             nodes[0].position.x, nodes[0].position.y, 0, 0
         ) : new DOMRect()
@@ -460,6 +467,8 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             node.element.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
+        // TODO Edges bounding rect
+        setBoundingRect(nodesRect)
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
@@ -549,14 +558,12 @@ function changeZoom(amount: number, controller: Controller, config: GrapherConfi
 }
 
 // Fit the viewport
-// TODO Take edges into account as well
-// TODO Replace element from ReactGrapher to empty div made specially for this purpose
-function fitView(fitConfig: GrapherFitViewConfigSet, config: GrapherConfigSet, controller: Controller, nodesRect: DOMRect, element: HTMLElement) {
-    if (element == null || nodesRect == null || (nodesRect.width === 0 && nodesRect.height === 0)) return
+function fitView(fitConfig: GrapherFitViewConfigSet, config: GrapherConfigSet, controller: Controller, boundingRect: DOMRect, element: HTMLElement) {
+    if (element == null || boundingRect == null || (boundingRect.width === 0 && boundingRect.height === 0)) return
     const w = element.offsetWidth, h = element.offsetHeight
 
     // Calculate zoom value for paddings
-    const rect = new DOMRect(nodesRect.x, nodesRect.y, nodesRect.width, nodesRect.height)
+    const rect = new DOMRect(boundingRect.x, boundingRect.y, boundingRect.width, boundingRect.height)
     let zoom = Math.min(w / rect.width, h / rect.height)
     if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
 

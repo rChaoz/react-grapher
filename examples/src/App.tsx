@@ -4,7 +4,6 @@ import "reactgrapher/dist/default-style.css"
 import "./App.css"
 
 export default function App() {
-
     return <div style={{
         width: "800px",
         marginInline: "auto",

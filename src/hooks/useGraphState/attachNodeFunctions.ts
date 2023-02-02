@@ -8,9 +8,22 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
         selection,
         multipleSelection: false,
         setSelection(selected: string[]) {
-            setNodes(nodes.slice())
+            // Compare selections before updating first. This prevents useless re-renders when deselecting all multiple times, double-clicking nodes etc.
+            // This does not work if orders in arrays are different, but chance of this happening is practically 0
+            if (selected.length === selection.length) {
+                let changed = false
+                for (let i = 0; i < selected.length; ++i) if (selected[i] != selection[i]) {
+                    changed = true
+                    break
+                }
+                if (!changed) return
+            }
+
+            // Update selected nodes. Slice is required because the 'Nodes' objects only updates on setSelection, not on setSelection
             setSelection(selected)
-            for (const node of nodes) node.selected = selected.includes(node.id)
+            const n = nodes.slice()
+            for (const node of n) node.selected = selected.includes(node.id)
+            setNodes(n)
         },
         setSelected(node: string, selected: boolean, newSelection?: boolean) {
             if (selected && (!this.multipleSelection || newSelection)) return this.setSelection([node])
