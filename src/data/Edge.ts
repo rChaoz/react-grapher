@@ -1,6 +1,6 @@
 import {randomID} from "../util/randomID";
 import {GrapherChange} from "./GrapherChange";
-import {emptyID} from "../util/errors";
+import {emptyID} from "../util/log";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'

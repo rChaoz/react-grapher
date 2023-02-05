@@ -2,6 +2,14 @@ function error(...message: any) {
     console.error("[ReactGrapher] - ERROR: ", ...message)
 }
 
+function warn(...message: any) {
+    console.warn("[ReactGrapher] - ERROR: ", ...message)
+}
+
+export function noReactGrapherID() {
+    warn("No ID provided to the ReactGrapher component. This could lead to errors if multiple ReactGrapher components are used on the same page.")
+}
+
 export function emptyID(id: string) {
     error("Empty ID is not allowed. ID was replaced with " + id)
 }

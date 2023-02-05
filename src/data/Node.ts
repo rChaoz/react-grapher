@@ -2,7 +2,7 @@ import {randomID} from "../util/randomID"
 import {GrapherChange} from "./GrapherChange";
 import {NodeProps} from "../components/DefaultNode";
 import React from "react";
-import {emptyID} from "../util/errors";
+import {emptyID} from "../util/log";
 
 export interface Node<T> {
     id: string

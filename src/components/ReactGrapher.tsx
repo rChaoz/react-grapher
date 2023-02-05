@@ -7,14 +7,19 @@ import {useGraphState} from "../hooks/useGraphState";
 import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
-import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
+import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
-import {domNodeID, noViewport, unknownNode} from "../util/errors";
+import {domNodeID, noReactGrapherID, noViewport, unknownNode} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
+import IDContext from "../context/IDContext";
 
 export interface CommonGraphProps {
+    /**
+     * ID for the element, must be specified for react versions <18
+     */
+    id?: string
     /**
      * The width of the root div element. Defaults to '100%'.
      */
@@ -96,6 +101,17 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     nodes.multipleSelection = config.userControls.multipleSelection
 
     const controllerImpl = controller as ControllerImpl
+    
+    let ownID
+    // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
+    const useID = React.useId
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    if (typeof useID === "function") ownID = useID()
+    else {
+        ownID = "react-grapher"
+        noReactGrapherID()
+    }
+    const id = props.id ?? ownID
 
     // Currently grabbed (being moved) node
     interface GrabbedNode {
@@ -132,7 +148,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
         // Node level
         function onNodePointerDown(event: PointerEvent) {
-            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(NODE_ID_PREFIX.length)
+            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 1)
             const node = nodeID != null ? nodes.get(nodeID) : null
             if (node == null) {
                 domNodeID(event.currentTarget, nodeID)
@@ -162,7 +178,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         }
 
         function onNodePointerUp(event: PointerEvent) {
-            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(NODE_ID_PREFIX.length)
+            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 1)
             const node = nodeID ? nodes.get(nodeID) : null
             if (node == null) {
                 domNodeID(event.currentTarget, nodeID)
@@ -423,7 +439,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         ) : new DOMRect()
 
         for (const node of nodes) {
-            const nodeElem = ref.current.querySelector<HTMLElement>(`#${NODE_ID_PREFIX}${node.id}`)
+            const nodeElem = ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`)
             if (nodeElem == null) continue
             node.element = nodeElem
 
@@ -507,7 +523,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
             document.removeEventListener("pointerup", onPointerUp)
             document.removeEventListener("keydown", onKeyDown)
         }
-    }, [nodes, edges, onEvent, onChange, controller, config, grabbed])
+    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id])
 
     // Fit view
     useEffect(() => {
@@ -524,14 +540,14 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controllerImpl])
 
-    return <BoundsContext.Provider value={config.viewportBounds}>
+    return <BoundsContext.Provider value={config.viewportBounds}><IDContext.Provider value={id}>
         <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
                 {nodeElements}
             </GrapherViewport>
             {props.children}
         </GraphDiv>
-    </BoundsContext.Provider>
+    </IDContext.Provider></BoundsContext.Provider>
 }
 
 // Utility functions

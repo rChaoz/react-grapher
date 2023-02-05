@@ -1,8 +1,9 @@
-import React, {memo} from "react";
+import React, {memo, useContext} from "react";
 import styled from "@emotion/styled";
 import {cx} from "@emotion/css";
 import {Position} from "../data/Node";
-import {NODE_CLASS, NODE_ID_PREFIX} from "../util/Constants";
+import {NODE_CLASS} from "../util/Constants";
+import IDContext from "../context/IDContext";
 
 export interface BaseNodeProps<T> {
     /**
@@ -48,7 +49,9 @@ const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position" | "selected" | "g
 `
 
 export const BaseNode = memo<BaseNodeProps<any>>(function BaseNode(props) {
-    return <BaseDiv id={NODE_ID_PREFIX + props.id} position={props.position} className={cx([...props.classes], NODE_CLASS)}
+    const baseID = useContext(IDContext)
+
+    return <BaseDiv id={`${baseID}-${props.id}`} position={props.position} className={cx([...props.classes], NODE_CLASS)}
                     selected={props.selected} data-selected={props.selected} grabbed={props.grabbed} data-grabbed={props.grabbed}>
         {props.children}
     </BaseDiv>
