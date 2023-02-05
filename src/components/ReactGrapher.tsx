@@ -8,11 +8,11 @@ import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {NODE_ID_PREFIX, REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
-import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultConfig} from "../data/GrapherConfig";
+import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {domNodeID, noViewport, unknownNode} from "../util/errors";
-import ShiftContext from "../context/BoundsContext";
+import BoundsContext from "../context/BoundsContext";
 
 export interface CommonGraphProps {
     /**
@@ -46,7 +46,7 @@ export interface CommonGraphProps {
      * 'always' - fit view every time nodes/edges are updated. You probably want to pair this with `disableControls`
      * undefined/'manual - you can fit view using the Controller returned by useController()/useControlledGraph()
      */
-    fitView?: "initial" | "always" | "manual" // TODO
+    fitView?: "initial" | "always" | "manual"
     /**
      * Fit view when the DOM element's size changes
      */
@@ -79,7 +79,7 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
 
 export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
     // Get default config and prevent config object from being created every re-render
-    const config = useMemo(() => withDefaultConfig(props.config), [props.config])
+    const config = useMemo(() => withDefaultsConfig(props.config), [props.config])
 
     let nodes: Nodes<T>
     let edges: Edges
@@ -277,9 +277,10 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         function onPointerMove(event: PointerEvent) {
             // Allow small movement (5px) without beginning the move
             if (grabbed.id != null && !grabbed.hasMoved
-                && Math.abs(event.clientX - grabbed.startX) ** 2 + Math.abs(event.clientY - grabbed.startY) ** 2 < 25) return;
+                && Math.abs(event.clientX - grabbed.startX) ** 2 + Math.abs(event.clientY - grabbed.startY) ** 2 < 25) return
             if (grabbed.id === "") {
                 // User is moving the viewport (panning the graph)
+                if (!config.viewportControls.allowPanning) return
                 // Send event
                 let prevent = false
                 if (onEvent != null) {
@@ -312,6 +313,8 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                     unknownNode(grabbed.id)
                     return
                 }
+                // TODO Each node should have it's own config to override global config
+                if (!config.userControls.allowMovingNodes) return
                 // Send event
                 let prevent = false
                 if (onEvent != null) {
@@ -521,14 +524,14 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controllerImpl])
 
-    return <ShiftContext.Provider value={config.viewportBounds}>
+    return <BoundsContext.Provider value={config.viewportBounds}>
         <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
                 {nodeElements}
             </GrapherViewport>
             {props.children}
         </GraphDiv>
-    </ShiftContext.Provider>
+    </BoundsContext.Provider>
 }
 
 // Utility functions

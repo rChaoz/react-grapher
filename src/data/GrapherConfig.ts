@@ -17,6 +17,26 @@ export interface GrapherViewportControls {
     allowZooming?: boolean
 }
 
+const defaultViewportControls = {
+    minZoom: .4,
+    maxZoom: 4,
+    allowPanning: true,
+    allowZooming: true,
+}
+
+const noViewportControls =  {
+    minZoom: .4,
+    maxZoom: 4,
+    allowPanning: false,
+    allowZooming: false,
+}
+
+function withDefaultsViewportControls(controls: GrapherViewportControls | boolean | undefined): Required<GrapherViewportControls> {
+    if (controls === true || controls === undefined) return defaultViewportControls
+    else if (controls === false) return noViewportControls
+    else return {...defaultViewportControls, ...controls}
+}
+
 export interface GrapherUserControls {
     /**
      * Allows the user to select nodes. Defaults to true
@@ -49,6 +69,32 @@ export interface GrapherUserControls {
     allowCreatingEdges?: boolean
 }
 
+const defaultUserControls = {
+    allowSelection: true,
+    multipleSelection: true,
+    allowMovingNodes: true,
+    allowDeletingNodes: false,
+    allowEditingEdges: false,
+    allowDeletingEdges: false,
+    allowCreatingEdges: false,
+}
+
+const noUserControls = {
+    allowSelection: false,
+    multipleSelection: false,
+    allowMovingNodes: false,
+    allowDeletingNodes: false,
+    allowEditingEdges: false,
+    allowDeletingEdges: false,
+    allowCreatingEdges: false,
+}
+
+function withDefaultsUserControls(controls: GrapherUserControls | false | undefined): Required<GrapherUserControls> {
+    if (controls === undefined) return defaultUserControls
+    else if (controls === false) return noUserControls
+    else return {...defaultUserControls, ...controls}
+}
+
 export interface GrapherFitViewConfig {
     /**
      * Any CSS string applicable to the "padding" CSS property. This padding will be resolved and used when fitting view to space the nodes/edges away from
@@ -63,6 +109,16 @@ export interface GrapherFitViewConfig {
     // TODO Animation, other options
 }
 
+const defaultFitViewConfig = {
+    padding: "10%",
+    abideMinMaxZoom: true,
+}
+
+export function withDefaultsFitViewConfig(config: GrapherFitViewConfig | undefined): GrapherFitViewConfigSet {
+    if (config === undefined) return defaultFitViewConfig
+    else return {...defaultFitViewConfig, ...config}
+}
+
 export interface GrapherConfig {
     /**
      * Whether the user can control the viewport (panning, zoom in & out). Possible values:
@@ -70,7 +126,7 @@ export interface GrapherConfig {
      * - false (no controls are allowed)
      * - object to fine tune the controls
      */
-    viewportControls?: true | false | GrapherViewportControls
+    viewportControls?: boolean | GrapherViewportControls
     /**
      * Controls how the user may change the graph. Possible values:
      * - undefined - same as empty object (default values) - user may select and move nodes
@@ -88,7 +144,7 @@ export interface GrapherConfig {
      * Bounds for the viewport (in pixels). Defaults to a 10000 by 10000 square with x=-5000px and y=-5000. For most cases this shouldn't be changed, but
      * you can make this bigger if nodes are at positions outside this square and are getting clipped / hidden.
      */
-    viewportRect?: DOMRect
+    viewportBounds?: DOMRect
 }
 
 export interface GrapherConfigSet {
@@ -100,48 +156,11 @@ export interface GrapherConfigSet {
 
 export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
 
-// TODO Replace this madness with Object.assign maybe?
-export function withDefaultConfig(config: GrapherConfig | undefined): GrapherConfigSet {
-    if (config == null) return {
-        viewportControls: {minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true},
-        userControls: {
-            allowSelection: true, multipleSelection: true, allowMovingNodes: true, allowDeletingNodes: false,
-            allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
-        },
-        fitViewConfig: withDefaultFitViewConfig(undefined),
-        viewportBounds: new DOMRect(-5000, -5000, 10000, 10000),
-    }; else return {
-        viewportControls: config.viewportControls === false ? {
-            minZoom: .4, maxZoom: 4, allowPanning: false, allowZooming: false
-        } : typeof config.viewportControls === "object" ? {
-            minZoom: config.viewportControls.minZoom ?? .4,
-            maxZoom: config.viewportControls.maxZoom ?? 4,
-            allowPanning: config.viewportControls.allowPanning ?? true,
-            allowZooming: config.viewportControls.allowZooming ?? true,
-        } : {
-            minZoom: .4, maxZoom: 4, allowPanning: true, allowZooming: true
-        },
-        userControls: config.userControls === false ? {
-            allowSelection: false, multipleSelection: false, allowMovingNodes: false, allowDeletingNodes: false,
-            allowEditingEdges: false, allowDeletingEdges: false, allowCreatingEdges: false,
-        } : {
-            allowSelection: config.userControls?.allowSelection ?? true,
-            multipleSelection: config.userControls?.multipleSelection ?? true,
-            allowMovingNodes: config.userControls?.allowMovingNodes ?? true,
-            allowDeletingNodes: config.userControls?.allowDeletingNodes ?? false,
-            allowEditingEdges: config.userControls?.allowEditingEdges ?? false,
-            allowDeletingEdges: config.userControls?.allowDeletingEdges ?? false,
-            allowCreatingEdges: config.userControls?.allowCreatingEdges ?? false,
-        },
-        fitViewConfig: withDefaultFitViewConfig(config.fitViewConfig),
-        viewportBounds: new DOMRect(-5000, -5000, 10000, 10000),
-    }
-}
-
-export function withDefaultFitViewConfig(config: GrapherFitViewConfig | undefined): GrapherFitViewConfigSet {
-    if (config == null) return {padding: "5%", abideMinMaxZoom: true}
-    else return {
-        padding: config.padding ?? "5%",
-        abideMinMaxZoom: config.abideMinMaxZoom ?? true,
+export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherConfigSet {
+    return {
+        viewportControls: withDefaultsViewportControls(config?.viewportControls),
+        userControls: withDefaultsUserControls(config?.userControls),
+        fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
+        viewportBounds: config?.viewportBounds ?? new DOMRect(-5000, -5000, 10000, 10000),
     }
 }
