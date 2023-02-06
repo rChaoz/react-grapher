@@ -4,6 +4,7 @@ import {cx} from "@emotion/css";
 import {Position} from "../data/Node";
 import {NODE_CLASS} from "../util/Constants";
 import IDContext from "../context/IDContext";
+import BoundsContext from "../context/BoundsContext";
 
 export interface BaseNodeProps<T> {
     /**
@@ -40,7 +41,7 @@ export interface BaseNodeProps<T> {
     data: T
 }
 
-const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position" | "selected" | "grabbed">>`
+const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position" | "selected" | "grabbed"> & {bounds: DOMRect}>`
   position: absolute;
   z-index: ${props => props.grabbed ? "1" : "auto"};
   left: ${props => props.position.x}px;
@@ -50,9 +51,10 @@ const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position" | "selected" | "g
 
 export const BaseNode = memo<BaseNodeProps<any>>(function BaseNode(props) {
     const baseID = useContext(IDContext)
+    const bounds = useContext(BoundsContext)
 
     return <BaseDiv id={`${baseID}-${props.id}`} position={props.position} className={cx([...props.classes], NODE_CLASS)}
-                    selected={props.selected} data-selected={props.selected} grabbed={props.grabbed} data-grabbed={props.grabbed}>
+                    selected={props.selected} data-selected={props.selected} bounds={bounds} grabbed={props.grabbed} data-grabbed={props.grabbed}>
         {props.children}
     </BaseDiv>
 })

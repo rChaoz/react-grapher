@@ -5,4 +5,4 @@ import React from "react";
  * which is an issue. To fix this, each Node (or any other element that needs a DOM ID) will have its ID prepended with the owning ReactGrapher ID, which cannot
  * be empty (if not provided, a random ID is used).
  */
-export default React.createContext<string>("ReactGrapher")
+export default React.createContext<string>("react-grapher")

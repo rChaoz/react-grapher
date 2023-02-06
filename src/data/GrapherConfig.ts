@@ -145,6 +145,11 @@ export interface GrapherConfig {
      * you can make this bigger if nodes are at positions outside this square and are getting clipped / hidden.
      */
     viewportBounds?: DOMRect
+    /**
+     * If true, nodes will have a higher Z-Index than edges (will render on top of them).
+     * Defaults to false.
+     */
+    nodesOverEdges?: boolean
 }
 
 export interface GrapherConfigSet {
@@ -152,6 +157,7 @@ export interface GrapherConfigSet {
     userControls: Required<GrapherUserControls>
     fitViewConfig: GrapherFitViewConfigSet
     viewportBounds: DOMRect
+    nodesOverEdges: boolean
 }
 
 export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
@@ -162,5 +168,6 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         userControls: withDefaultsUserControls(config?.userControls),
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
         viewportBounds: config?.viewportBounds ?? new DOMRect(-5000, -5000, 10000, 10000),
+        nodesOverEdges: config?.nodesOverEdges ?? false,
     }
 }

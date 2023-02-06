@@ -7,7 +7,7 @@ import {useGraphState} from "../hooks/useGraphState";
 import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
-import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS} from "../util/Constants";
+import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from "../util/Constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
@@ -82,6 +82,18 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
   height: ${props => props.height ?? "100%"};
 `
 
+const Edges = styled.svg<{nodesOverEdges: boolean}>`
+  position: absolute;
+  inset: 0;
+  z-index: ${props => props.nodesOverEdges ? Z_INDEX_NODES : Z_INDEX_EDGES};
+`
+
+const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
+  position: absolute;
+  inset: 0;
+  z-index: ${props => props.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODES};
+`
+
 export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
     // Get default config and prevent config object from being created every re-render
     const config = useMemo(() => withDefaultsConfig(props.config), [props.config])
@@ -124,17 +136,21 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
 
     const [grabbed, setGrabbed] = useState<GrabbedNode>({id: null, startX: 0, startY: 0, hasMoved: false})
 
-    // Create DefaultNode elements from Nodes elements
+    // Create components from Nodes array
     const nodeElements = useMemo(() => nodes.map(node => {
         const Component = node.Component ?? DefaultNode
-        return <Component key={node.id} id={node.id} data={node.data} position={{
-            isAbsolute: node.position.isAbsolute,
-            x: node.position.x - config.viewportBounds.x,
-            y: node.position.y - config.viewportBounds.y,
-        }} grabbed={grabbed.id === node.id} parentPosition={
+        return <Component key={node.id} id={node.id} data={node.data} position={node.position} grabbed={grabbed.id === node.id} parentPosition={
             node.parent == null ? undefined : nodes.get(node.parent)?.position
         } classes={node.classes} selected={node.selected}/>
-    }), [nodes, grabbed, config.viewportBounds])
+    }), [nodes, grabbed])
+
+    // Same for edges
+    const edgeElements = useMemo(() => edges.map(edge => {
+
+        return <g key={edge.id}>
+
+        </g>
+    }), [edges])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -540,10 +556,17 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controllerImpl])
 
-    return <BoundsContext.Provider value={config.viewportBounds}><IDContext.Provider value={id}>
+    const b = config.viewportBounds
+    return <BoundsContext.Provider value={b}><IDContext.Provider value={id}>
         <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
-                {nodeElements}
+                <Edges nodesOverEdges={config.nodesOverEdges} viewBox={`${b.x} ${b.y} ${b.width} ${b.height}`}>
+                    <defs>{/* TODO markers */}</ defs>
+                    <g>{edgeElements}</g>
+                </Edges>
+                <Nodes nodesOverEdges={config.nodesOverEdges}>
+                    {nodeElements}
+                </Nodes>
             </GrapherViewport>
             {props.children}
         </GraphDiv>
