@@ -9,7 +9,7 @@ import attachEdgeFunctions from "./attachEdgeFunctions";
  * Never modify these directly, such as with 'nodes.push(...)', edges[4].target = ... etc. This will not work.
  * Use the provided helper functions, attached to the returned objects, that will update the internal React state associated with it.
  */
-export function useGraphState<T>(initialNodes?: Node<T>[], initialEdges?: Edge[]): { nodes: Nodes<T>, edges: Edges } {
+export function useGraphState<N, E>(initialNodes?: Node<N>[], initialEdges?: Edge<E>[]): { nodes: Nodes<N>, edges: Edges<E> } {
     const [nodes, setNodes] = useState(initialNodes ?? [])
     const [selection, setSelection] = useState<string[]>([])
     const [edges, setEdges] = useState(initialEdges ?? [])

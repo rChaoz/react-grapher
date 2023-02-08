@@ -3,7 +3,7 @@ function error(...message: any) {
 }
 
 function warn(...message: any) {
-    console.warn("[ReactGrapher] - ERROR: ", ...message)
+    console.warn("[ReactGrapher] - WARN: ", ...message)
 }
 
 export function noReactGrapherID() {
@@ -11,7 +11,7 @@ export function noReactGrapherID() {
 }
 
 export function emptyID(id: string) {
-    error("Empty ID is not allowed. ID was replaced with " + id)
+    warn("Empty ID is not allowed. You should specify node IDs for controlled graphs. ID was replaced with " + id)
 }
 
 export function domNodeID(node: EventTarget | null, id?: string | null) {

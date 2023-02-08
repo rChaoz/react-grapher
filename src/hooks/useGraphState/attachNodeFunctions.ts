@@ -1,12 +1,27 @@
 import {Node, Nodes, NodesFunctions} from "../../data/Node";
 import React from "react";
 import {GrapherChange, isNodeChange} from "../../data/GrapherChange";
+import {unknownNode} from "../../util/log";
 
 export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React.Dispatch<React.SetStateAction<Node<T>[]>>,
                                                selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>): Nodes<T> {
     const functions: NodesFunctions<T> = {
         selection,
         multipleSelection: false,
+        absolute(node: Node<any> | string): DOMPoint {
+            if (typeof node === "string") {
+                const n = this.get(node)
+                if (n == null) {
+                    unknownNode(node)
+                    return new DOMPoint(0, 0)
+                } else node = n
+            }
+            if (node.parent == null) return node.position
+            else {
+                const parent = this.absolute(node.parent)
+                return new DOMPoint(node.position.x + parent.x, node.position.y + parent.y)
+            }
+        },
         setSelection(selected: string[]) {
             // Compare selections before updating first. This prevents useless re-renders when deselecting all multiple times, double-clicking nodes etc.
             // This does not work if orders in arrays are different, but chance of this happening is practically 0

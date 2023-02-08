@@ -1,20 +1,23 @@
 import React, {memo, useContext} from "react";
 import styled from "@emotion/styled";
 import {cx} from "@emotion/css";
-import {Position} from "../data/Node";
 import {NODE_CLASS} from "../util/Constants";
 import IDContext from "../context/IDContext";
 import BoundsContext from "../context/BoundsContext";
 
-export interface BaseNodeProps<T> {
+export interface BaseNodeProps {
+    /**
+     * ID of this node
+     */
+    id: string
     /**
      * List of classes this node should use (besides the default "react-grapher-node")
      */
     classes: Set<string>
     /**
-     * Position of this node
+     * Absolute position of this node
      */
-    position: Position
+    absolutePosition: DOMPoint
     /**
      * Whether this node is selected or not
      */
@@ -24,37 +27,27 @@ export interface BaseNodeProps<T> {
      */
     grabbed: boolean
     /**
-     * Position of the parent of this node
-     */
-    parentPosition?: Position
-    /**
-     * ID of this node
-     */
-    id: string
-    /**
      * Contents of your node should be placed here
      */
     children: React.ReactNode
-    /**
-     * Data of the node
-     */
-    data: T
 }
 
-const BaseDiv = styled.div<Pick<BaseNodeProps<any>, "position" | "selected" | "grabbed"> & {bounds: DOMRect}>`
+const BaseDiv = styled.div<Pick<BaseNodeProps, "absolutePosition" | "selected" | "grabbed"> & { bounds: DOMRect }>`
   position: absolute;
   z-index: ${props => props.grabbed ? "1" : "auto"};
-  left: ${props => props.position.x}px;
-  top: ${props => props.position.y}px;
+  left: ${props => props.absolutePosition.x - props.bounds.x}px;
+  top: ${props => props.absolutePosition.y - props.bounds.y}px;
   transform: translate(-50%, -50%);
 `
 
-export const BaseNode = memo<BaseNodeProps<any>>(function BaseNode(props) {
-    const baseID = useContext(IDContext)
-    const bounds = useContext(BoundsContext)
+export const BaseNode = memo<BaseNodeProps>(
+    function BaseNode({id, absolutePosition, classes, selected, grabbed, children}) {
+        const baseID = useContext(IDContext)
+        const bounds = useContext(BoundsContext)
 
-    return <BaseDiv id={`${baseID}-${props.id}`} position={props.position} className={cx([...props.classes], NODE_CLASS)}
-                    selected={props.selected} data-selected={props.selected} bounds={bounds} grabbed={props.grabbed} data-grabbed={props.grabbed}>
-        {props.children}
-    </BaseDiv>
-})
+        return <BaseDiv id={`${baseID}-${id}`} absolutePosition={absolutePosition} className={cx([...classes], NODE_CLASS)}
+                        selected={selected} data-selected={selected} bounds={bounds} grabbed={grabbed} data-grabbed={grabbed}>
+            {children}
+        </BaseDiv>
+    }
+)

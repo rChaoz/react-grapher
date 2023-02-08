@@ -10,11 +10,14 @@ export interface Node<T> {
     parent?: string | null
     data: T
     /**
-     * CSS classes that will be passed to the DefaultNode component function. Ultimately, the function decides what classes it adds to the DOM element.
+     * CSS classes that will be passed to the DefaultNode component function. Ultimately, the component function decides what classes it adds to the DOM element.
      * By default, these classes are kept as-is.
      */
     classes: Set<string>
-    position: Position
+    /**
+     * Position relative to the parent (or absolute if parent is null)
+     */
+    position: DOMPoint
     /**
      * Whether this node has been selected by the user (read-only). You can access all selected nodes using `Nodes.selection`.
      * You can modify the current selection using selection related functions on the Nodes object.
@@ -38,32 +41,26 @@ export interface Node<T> {
     borderRadius?: [[number, number], [number, number], [number, number], [number, number]]
 }
 
-export interface Position {
-    /**
-     * True if this node has a parent (i.e. belongs in a group), yet needs to have absolute positioning.
-     */
-    isAbsolute?: boolean
-    x: number
-    y: number
-}
-
 /**
  * Create a node with provided data.
  * @param id ID of the node, defaults to random alfa-numerical sequence
  * @param position Position of the Node, defaults to 0, 0
  * @param data Data passed to Node component, default implementation just displays a label with value of `String(data)`
  * @param classes Array of class names to be passed to the Node component
+ * @param Component Custom component function for rendering this node
  */
-export function createNode<T>({id, position, data, classes}: { id?: string, position?: Position, data: T, classes?: string[] }): Node<T> {
-    if (id === "") {
+export function createNode<T>({id, position, data, classes}: { id?: string, position?: DOMPoint, data: T, classes?: string[] },
+                              Component?: React.ExoticComponent<NodeProps<T>>): Node<T> {
+    if (id === "" || id == null) {
         id = randomID()
         emptyID(id)
     }
     return {
-        id: id ?? randomID(),
-        position: position ?? {x: 0, y: 0},
+        id: id,
+        Component,
+        position: position ?? new DOMPoint(0, 0),
         data,
-        classes: new Set(classes ?? null),
+        classes: new Set(classes),
         selected: false,
     }
 }
@@ -71,7 +68,7 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
 /**
  * Create a new Node with default values and provided string as its data.
  */
-export function createTextNode(text: string, position?: Position, id?: string): Node<string> {
+export function createTextNode(text: string, position?: DOMPoint, id?: string): Node<string> {
     return createNode({data: text, position, id})
 }
 
@@ -96,6 +93,12 @@ export interface NodesFunctions<T> {
      * Currently selected nodes IDs (read-only, use selection related functions to modify this).
      */
     selection: string[]
+
+    /**
+     * Calculate absolute position of a node
+     * @param node ID or Node object
+     */
+    absolute(node: Node<any> | string): DOMPoint
 
     /**
      * Sets currently selected nodes

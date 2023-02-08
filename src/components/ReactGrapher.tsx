@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Node, Nodes, Position} from "../data/Node"
+import {Node, Nodes} from "../data/Node"
 import {Edge, Edges} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
@@ -14,6 +14,7 @@ import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent,
 import {domNodeID, noReactGrapherID, noViewport, unknownNode} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
+import {DefaultEdge} from "./DefaultEdge";
 
 export interface CommonGraphProps {
     /**
@@ -67,14 +68,14 @@ export interface CommonGraphProps {
     onChange?: (changes: GrapherChange[]) => GrapherChange[] | undefined | void
 }
 
-export interface ControlledGraphProps<T> extends CommonGraphProps {
-    nodes: Nodes<T>
-    edges: Edges
+export interface ControlledGraphProps<N, E> extends CommonGraphProps {
+    nodes: Nodes<N>
+    edges: Edges<E>
 }
 
-export interface UncontrolledGraphProps<T> extends CommonGraphProps {
-    defaultNodes?: Node<T>[]
-    defaultEdges?: Edge[]
+export interface UncontrolledGraphProps<N, E> extends CommonGraphProps {
+    defaultNodes?: Node<N>[]
+    defaultEdges?: Edge<E>[]
 }
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
@@ -83,6 +84,7 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
 `
 
 const Edges = styled.svg<{nodesOverEdges: boolean}>`
+  pointer-events: none;
   position: absolute;
   inset: 0;
   z-index: ${props => props.nodesOverEdges ? Z_INDEX_NODES : Z_INDEX_EDGES};
@@ -94,15 +96,15 @@ const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
   z-index: ${props => props.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODES};
 `
 
-export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGraphProps<T>) {
+export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
     // Get default config and prevent config object from being created every re-render
     const config = useMemo(() => withDefaultsConfig(props.config), [props.config])
 
-    let nodes: Nodes<T>
-    let edges: Edges
+    let nodes: Nodes<N>
+    let edges: Edges<E>
 
     // Ensure rules of hooks are always met - we never know when this component is uncontrolled one render and controlled the next render
-    const {nodes: ownNodes, edges: ownEdges} = useGraphState((props as UncontrolledGraphProps<T>).defaultNodes, (props as any).defaultEdges)
+    const {nodes: ownNodes, edges: ownEdges} = useGraphState((props as UncontrolledGraphProps<N, E>).defaultNodes, (props as UncontrolledGraphProps<N, E>).defaultEdges)
     const ownController = useController()
     const controller = props.controller ?? ownController
 
@@ -139,18 +141,25 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     // Create components from Nodes array
     const nodeElements = useMemo(() => nodes.map(node => {
         const Component = node.Component ?? DefaultNode
-        return <Component key={node.id} id={node.id} data={node.data} position={node.position} grabbed={grabbed.id === node.id} parentPosition={
-            node.parent == null ? undefined : nodes.get(node.parent)?.position
-        } classes={node.classes} selected={node.selected}/>
+        return <Component key={node.id} id={node.id} data={node.data} absolutePosition={nodes.absolute(node)}
+                          grabbed={grabbed.id === node.id} classes={node.classes} selected={node.selected}/>
     }), [nodes, grabbed])
 
     // Same for edges
     const edgeElements = useMemo(() => edges.map(edge => {
-
-        return <g key={edge.id}>
-
-        </g>
-    }), [edges])
+        const source = nodes.get(edge.source), target = nodes.get(edge.target)
+        if (source == null) {
+            unknownNode(edge.source)
+            return
+        }
+        if (target == null) {
+            unknownNode(edge.target)
+            return
+        }
+        const Component = edge.Component ?? DefaultEdge
+        // TODO Implement handles, floating edges...
+        return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={source.position} targetPos={target.position} classes={edge.classes}/>
+    }), [edges, nodes])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -366,11 +375,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                 grabbed.hasMoved = true
                 // Calculate where the node should arrive
                 const deltaX = event.movementX / controller.getViewport().zoom, deltaY = event.movementY / controller.getViewport().zoom
-                const newPosition: Position = {
-                    isAbsolute: node.position.isAbsolute,
-                    x: node.position.x + deltaX,
-                    y: node.position.y + deltaY,
-                }
+                const newPosition = new DOMPoint(node.position.x + deltaX, node.position.y + deltaY)
 
                 // Move grabbed node
                 const changes: GrapherChange[] = [{
@@ -395,11 +400,7 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
                             type: "node-move",
                             event: "selected",
                             oldPosition: n.position,
-                            position: {
-                                isAbsolute: n.position.isAbsolute,
-                                x: n.position.x + deltaX,
-                                y: n.position.y + deltaY,
-                            },
+                            position: new DOMPoint(n.position.x + deltaX, n.position.y + deltaY),
                             selected: n.selected,
                             node: n,
                         })
@@ -560,13 +561,13 @@ export function ReactGrapher<T>(props: ControlledGraphProps<T> | UncontrolledGra
     return <BoundsContext.Provider value={b}><IDContext.Provider value={id}>
         <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
+                <Nodes nodesOverEdges={config.nodesOverEdges}>
+                    {nodeElements}
+                </Nodes>
                 <Edges nodesOverEdges={config.nodesOverEdges} viewBox={`${b.x} ${b.y} ${b.width} ${b.height}`}>
                     <defs>{/* TODO markers */}</ defs>
                     <g>{edgeElements}</g>
                 </Edges>
-                <Nodes nodesOverEdges={config.nodesOverEdges}>
-                    {nodeElements}
-                </Nodes>
             </GrapherViewport>
             {props.children}
         </GraphDiv>
@@ -584,7 +585,7 @@ function resolveValue(value: string, length: number): number {
 }
 
 // Send a change to the graph
-function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {
+function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges<any>, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {
     let c: GrapherChange[] | undefined | void = changes
     if (onChange != null) c = onChange(changes)
     if (c != null) {

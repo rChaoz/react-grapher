@@ -1,4 +1,4 @@
-import {Node, Position} from "./Node";
+import {Node} from "./Node";
 
 export type GrapherChange = NodeMoveChange
 
@@ -36,9 +36,9 @@ export interface NodeMoveChange extends NodeChange {
     /**
      * Old (current) position
      */
-    oldPosition: Position
+    oldPosition: DOMPoint
     /**
      * Position where this node should arrive
      */
-    position: Position
+    position: DOMPoint
 }

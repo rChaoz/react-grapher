@@ -2,18 +2,18 @@ import React from "react";
 import {Edge, Edges, EdgesFunctions} from "../../data/Edge";
 import {GrapherChange, isEdgeChange} from "../../data/GrapherChange";
 
-export default function attachEdgeFunctions(edges: Edge[], setEdges: React.Dispatch<React.SetStateAction<Edge[]>>): Edges {
+export default function attachEdgeFunctions<T>(edges: Edge<T>[], setEdges: React.Dispatch<React.SetStateAction<Edge<T>[]>>): Edges<T> {
     const functions: EdgesFunctions = {
         clear() {
             setEdges([])
         },
-        set(newEdges: Edge[]) {
+        set(newEdges: Edge<T>[]) {
             setEdges(newEdges)
         },
-        add(newEdge: Edge | Edge[]) {
+        add(newEdge: Edge<T> | Edge<T>[]) {
             setEdges(edges.concat(newEdge))
         },
-        update(mapFunc: (node: Edge) => (Edge | null | undefined)) {
+        update(mapFunc: (node: Edge<T>) => (Edge<T> | null | undefined)) {
             const newEdges = []
             for (const edge of edges) {
                 const r = mapFunc(edge)
@@ -21,7 +21,7 @@ export default function attachEdgeFunctions(edges: Edge[], setEdges: React.Dispa
             }
             return newEdges
         },
-        replace(targetID: string, replacement?: Edge | ((edge: Edge) => (Edge | null | undefined)) | null) {
+        replace(targetID: string, replacement?: Edge<any> | ((edge: Edge<any>) => (Edge<any> | null | undefined)) | null) {
             this.update(edge => {
                 if (edge.id === targetID) {
                     if (typeof replacement === "function") replacement(edge)
