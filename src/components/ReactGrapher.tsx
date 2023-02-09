@@ -15,6 +15,7 @@ import {domNodeID, noReactGrapherID, noViewport, unknownNode} from "../util/log"
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
+import {getNodeIntersection} from "../util/EdgePath";
 
 export interface CommonGraphProps {
     /**
@@ -83,7 +84,7 @@ const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
   height: ${props => props.height ?? "100%"};
 `
 
-const Edges = styled.svg<{nodesOverEdges: boolean}>`
+const Edges = styled.svg<{ nodesOverEdges: boolean }>`
   pointer-events: none;
   position: absolute;
   inset: 0;
@@ -115,7 +116,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     nodes.multipleSelection = config.userControls.multipleSelection
 
     const controllerImpl = controller as ControllerImpl
-    
+
     let ownID
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
     const useID = React.useId
@@ -146,20 +147,28 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }), [nodes, grabbed])
 
     // Same for edges
-    const edgeElements = useMemo(() => edges.map(edge => {
-        const source = nodes.get(edge.source), target = nodes.get(edge.target)
-        if (source == null) {
-            unknownNode(edge.source)
-            return
-        }
-        if (target == null) {
-            unknownNode(edge.target)
-            return
-        }
-        const Component = edge.Component ?? DefaultEdge
-        // TODO Implement handles, floating edges...
-        return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={source.position} targetPos={target.position} classes={edge.classes}/>
-    }), [edges, nodes])
+    const [updateEdges, setUpdateEdges] = useState(0)
+    const edgeElements = useMemo(() => {
+        // 2 reasons for this 'if': 1. don't need edges first render (nodes don't have values calculated)
+        // and 2. ES lint will complain about useMemo dependencies otherwise
+        if (updateEdges == 0) return []
+        return edges.map(edge => {
+            const source = nodes.get(edge.source), target = nodes.get(edge.target)
+            if (source == null) {
+                unknownNode(edge.source)
+                return
+            }
+            if (target == null) {
+                unknownNode(edge.target)
+                return
+            }
+            const Component = edge.Component ?? DefaultEdge
+            // TODO Implement handles
+            const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
+            const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position
+            return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}/>
+        })
+    }, [edges, nodes, updateEdges])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -455,38 +464,32 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             nodes[0].position.x, nodes[0].position.y, 0, 0
         ) : new DOMRect()
 
+        let nodesChanged = false
         for (const node of nodes) {
-            const nodeElem = ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`)
-            if (nodeElem == null) continue
+            const nodeElem = node.hasChanged ? ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`) : node.element
+            if (nodeElem == null) {
+                unknownNode(node.id)
+                continue
+            }
             node.element = nodeElem
 
-            function resolveValues(strValue: string, width: number, height: number): [number, number] {
-                /* Computed border radius may be of form:
-                - 6px
-                - 2px 5px
-                - 20%
-                - 10% 5%
-                - <empty>
-                 */
-                const vals = strValue.split(" ")
-                if (vals.length === 0) return [0, 0]
-                else if (vals.length === 1) return [resolveValue(vals[0], width), resolveValue(vals[0], height)]
-                else return [resolveValue(vals[0], width), resolveValue(vals[1], height)]
+            // Set dimensions & border radii
+            if (node.hasChanged) {
+                node.hasChanged = false
+                nodesChanged = true
+                node.width = nodeElem.offsetWidth
+                node.height = nodeElem.offsetHeight
+                const style = getComputedStyle(nodeElem)
+                node.borderRadius = [
+                    resolveValues(style.borderTopLeftRadius, node.width, node.height),
+                    resolveValues(style.borderTopRightRadius, node.width, node.height),
+                    resolveValues(style.borderBottomRightRadius, node.width, node.height),
+                    resolveValues(style.borderBottomLeftRadius, node.width, node.height),
+                ]
             }
 
-            // Set node dimensions
-            node.width = nodeElem.offsetWidth
-            node.height = nodeElem.offsetHeight
-            const style = getComputedStyle(nodeElem)
-            node.borderRadius = [
-                resolveValues(style.borderTopLeftRadius, node.width, node.height),
-                resolveValues(style.borderTopRightRadius, node.width, node.height),
-                resolveValues(style.borderBottomRightRadius, node.width, node.height),
-                resolveValues(style.borderBottomLeftRadius, node.width, node.height),
-            ]
-
             // Update bounding rect
-            const left = node.position.x - node.width / 2, top = node.position.y - node.height / 2, right = left + node.width, bottom = top + node.height
+            const left = node.position.x - node.width! / 2, top = node.position.y - node.height! / 2, right = left + node.width!, bottom = top + node.height!
             if (left < nodesRect.left) {
                 const delta = nodesRect.left - left
                 nodesRect.x -= delta
@@ -505,6 +508,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             node.element.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
+        // Re-render edges
+        if (nodesChanged) setUpdateEdges(value => value + 1)
         // TODO Edges
 
         // Viewport-level listeners
@@ -540,7 +545,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             document.removeEventListener("pointerup", onPointerUp)
             document.removeEventListener("keydown", onKeyDown)
         }
-    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id])
+    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id, setUpdateEdges])
 
     // Fit view
     useEffect(() => {
@@ -582,6 +587,21 @@ function resolveValue(value: string, length: number): number {
     if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
     else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
     else return 0
+}
+
+// Convert a pair of CSS values to pixel values (useful for border radius, which may be 1 or 2 values)
+function resolveValues(strValue: string, width: number, height: number): [number, number] {
+    /* Computed border radius may be of form:
+    - 6px
+    - 2px 5px
+    - 20%
+    - 10% 5%
+    - <empty>
+     */
+    const vals = strValue.split(" ")
+    if (vals.length === 0) return [0, 0]
+    else if (vals.length === 1) return [resolveValue(vals[0], width), resolveValue(vals[0], height)]
+    else return [resolveValue(vals[0], width), resolveValue(vals[1], height)]
 }
 
 // Send a change to the graph

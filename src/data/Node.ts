@@ -24,6 +24,10 @@ export interface Node<T> {
      */
     selected: boolean
     /**
+     * Used internally to detect when to re-calculate values for this node
+     */
+    hasChanged: boolean
+    /**
      * Automatically set during rendering. DOM Element for this node.
      */
     element?: HTMLElement
@@ -62,6 +66,7 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
         data,
         classes: new Set(classes),
         selected: false,
+        hasChanged: true,
     }
 }
 
@@ -134,7 +139,8 @@ export interface NodesFunctions<T> {
     add(newNode: Node<T> | Node<T>[]): void
 
     /**
-     * Map in-place, return null/undefined to remove a node
+     * Map in-place, return null/undefined to remove a node. If you return a node but modified, make sure to set its "hasChanged" property to true to
+     * trigger internal re-calculations for the node.
      */
     update(mapFunc: (node: Node<T>) => Node<T> | null | undefined): void
 

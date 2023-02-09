@@ -11,7 +11,7 @@ export function noReactGrapherID() {
 }
 
 export function emptyID(id: string) {
-    warn("Empty ID is not allowed. You should specify node IDs for controlled graphs. ID was replaced with " + id)
+    warn("Empty ID is not allowed. You should specify IDs for controlled graphs. ID was replaced with " + id)
 }
 
 export function domNodeID(node: EventTarget | null, id?: string | null) {

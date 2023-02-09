@@ -37,7 +37,11 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             // Update selected nodes. Slice is required because the 'Nodes' objects only updates on setSelection, not on setSelection
             setSelection(selected)
             const n = nodes.slice()
-            for (const node of n) node.selected = selected.includes(node.id)
+            for (const node of n) {
+                const sel = selected.includes(node.id)
+                node.hasChanged = node.selected != sel
+                node.selected = sel
+            }
             setNodes(n)
         },
         setSelected(node: string, selected: boolean, newSelection?: boolean) {
@@ -56,9 +60,12 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             return nodes.find(node => node.id === id)
         },
         set(newNodes: Node<T>[]) {
+            for (const node of newNodes) node.hasChanged = true
             setNodes(newNodes)
         },
         add(newNode: Node<T> | Node<T>[]) {
+            if (Array.isArray(newNode)) for (const node of newNode) node.hasChanged = true
+            else newNode.hasChanged = true
             setNodes(nodes => nodes.concat(newNode))
         },
         update(mapFunc: (node: Node<T>) => (Node<T> | null | undefined)) {
@@ -66,7 +73,10 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
                 const newNodes: Node<T>[] = []
                 for (const node of nodes) {
                     const r = mapFunc(node)
-                    if (r != null) newNodes.push(r)
+                    if (r != null) {
+                        if (r !== node) r.hasChanged = true
+                        newNodes.push(r)
+                    }
                 }
                 return newNodes
             })
@@ -85,7 +95,10 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             for (const change of changes) {
                 if (!isNodeChange(change)) continue
                 changed = true
-                if (change.type == "node-move") change.node.position = change.position
+                if (change.type == "node-move") {
+                    change.node.position = change.position
+                    change.node.hasChanged = true
+                }
             }
             if (changed) setNodes(n)
         },

@@ -27,12 +27,9 @@
     background: var(--react-grapher-node-background-hover)
 }
 
-.react-grapher-node:active {
-    background: var(--react-grapher-node-background-active)
-}
-
 .react-grapher-node[data-grabbed=true] {
     opacity: .9;
+    background: var(--react-grapher-node-background-active)
 }
 
 .react-grapher-node[data-selected=true] {
@@ -42,6 +39,7 @@
 
 .react-grapher-edge-path {
     fill: transparent;
-    stroke: black;
+    stroke: gray;
     stroke-width: 3px;
+    stroke-linecap: round
 }

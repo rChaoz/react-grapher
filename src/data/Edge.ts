@@ -16,6 +16,14 @@ export interface Edge<T> {
      */
     source: string
     /**
+     * Name of the handle of the source node (null for floating edge)
+     */
+    sourceHandle?: string | null
+    /**
+     * Name of the handle of the target node (null for floating edge)
+     */
+    targetHandle?: string | null
+    /**
      * ID of target node
      */
     target: string
