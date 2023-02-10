@@ -23,6 +23,10 @@ export function errorUnknownNode(id: string) {
     error("Error: unable to find node with ID: ", id)
 }
 
+export function errorUnknownEdge(id: string) {
+    error("Error: unable to find edge with ID: ", id)
+}
+
 export function criticalNoViewport() {
     console.error("CRITICAL - unable to find viewport DOM node")
 }

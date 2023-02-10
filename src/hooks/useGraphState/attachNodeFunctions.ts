@@ -42,11 +42,7 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             // Update selected nodes. Slice is required because the 'Nodes' objects only updates on setSelection, not on setSelection
             setSelection(selected)
             const n = nodes.slice()
-            for (const node of n) {
-                const sel = selected.includes(node.id)
-                node.hasChanged = node.selected != sel
-                node.selected = sel
-            }
+            for (const node of n) node.selected = selected.includes(node.id)
             setNodes(n)
         },
         setSelected(node: string, selected: boolean, newSelection?: boolean) {
@@ -68,19 +64,11 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
         set(newNodes: Node<T>[]) {
             setNodes(newNodes)
             map.clear()
-            for (const node of newNodes) {
-                map.set(node.id, node)
-                node.hasChanged = true
-            }
+            for (const node of newNodes) map.set(node.id, node)
         },
         add(newNode: Node<T> | Node<T>[]) {
-            if (Array.isArray(newNode)) for (const node of newNode) {
-                map.set(node.id, node)
-                node.hasChanged = true
-            } else {
-                map.set(newNode.id, newNode)
-                newNode.hasChanged = true
-            }
+            if (Array.isArray(newNode)) for (const node of newNode) map.set(node.id, node)
+            else map.set(newNode.id, newNode)
             setNodes(nodes => nodes.concat(newNode))
         },
         update(mapFunc: (node: Node<T>) => (Node<T> | null | undefined)) {
@@ -93,7 +81,6 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
                             // Use != instead of !== just in case someone might use try to use integers as IDs
                             if (r.id != node.id) map.delete(node.id)
                             map.set(r.id, r)
-                            r.hasChanged = true
                         }
                         newNodes.push(r)
                     }
@@ -103,11 +90,8 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
         },
         replace(targetID: string, replacement?: Node<T> | (<T>(node: Node<T>) => (Node<T> | null | undefined)) | null) {
             this.update(node => {
-                if (node.id === targetID) {
-                    const newNode = typeof replacement === "function" ? replacement(node) : replacement
-                    if (newNode != null) newNode.hasChanged = true
-                    return newNode
-                } else return node
+                if (node.id === targetID) return typeof replacement === "function" ? replacement(node) : replacement
+                else return node
             })
         },
         processChanges(changes: GrapherChange[]) {
@@ -116,10 +100,7 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             for (const change of changes) {
                 if (!isNodeChange(change)) continue
                 changed = true
-                if (change.type == "node-move") {
-                    change.node.position = change.position
-                    change.node.hasChanged = true
-                }
+                if (change.type == "node-move") change.node.position = change.position
             }
             if (changed) setNodes(n)
         },

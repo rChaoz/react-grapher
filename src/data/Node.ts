@@ -1,4 +1,4 @@
-import {randomID} from "../util/randomID"
+import {randomID} from "../util/utils"
 import {GrapherChange} from "./GrapherChange";
 import {NodeProps} from "../components/DefaultNode";
 import React from "react";
@@ -23,10 +23,6 @@ export interface Node<T> {
      * You can modify the current selection using selection related functions on the Nodes object.
      */
     selected: boolean
-    /**
-     * Used internally to detect when to re-calculate values for this node
-     */
-    hasChanged: boolean
 }
 
 export interface NodeImpl<T> extends Node<T> {
@@ -37,15 +33,11 @@ export interface NodeImpl<T> extends Node<T> {
     /**
      * Automatically set during rendering. DOM width of this node
      */
-    width?: number
+    width: number
     /**
      * Automatically set during rendering. DOM height of this node
      */
-    height?: number
-    /**
-     * Automatically set during rendering. Used for calculation of Floating edges positions.
-     */
-    borderRadius?: [[number, number], [number, number], [number, number], [number, number]]
+    height: number
 }
 
 /**
@@ -62,15 +54,19 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
         id = randomID()
         warnEmptyID(id)
     }
-    return {
+    // noinspection UnnecessaryLocalVariableJS, we do this to get type checking for NodeImpl
+    const node: NodeImpl<any> = {
         id: id,
         Component,
         position: position ?? new DOMPoint(0, 0),
         data,
         classes: new Set(classes),
         selected: false,
-        hasChanged: true,
+
+        width: 0,
+        height: 0,
     }
+    return node
 }
 
 /**

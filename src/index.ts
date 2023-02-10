@@ -20,7 +20,7 @@ import {BaseEdge, BaseEdgeProps} from "./components/BaseEdge";
 import {DefaultEdge, EdgeProps} from "./components/DefaultEdge";
 // Other
 import {EdgePath, getNodeIntersection, getStraightEdgePath} from "./util/EdgePath";
-import {randomID} from "./util/randomID";
+import {randomID} from "./util/utils";
 
 export {
     // Data

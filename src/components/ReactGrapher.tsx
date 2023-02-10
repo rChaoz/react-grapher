@@ -11,11 +11,12 @@ import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from 
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
-import {errorDOMNodeUnknownID, warnNoReactGrapherID, criticalNoViewport, errorUnknownNode} from "../util/log";
+import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownEdge, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
 import {getNodeIntersection} from "../util/EdgePath";
+import {resolveValue} from "../util/utils";
 
 export interface CommonGraphProps {
     /**
@@ -121,16 +122,18 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }
     nodes.multipleSelection = config.userControls.multipleSelection
 
-    let ownID
-    // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
-    const useID = React.useId
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    if (typeof useID === "function") ownID = useID()
+    let id: string
+    if (props.id != null) id = props.id
     else {
-        ownID = "react-grapher"
-        warnNoReactGrapherID()
+        // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
+        const useID = React.useId
+        // eslint-disable-next-line react-hooks/rules-of-hooks
+        if (typeof useID === "function") id = useID()
+        else {
+            id = "react-grapher"
+            warnNoReactGrapherID()
+        }
     }
-    const id = props.id ?? ownID
 
     // Currently grabbed (being moved) node
     interface GrabbedNode {
@@ -470,26 +473,19 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         let nodesChanged = false
         for (const node of nodes) {
-            const nodeElem = node.hasChanged ? ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`) : node.element
+            const nodeElem = ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`)
             if (nodeElem == null) {
                 errorUnknownNode(node.id)
                 continue
             }
             node.element = nodeElem
-
-            // Set dimensions & border radii
-            if (node.hasChanged) {
-                node.hasChanged = false
-                nodesChanged = true
+            if (Math.abs(node.width - nodeElem.offsetWidth) > 5) {
                 node.width = nodeElem.offsetWidth
+                nodesChanged = true
+            }
+            if (Math.abs(node.height - nodeElem.offsetHeight) > 5) {
                 node.height = nodeElem.offsetHeight
-                const style = getComputedStyle(nodeElem)
-                node.borderRadius = [
-                    resolveValues(style.borderTopLeftRadius, node.width, node.height),
-                    resolveValues(style.borderTopRightRadius, node.width, node.height),
-                    resolveValues(style.borderBottomRightRadius, node.width, node.height),
-                    resolveValues(style.borderBottomLeftRadius, node.width, node.height),
-                ]
+                nodesChanged = true
             }
 
             // Update bounding rect
@@ -508,8 +504,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (bottom > nodesRect.bottom) nodesRect.height += bottom - nodesRect.bottom
 
             // Set listeners
-            node.element.addEventListener("pointerdown", onNodePointerDown)
-            node.element.addEventListener("pointerup", onNodePointerUp)
+            nodeElem.addEventListener("pointerdown", onNodePointerDown)
+            nodeElem.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
         // Re-render edges
@@ -584,29 +580,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 }
 
 // Utility functions
-
-// Convert a CSS computed value to pixel value
-function resolveValue(value: string, length: number): number {
-    // Resolve a percentage or pixel value to pixel value
-    if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
-    else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
-    else return 0
-}
-
-// Convert a pair of CSS values to pixel values (useful for border radius, which may be 1 or 2 values)
-function resolveValues(strValue: string, width: number, height: number): [number, number] {
-    /* Computed border radius may be of form:
-    - 6px
-    - 2px 5px
-    - 20%
-    - 10% 5%
-    - <empty>
-     */
-    const vals = strValue.split(" ")
-    if (vals.length === 0) return [0, 0]
-    else if (vals.length === 1) return [resolveValue(vals[0], width), resolveValue(vals[0], height)]
-    else return [resolveValue(vals[0], width), resolveValue(vals[1], height)]
-}
 
 // Send a change to the graph
 function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges<any>, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {

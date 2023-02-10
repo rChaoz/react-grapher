@@ -1,4 +1,5 @@
 import {Node, NodeImpl} from "../data/Node";
+import {resolveValue} from "./utils";
 
 /**
  * Create slope-intercept form of line defined by 2 points
@@ -10,6 +11,24 @@ function getSlopeIntercept(p1: DOMPoint, p2: DOMPoint): [number, number] {
     else if (m < -10000) m = -10000
     const b = p1.y - m * p1.x
     return [m, b]
+}
+
+
+/**
+ * Convert a pair of CSS values to pixel values (useful for border radius, which may be 1 or 2 values)
+ */
+function resolveValues(strValue: string, width: number, height: number): [number, number] {
+    /* Computed border radius may be of form:
+    - 6px
+    - 2px 5px
+    - 20%
+    - 10% 5%
+    - <empty>
+     */
+    const vals = strValue.split(" ")
+    if (vals.length === 0) return [0, 0]
+    else if (vals.length === 1) return [resolveValue(vals[0], width), resolveValue(vals[0], height)]
+    else return [resolveValue(vals[0], width), resolveValue(vals[1], height)]
 }
 
 /**
@@ -24,7 +43,14 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
      */
     const sourceNodeImpl = sourceNode as NodeImpl<any>
 
-    const border = sourceNodeImpl.borderRadius!
+    // Calculate border radius of source node
+    const style = getComputedStyle(sourceNodeImpl.element!)
+    const border = [
+        resolveValues(style.borderTopLeftRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
+        resolveValues(style.borderTopRightRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
+        resolveValues(style.borderBottomRightRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
+        resolveValues(style.borderBottomLeftRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
+    ]
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)
 
