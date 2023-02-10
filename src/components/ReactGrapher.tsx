@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Node, Nodes} from "../data/Node"
-import {Edge, Edges} from "../data/Edge";
+import {Node, Nodes, NodesImpl} from "../data/Node"
+import {Edge, Edges, EdgesImpl} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
 import {useGraphState} from "../hooks/useGraphState";
@@ -11,7 +11,7 @@ import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from 
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
-import {domNodeID, noReactGrapherID, noViewport, unknownNode} from "../util/log";
+import {errorDOMNodeUnknownID, warnNoReactGrapherID, criticalNoViewport, errorUnknownNode} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
@@ -101,21 +101,25 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // Get default config and prevent config object from being created every re-render
     const config = useMemo(() => withDefaultsConfig(props.config), [props.config])
 
-    let nodes: Nodes<N>
-    let edges: Edges<E>
+    let nodes: NodesImpl<N>
+    let edges: EdgesImpl<E>
 
     // Ensure rules of hooks are always met - we never know when this component is uncontrolled one render and controlled the next render
     const {nodes: ownNodes, edges: ownEdges} = useGraphState((props as UncontrolledGraphProps<N, E>).defaultNodes, (props as UncontrolledGraphProps<N, E>).defaultEdges)
     const ownController = useController()
-    const controller = props.controller ?? ownController
+    const controller = (props.controller ?? ownController) as ControllerImpl
 
     // Controlled graphs use provided nodes & edges objects
-    if ("nodes" in props) ({nodes, edges} = props)
+    if ("nodes" in props) {
+        nodes = props.nodes as NodesImpl<N>
+        edges = props.edges as EdgesImpl<E>
+    }
     // Uncontrolled Graphs manage their own state
-    else [nodes, edges] = [ownNodes, ownEdges]
+    else {
+        nodes = ownNodes as NodesImpl<N>
+        edges = ownEdges as EdgesImpl<E>
+    }
     nodes.multipleSelection = config.userControls.multipleSelection
-
-    const controllerImpl = controller as ControllerImpl
 
     let ownID
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
@@ -124,7 +128,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     if (typeof useID === "function") ownID = useID()
     else {
         ownID = "react-grapher"
-        noReactGrapherID()
+        warnNoReactGrapherID()
     }
     const id = props.id ?? ownID
 
@@ -155,11 +159,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         return edges.map(edge => {
             const source = nodes.get(edge.source), target = nodes.get(edge.target)
             if (source == null) {
-                unknownNode(edge.source)
+                errorUnknownNode(edge.source)
                 return
             }
             if (target == null) {
-                unknownNode(edge.target)
+                errorUnknownNode(edge.target)
                 return
             }
             const Component = edge.Component ?? DefaultEdge
@@ -185,7 +189,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 1)
             const node = nodeID != null ? nodes.get(nodeID) : null
             if (node == null) {
-                domNodeID(event.currentTarget, nodeID)
+                errorDOMNodeUnknownID(event.currentTarget, nodeID)
                 return
             }
             let prevent = false
@@ -215,7 +219,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 1)
             const node = nodeID ? nodes.get(nodeID) : null
             if (node == null) {
-                domNodeID(event.currentTarget, nodeID)
+                errorDOMNodeUnknownID(event.currentTarget, nodeID)
                 return
             }
             if (onEvent != null) {
@@ -360,7 +364,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 // User is currently moving a node
                 const node = nodes.get(grabbed.id)
                 if (node == null) {
-                    unknownNode(grabbed.id)
+                    errorUnknownNode(grabbed.id)
                     return
                 }
                 // TODO Each node should have it's own config to override global config
@@ -402,7 +406,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         if (s === node.id) continue // grabbed node is already added
                         const n = nodes.get(s)
                         if (n == null) {
-                            unknownNode(s)
+                            errorUnknownNode(s)
                             continue
                         }
                         changes.push({
@@ -468,7 +472,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         for (const node of nodes) {
             const nodeElem = node.hasChanged ? ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`) : node.element
             if (nodeElem == null) {
-                unknownNode(node.id)
+                errorUnknownNode(node.id)
                 continue
             }
             node.element = nodeElem
@@ -514,7 +518,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
-        if (viewportElem == null) noViewport()
+        if (viewportElem == null) criticalNoViewport()
         else {
             viewportElem.addEventListener("pointerdown", onViewportPointerDown)
             viewportElem.addEventListener("pointerup", onViewportPointerUp)
@@ -555,12 +559,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
     useEffect(() => {
-        if (controllerImpl.fitViewValue != needFitView.current) {
+        if (controller.fitViewValue != needFitView.current) {
             fitView(config.fitViewConfig, config, controller, nodes.boundingRect!, ref.current!)
-            needFitView.current = controllerImpl.fitViewValue
+            needFitView.current = controller.fitViewValue
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [controllerImpl])
+    }, [controller])
 
     const b = config.viewportBounds
     return <BoundsContext.Provider value={b}><IDContext.Provider value={id}>

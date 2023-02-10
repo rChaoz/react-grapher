@@ -19,7 +19,7 @@ import {DefaultNode, NodeProps} from "./components/DefaultNode";
 import {BaseEdge, BaseEdgeProps} from "./components/BaseEdge";
 import {DefaultEdge, EdgeProps} from "./components/DefaultEdge";
 // Other
-import {EdgePath, getNodeIntersection, getStraightLinePath} from "./util/EdgePath";
+import {EdgePath, getNodeIntersection, getStraightEdgePath} from "./util/EdgePath";
 import {randomID} from "./util/randomID";
 
 export {
@@ -38,6 +38,6 @@ export {
     BaseNode, BaseNodeProps, DefaultNode, NodeProps,
     BaseEdge, BaseEdgeProps, DefaultEdge, EdgeProps,
     // Others
-    EdgePath, getNodeIntersection, getStraightLinePath,
+    EdgePath, getNodeIntersection, getStraightEdgePath,
     randomID,
 }

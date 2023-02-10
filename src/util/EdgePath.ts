@@ -1,4 +1,4 @@
-import {Node} from "../data/Node";
+import {Node, NodeImpl} from "../data/Node";
 
 /**
  * Create slope-intercept form of line defined by 2 points
@@ -22,13 +22,14 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
     pos = 0 (top-left) / 1 (top-right) / 2 (bottom-right) / 3 (bottom-left)
     axis = 0 (x-axis) / 1 (y-axis)
      */
+    const sourceNodeImpl = sourceNode as NodeImpl<any>
 
-    const border = sourceNode.borderRadius!
+    const border = sourceNodeImpl.borderRadius!
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)
 
-    const w = sourceNode.width!;
-    const h = sourceNode.height!;
+    const w = sourceNodeImpl.width!;
+    const h = sourceNodeImpl.height!;
     const x1 = sourcePos.x - w / 2, x2 = sourcePos.x + w / 2, y1 = sourcePos.y - h / 2, y2 = sourcePos.y + h / 2
 
     // If nodes overlap, draw the line between their centers
@@ -138,7 +139,7 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
         else return new DOMPoint(pos, y2)
     }
 
-    // Return something
+    // Return something, should never get here anyway
     return sourcePos
 }
 
@@ -150,7 +151,7 @@ export type EdgePath = {
 /**
  * Returns the EdgePath for a straight line edge
  */
-export function getStraightLinePath(a: DOMPoint, b: DOMPoint): EdgePath {
+export function getStraightEdgePath(a: DOMPoint, b: DOMPoint): EdgePath {
     return {
         path: `M ${a.x} ${a.y} L ${b.x} ${b.y}`,
         labelPosition: new DOMPoint((a.x + b.x) / 2, (a.y + b.y) / 2),

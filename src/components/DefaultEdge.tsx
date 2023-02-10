@@ -2,7 +2,7 @@ import {BaseEdge} from "./BaseEdge";
 import {Node} from "../data/Node";
 import {memo} from "react";
 import React from "react";
-import {getStraightLinePath} from "../util/EdgePath";
+import {getStraightEdgePath} from "../util/EdgePath";
 
 export interface EdgeProps<T> {
     source: Node<any>
@@ -43,6 +43,6 @@ export interface EdgeProps<T> {
 
 export const DefaultEdge = memo<EdgeProps<any>>(
     function DefaultEdge(props) {
-        return <BaseEdge {...props} {...getStraightLinePath(props.sourcePos, props.targetPos)} />
+        return <BaseEdge {...props} {...getStraightEdgePath(props.sourcePos, props.targetPos)} />
     }
 )

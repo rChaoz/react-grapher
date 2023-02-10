@@ -1,18 +1,20 @@
-import {Node, Nodes, NodesFunctions} from "../../data/Node";
+import {Node, NodeImpl, NodesFunctionsImpl, NodesImpl} from "../../data/Node";
 import React from "react";
 import {GrapherChange, isNodeChange} from "../../data/GrapherChange";
-import {unknownNode} from "../../util/log";
+import {errorUnknownNode} from "../../util/log";
 
 export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React.Dispatch<React.SetStateAction<Node<T>[]>>,
-                                               selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>): Nodes<T> {
-    const functions: NodesFunctions<T> = {
+                                               selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>,
+                                               map: Map<string, Node<T>>): NodesImpl<T> {
+    const functions: NodesFunctionsImpl<T> = {
         selection,
+        internalMap: map,
         multipleSelection: false,
         absolute(node: Node<any> | string): DOMPoint {
             if (typeof node === "string") {
                 const n = this.get(node)
                 if (n == null) {
-                    unknownNode(node)
+                    errorUnknownNode(node)
                     return new DOMPoint(0, 0)
                 } else node = n
             }
@@ -21,6 +23,9 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
                 const parent = this.absolute(node.parent)
                 return new DOMPoint(node.position.x + parent.x, node.position.y + parent.y)
             }
+        },
+        getSelection(): string[] {
+            return selection
         },
         setSelection(selected: string[]) {
             // Compare selections before updating first. This prevents useless re-renders when deselecting all multiple times, double-clicking nodes etc.
@@ -54,18 +59,28 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             }
         },
         clear() {
+            map.clear()
             setNodes([])
         },
         get(id: string): Node<T> | undefined {
-            return nodes.find(node => node.id === id)
+            return map.get(id)
         },
         set(newNodes: Node<T>[]) {
-            for (const node of newNodes) node.hasChanged = true
             setNodes(newNodes)
+            map.clear()
+            for (const node of newNodes) {
+                map.set(node.id, node)
+                node.hasChanged = true
+            }
         },
         add(newNode: Node<T> | Node<T>[]) {
-            if (Array.isArray(newNode)) for (const node of newNode) node.hasChanged = true
-            else newNode.hasChanged = true
+            if (Array.isArray(newNode)) for (const node of newNode) {
+                map.set(node.id, node)
+                node.hasChanged = true
+            } else {
+                map.set(newNode.id, newNode)
+                newNode.hasChanged = true
+            }
             setNodes(nodes => nodes.concat(newNode))
         },
         update(mapFunc: (node: Node<T>) => (Node<T> | null | undefined)) {
@@ -74,7 +89,12 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
                 for (const node of nodes) {
                     const r = mapFunc(node)
                     if (r != null) {
-                        if (r !== node) r.hasChanged = true
+                        if (r !== node) {
+                            // Use != instead of !== just in case someone might use try to use integers as IDs
+                            if (r.id != node.id) map.delete(node.id)
+                            map.set(r.id, r)
+                            r.hasChanged = true
+                        }
                         newNodes.push(r)
                     }
                 }
@@ -84,8 +104,9 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
         replace(targetID: string, replacement?: Node<T> | (<T>(node: Node<T>) => (Node<T> | null | undefined)) | null) {
             this.update(node => {
                 if (node.id === targetID) {
-                    if (typeof replacement === "function") replacement(node)
-                    else return replacement
+                    const newNode = typeof replacement === "function" ? replacement(node) : replacement
+                    if (newNode != null) newNode.hasChanged = true
+                    return newNode
                 } else return node
             })
         },
@@ -103,5 +124,5 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             if (changed) setNodes(n)
         },
     }
-    return Object.assign(nodes, functions)
+    return Object.assign(nodes as NodeImpl<T>[], functions)
 }

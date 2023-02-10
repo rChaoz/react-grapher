@@ -2,7 +2,7 @@ import {randomID} from "../util/randomID"
 import {GrapherChange} from "./GrapherChange";
 import {NodeProps} from "../components/DefaultNode";
 import React from "react";
-import {emptyID} from "../util/log";
+import {warnEmptyID} from "../util/log";
 
 export interface Node<T> {
     id: string
@@ -27,6 +27,9 @@ export interface Node<T> {
      * Used internally to detect when to re-calculate values for this node
      */
     hasChanged: boolean
+}
+
+export interface NodeImpl<T> extends Node<T> {
     /**
      * Automatically set during rendering. DOM Element for this node.
      */
@@ -57,7 +60,7 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
                               Component?: React.ExoticComponent<NodeProps<T>>): Node<T> {
     if (id === "" || id == null) {
         id = randomID()
-        emptyID(id)
+        warnEmptyID(id)
     }
     return {
         id: id,
@@ -85,25 +88,15 @@ export function createTextNode(text: string, position?: DOMPoint, id?: string): 
  */
 export interface NodesFunctions<T> {
     /**
-     * Automatically set during rendering. Bounding box of nodes, used when fitting view.
-     */
-    boundingRect?: DOMRect
-
-    /**
-     * Whether multiple selection is enabled (read-only). Change this using `config` prop of ReactGrapher
-     */
-    multipleSelection: boolean
-
-    /**
-     * Currently selected nodes IDs (read-only, use selection related functions to modify this).
-     */
-    selection: string[]
-
-    /**
      * Calculate absolute position of a node
      * @param node ID or Node object
      */
     absolute(node: Node<any> | string): DOMPoint
+
+    /**
+     * Gets currently selected nodes. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
+     */
+    getSelection(): string[]
 
     /**
      * Sets currently selected nodes
@@ -157,4 +150,25 @@ export interface NodesFunctions<T> {
     processChanges(changes: GrapherChange[]): void
 }
 
+export interface NodesFunctionsImpl<T> extends NodesFunctions<T> {
+    /**
+     * Automatically set during rendering. Bounding box of nodes, used when fitting view.
+     */
+    boundingRect?: DOMRect
+    /**
+     * Whether multiple selection is enabled.
+     */
+    multipleSelection: boolean
+    /**
+     * Currently selected nodes
+     */
+    selection: string[]
+    /**
+     * Internal map used to get node by ID
+     */
+    internalMap: Map<string, Node<T>>
+}
+
 export type Nodes<T> = NodesFunctions<T> & Node<T>[]
+
+export type NodesImpl<T> = NodesFunctionsImpl<T> & NodeImpl<T>[]

@@ -1,6 +1,6 @@
 import {randomID} from "../util/randomID";
 import {GrapherChange} from "./GrapherChange";
-import {emptyID} from "../util/log";
+import {warnEmptyID} from "../util/log";
 import React from "react";
 import {EdgeProps} from "../components/DefaultEdge";
 
@@ -43,6 +43,11 @@ export interface Edge<T> {
      * Label for this edge
      */
     label: string | undefined
+    /**
+     * Whether this edge has been selected by the user (read-only). You can access all selected edges using `Edges.selection`.
+     * You can modify the current selection using selection related functions on the Edges object.
+     */
+    selected: boolean
 }
 
 /**
@@ -59,7 +64,7 @@ export function createEdge<T>(source: string, target: string, {id, data, label, 
                               Component?: React.ExoticComponent<EdgeProps<T>>): Edge<T> {
     if (id === "" || id == null) {
         id = randomID()
-        emptyID(id)
+        warnEmptyID(id)
     }
     return {
         id,
@@ -69,6 +74,7 @@ export function createEdge<T>(source: string, target: string, {id, data, label, 
         target,
         data,
         label,
+        selected: false,
     }
 }
 
@@ -81,8 +87,24 @@ export function createSimpleEdge<T>(source: string, target: string, id?: string)
  * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
  * be registered.
  */
-export interface EdgesFunctions {
-    // TODO Bounding rect
+export interface EdgesFunctions<T> {
+    /**
+     * Gets currently selected edges. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
+     */
+    getSelection(): string[]
+
+    /**
+     * Sets currently selected edges
+     */
+    setSelection(selected: string[]): void
+
+    /**
+     * Selects/deselects an edge.
+     * @param node ID of the edge
+     * @param selected Whether to select or unselect the edge.
+     * @param newSelection If this parameter is true or `ReactGrapher` does not allow multiple selections and `selected` is true, previously selected edges are unselected.
+     */
+    setSelected(node: string, selected: boolean, newSelection?: boolean): void
 
     /**
      * Remove all edges
@@ -92,24 +114,24 @@ export interface EdgesFunctions {
     /**
      * Replace all existing edges
      */
-    set(newEdges: Edge<any>[]): void
+    set(newEdges: Edge<T>[]): void
 
     /**
      * Add one or more edges to the Graph
      */
-    add(newEdge: Edge<any> | Edge<any>[]): void
+    add(newEdge: Edge<T> | Edge<T>[]): void
 
     /**
      * Map in-place, return null/undefined to remove an edge
      */
-    update(mapFunc: (node: Edge<any>) => Edge<any> | null | undefined): void
+    update(mapFunc: (node: Edge<T>) => Edge<T> | null | undefined): void
 
     /**
      * Replace or remove an edge by ID
      * @param targetID ID of the edge you want to remove
      * @param replacement New edge or function that returns a new edge and receives the old edge (null to remove)
      */
-    replace(targetID: string, replacement?: Edge<any> | null | ((edge: Edge<any>) => Edge<any> | null | undefined)): void
+    replace(targetID: string, replacement?: Edge<T> | null | ((edge: Edge<T>) => Edge<T> | null | undefined)): void
 
     /**
      * Process given changes, updating this Edges list (ignores non-Edge changes)
@@ -117,4 +139,25 @@ export interface EdgesFunctions {
     processChanges(changes: GrapherChange[]): void
 }
 
-export type Edges<E> = EdgesFunctions & Edge<E>[]
+export interface EdgesFunctionsImpl<T> extends EdgesFunctions<T> {
+    /**
+     * Automatically set during rendering. Bounding box of edges used when fitting view.
+     */
+    boundingRect?: DOMRect
+    /**
+     * Whether multiple selection is enabled.
+     */
+    multipleSelection: boolean
+    /**
+     * Currently selected edges
+     */
+    selection: string[]
+    /**
+     * Internal map used to get edge by ID
+     */
+    internalMap: Map<string, Edge<T>>
+}
+
+export type Edges<T> = EdgesFunctions<T> & Edge<T>[]
+
+export type EdgesImpl<T> = EdgesFunctionsImpl<T> & Edge<T>[]

@@ -1,6 +1,6 @@
 import {Node, Nodes} from "../../data/Node";
 import {Edge, Edges} from "../../data/Edge";
-import {useState} from "react";
+import {useMemo, useState} from "react";
 import attachNodeFunctions from "./attachNodeFunctions";
 import attachEdgeFunctions from "./attachEdgeFunctions";
 
@@ -11,7 +11,15 @@ import attachEdgeFunctions from "./attachEdgeFunctions";
  */
 export function useGraphState<N, E>(initialNodes?: Node<N>[], initialEdges?: Edge<E>[]): { nodes: Nodes<N>, edges: Edges<E> } {
     const [nodes, setNodes] = useState(initialNodes ?? [])
-    const [selection, setSelection] = useState<string[]>([])
+    const [nodesSelection, setNodesSelection] = useState<string[]>([])
     const [edges, setEdges] = useState(initialEdges ?? [])
-    return {nodes: attachNodeFunctions(nodes, setNodes, selection, setSelection), edges: attachEdgeFunctions(edges, setEdges)}
+    const [edgesSelection, setEdgesSelection] = useState<string[]>([])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const nodesMap = useMemo(() => new Map(initialNodes?.map(node => [node.id, node])), [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const edgesMap = useMemo(() => new Map(initialEdges?.map(edge => [edge.id, edge])), [])
+    return {
+        nodes: attachNodeFunctions(nodes, setNodes, nodesSelection, setNodesSelection, nodesMap),
+        edges: attachEdgeFunctions(edges, setEdges, edgesSelection, setEdgesSelection, edgesMap),
+    }
 }
