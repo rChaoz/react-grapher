@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Node, Nodes, NodesImpl} from "../data/Node"
+import {Node, NodeImpl, Nodes, NodesImpl} from "../data/Node"
 import {Edge, Edges, EdgesImpl} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
@@ -11,7 +11,7 @@ import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from 
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
-import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownEdge, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
+import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
@@ -160,7 +160,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // and 2. ES lint will complain about useMemo dependencies otherwise
         if (updateEdges == 0) return []
         return edges.map(edge => {
-            const source = nodes.get(edge.source), target = nodes.get(edge.target)
+            const source = nodes.get(edge.source) as NodeImpl<any>, target = nodes.get(edge.target) as NodeImpl<any>
             if (source == null) {
                 errorUnknownNode(edge.source)
                 return
@@ -169,6 +169,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 errorUnknownNode(edge.target)
                 return
             }
+            if (source.element == null || target.element == null) return
             const Component = edge.Component ?? DefaultEdge
             // TODO Implement handles
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
@@ -181,6 +182,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     const ref = useRef<HTMLDivElement>(null)
 
     // On effect, create edges, update node dimensions and setup listeners
+    const [bounds, setBounds] = useState(new DOMRect())
     const onEvent = props.onEvent
     const onChange = props.onChange
     useEffect(() => {
@@ -470,6 +472,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         const nodesRect = nodes.length > 0 ? new DOMRect(
             nodes[0].position.x, nodes[0].position.y, 0, 0
         ) : new DOMRect()
+        const edgesRect = new DOMRect(nodesRect.x, nodesRect.y, 0, 0)
 
         let nodesChanged = false
         for (const node of nodes) {
@@ -488,8 +491,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 nodesChanged = true
             }
 
-            // Update bounding rect
-            const left = node.position.x - node.width! / 2, top = node.position.y - node.height! / 2, right = left + node.width!, bottom = top + node.height!
+            /* Update bounding rect
+            'right' needs to be x + width and not x + width/2 because nodes use translateX(-50%) to center themselves. This means, although its true 'right'
+            is indeed x + width/2, its layout 'right' does not take transforms into account. And, if the node's layout right is out of bounds, text inside the node
+            will start wrapping, and we don't want that! Same thing for 'bottom' - it needs to be y + height, not y + height/2. */
+            const left = node.position.x - node.width! / 2, right = node.position.x + node.width!
+            const top = node.position.y - node.height! / 2, bottom = node.position.y + node.height!
             if (left < nodesRect.left) {
                 const delta = nodesRect.left - left
                 nodesRect.x -= delta
@@ -508,8 +515,51 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             nodeElem.addEventListener("pointerup", onNodePointerUp)
         }
         nodes.boundingRect = nodesRect
-        // Re-render edges
+        // Re-render edges when nodes change in size
         if (nodesChanged) setUpdateEdges(value => value + 1)
+
+        // Same for edges
+        for (const edge of edges) {
+            const edgeElem = ref.current.querySelector<SVGGElement>(`#${id.replace(/:/g, "\\:")}-${edge.id}`)
+
+            if (edgeElem == null) {
+                // Edges are not rendered initially (as we need nodes' width, height, border radius...)
+                // So this is not an error usually
+                //errorUnknownEdge(edge.id)
+                continue
+            }
+
+            // Update bounding rect
+            const r = edgeElem.getBBox() as Pick<DOMRect, "x" | "y" | "width" | "height">
+            // We are not using r.left, r.top etc. because r is an SVGRect, not a DOMRect, like typescript suggests, and does not have these properties
+            if (r.x < edgesRect.left) {
+                const delta = edgesRect.left - r.x
+                edgesRect.x -= delta
+                edgesRect.width += delta
+            }
+            if (r.y < edgesRect.top) {
+                const delta = edgesRect.top - r.y
+                edgesRect.y -= delta
+                edgesRect.height += delta
+            }
+            if (r.x + r.width > edgesRect.right) edgesRect.width += r.x + r.width - edgesRect.right
+            if (r.y + r.height > edgesRect.bottom) edgesRect.height += r.y + r.height - edgesRect.bottom
+        }
+        edges.boundingRect = edgesRect
+
+        // Calculate the bigger rect and add some padding
+        const finalX = Math.min(nodesRect.x, edgesRect.x), finalY = Math.min(nodesRect.y, edgesRect.y)
+        const finalRect = new DOMRect(
+            finalX - 200,
+            finalY - 200,
+            Math.max(nodesRect.right, nodesRect.right) - finalX + 400,
+            Math.max(nodesRect.bottom, nodesRect.bottom) - finalY + 400,
+        )
+        // Update bounds state if bounds changed too much
+        if (Math.abs(finalRect.left - bounds.left) > 100 || Math.abs(finalRect.top - bounds.top) > 100
+            || Math.abs(finalRect.right - bounds.right) > 100 || Math.abs(finalRect.bottom - bounds.bottom) > 100)
+            setBounds(finalRect)
+
         // TODO Edges
 
         // Viewport-level listeners
@@ -545,7 +595,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             document.removeEventListener("pointerup", onPointerUp)
             document.removeEventListener("keydown", onKeyDown)
         }
-    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id, setUpdateEdges])
+    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id, setUpdateEdges, bounds])
 
     // Fit view
     useEffect(() => {
@@ -562,14 +612,13 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller])
 
-    const b = config.viewportBounds
-    return <BoundsContext.Provider value={b}><IDContext.Provider value={id}>
-        <GraphDiv ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
+    return <BoundsContext.Provider value={bounds}><IDContext.Provider value={id}>
+        <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
                 <Nodes nodesOverEdges={config.nodesOverEdges}>
                     {nodeElements}
                 </Nodes>
-                <Edges nodesOverEdges={config.nodesOverEdges} viewBox={`${b.x} ${b.y} ${b.width} ${b.height}`}>
+                <Edges nodesOverEdges={config.nodesOverEdges} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`}>
                     <defs>{/* TODO markers */}</ defs>
                     <g>{edgeElements}</g>
                 </Edges>

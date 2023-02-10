@@ -6,6 +6,7 @@ import {GrapherChange, isEdgeChange} from "../../data/GrapherChange";
 export default function attachEdgeFunctions<T>(edges: Edge<T>[], setEdges: React.Dispatch<React.SetStateAction<Edge<T>[]>>,
                                                selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>,
                                                map: Map<string, Edge<T>>): EdgesImpl<T> {
+    // TODO Update internal map
     const functions: EdgesFunctionsImpl<T> = {
         selection,
         internalMap: map,

@@ -11,6 +11,7 @@
 .react-grapher-node {
     border-radius: 16px;
     border: 2px solid;
+    margin: 2px;
     padding: 16px;
     user-select: none;
     font-weight: bold;

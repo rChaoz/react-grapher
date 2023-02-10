@@ -1,7 +1,6 @@
 import {BaseEdge} from "./BaseEdge";
 import {Node} from "../data/Node";
-import {memo} from "react";
-import React from "react";
+import React, {memo} from "react";
 import {getStraightEdgePath} from "../util/EdgePath";
 
 export interface EdgeProps<T> {

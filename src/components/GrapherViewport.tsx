@@ -1,4 +1,4 @@
-import React, {useContext, useRef} from "react";
+import React, {useContext} from "react";
 import {Controller} from "../data/Controller";
 import styled from "@emotion/styled";
 import {CONTENT_CLASS, VIEWPORT_CLASS} from "../util/Constants";
@@ -24,15 +24,16 @@ const ContentDiv = styled.div`
 `
 
 export function GrapherViewport(props: GrapherViewportProps) {
-    const ref = useRef<HTMLDivElement>(null)
     const bounds = useContext(BoundsContext)
     const viewport = props.controller.getViewport()
+    const dx = bounds.x - viewport.centerX, dy = bounds.y - viewport.centerY
 
-    return <BaseDiv ref={ref} className={VIEWPORT_CLASS}>
+    return <BaseDiv className={VIEWPORT_CLASS}>
         <ContentDiv className={CONTENT_CLASS} style={{
             width: bounds.width,
             height: bounds.height,
-            transform: `translate(${bounds.x}px, ${bounds.y}px) scale(${viewport.zoom}) translate(${-viewport.centerX}px, ${-viewport.centerY}px)`
+            transformOrigin: `${-dx}px ${-dy}px`,
+            transform: `translate(${dx}px, ${dy}px) scale(${viewport.zoom})`,
         }}>
             {props.children}
         </ContentDiv>

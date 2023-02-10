@@ -139,12 +139,6 @@ export interface GrapherConfig {
      * override, if needed, the configuration set here.
      */
     fitViewConfig?: GrapherFitViewConfig
-
-    /**
-     * Bounds for the viewport (in pixels). Defaults to a 10000 by 10000 square with x=-5000px and y=-5000. For most cases this shouldn't be changed, but
-     * you can make this bigger if nodes are at positions outside this square and are getting clipped / hidden.
-     */
-    viewportBounds?: DOMRect
     /**
      * If true, nodes will have a higher Z-Index than edges (will render on top of them).
      * Defaults to false.
@@ -156,7 +150,6 @@ export interface GrapherConfigSet {
     viewportControls: Required<GrapherViewportControls>
     userControls: Required<GrapherUserControls>
     fitViewConfig: GrapherFitViewConfigSet
-    viewportBounds: DOMRect
     nodesOverEdges: boolean
 }
 
@@ -167,7 +160,6 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         viewportControls: withDefaultsViewportControls(config?.viewportControls),
         userControls: withDefaultsUserControls(config?.userControls),
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
-        viewportBounds: config?.viewportBounds ?? new DOMRect(-5000, -5000, 10000, 10000),
         nodesOverEdges: config?.nodesOverEdges ?? false,
     }
 }

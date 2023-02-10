@@ -20,11 +20,11 @@ export function errorDOMNodeUnknownID(node: EventTarget | null, id?: string | nu
 }
 
 export function errorUnknownNode(id: string) {
-    error("Error: unable to find node with ID: ", id)
+    error(`Error: unable to find node with ID ${id}`)
 }
 
 export function errorUnknownEdge(id: string) {
-    error("Error: unable to find edge with ID: ", id)
+    error(`Error: unable to find edge with ID ${id}`)
 }
 
 export function criticalNoViewport() {
