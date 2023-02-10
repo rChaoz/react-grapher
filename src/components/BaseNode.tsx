@@ -32,11 +32,8 @@ export interface BaseNodeProps {
     children: React.ReactNode
 }
 
-const BaseDiv = styled.div<Pick<BaseNodeProps, "absolutePosition" | "selected" | "grabbed"> & { bounds: DOMRect }>`
+const BaseDiv = styled.div`
   position: absolute;
-  z-index: ${props => props.grabbed ? "1" : "auto"};
-  left: ${props => props.absolutePosition.x - props.bounds.x}px;
-  top: ${props => props.absolutePosition.y - props.bounds.y}px;
   transform: translate(-50%, -50%);
 `
 
@@ -45,8 +42,11 @@ export const BaseNode = memo<BaseNodeProps>(
         const baseID = useContext(IDContext)
         const bounds = useContext(BoundsContext)
 
-        return <BaseDiv id={`${baseID}-${id}`} absolutePosition={absolutePosition} className={cx([...classes], NODE_CLASS)}
-                        selected={selected} data-selected={selected} bounds={bounds} grabbed={grabbed} data-grabbed={grabbed}>
+        return <BaseDiv id={`${baseID}-${id}`} className={cx([...classes], NODE_CLASS)} data-selected={selected} data-grabbed={grabbed} style={{
+            zIndex: grabbed ? 1 : "auto",
+            left: absolutePosition.x - bounds.x,
+            top: absolutePosition.y - bounds.y,
+        }}>
             {children}
         </BaseDiv>
     }
