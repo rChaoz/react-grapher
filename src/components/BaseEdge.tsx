@@ -1,7 +1,7 @@
 import React, {memo, useContext} from "react";
 import IDContext from "../context/IDContext";
 import {cx} from "@emotion/css";
-import {EDGE_CLASS, EDGE_MARKER_START, EDGE_MARKER_END, EDGE_PATH_CLASS, EDGE_LABEL_CLASS} from "../util/constants";
+import {EDGE_CLASS, EDGE_PATH_CLASS, EDGE_LABEL_CLASS} from "../util/constants";
 
 export interface BaseEdgeProps {
     /**
@@ -17,13 +17,13 @@ export interface BaseEdgeProps {
      */
     path: string
     /**
-     * ID of the custom SVG marker or true for the default arrow tip. False/undefined means no marker.
+     * ID of the predefined/custom SVG marker.
      */
-    markerStart?: boolean | string
+    markerStart?: string
     /**
-     * ID of the custom SVG marker or true for the default arrow tip. False/undefined means no marker.
+     * ID of the predefined/custom SVG marker.
      */
-    markerEnd?: boolean | string
+    markerEnd?: string
     /**
      * Label text
      */
@@ -40,9 +40,9 @@ export const BaseEdge = memo<BaseEdgeProps>(
 
         return <g id={`${baseID}e-${id}`} className={cx([...classes], EDGE_CLASS)}>
             <path d={path} className={EDGE_PATH_CLASS} markerStart={
-                markerStart === true ? baseID + EDGE_MARKER_START : typeof markerStart === "string" ? markerStart : undefined
+                markerStart != null ? `url(#${baseID}-${markerStart})` : undefined
             } markerEnd={
-                markerEnd === true ? baseID + EDGE_MARKER_END : typeof markerEnd === "string" ? markerEnd : undefined
+                markerEnd != null ? `url(#${baseID}-${markerEnd})` : undefined
             }/>
             {label && labelPosition && <text className={EDGE_LABEL_CLASS} x={labelPosition.x} y={labelPosition.y} textAnchor={"middle"}>{label}</text>}
         </g>

@@ -26,6 +26,10 @@ export interface Node<T> {
      */
     position: DOMPoint
     /**
+     * Spacing between this node and the edges that connect to it. Defaults to 3
+     */
+    edgeMargin: number
+    /**
      * Whether this node has been selected by the user (read-only). You can access all selected nodes using `Nodes.selection`.
      * You can modify the current selection using selection related functions on the Nodes object.
      */
@@ -74,6 +78,10 @@ export interface NodeData<T> {
      * Y coordinate of this node's position.
      */
     y?: number
+    /**
+     * Spacing between this node and the edges that connect to it. Defaults to 3
+     */
+    edgeMargin?: number
 }
 
 export function createNode<T>(data: NodeData<T>): Node<T> {
@@ -86,6 +94,7 @@ export function createNode<T>(data: NodeData<T>): Node<T> {
         classes: new Set(data.classes),
         selected: false,
         position: new DOMPoint(data.x, data.y),
+        edgeMargin: data.edgeMargin ?? 3,
 
         width: 0,
         height: 0,

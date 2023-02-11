@@ -7,7 +7,16 @@ import {useGraphState} from "../hooks/useGraphState";
 import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
-import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from "../util/constants";
+import {
+    MARKER_ARROW_CLASS,
+    MARKER_ARROW_FILLED_CLASS,
+    MARKER_ARROW_FILLED_ID,
+    MARKER_ARROW_ID,
+    REACT_GRAPHER_CLASS,
+    VIEWPORT_CLASS,
+    Z_INDEX_EDGES,
+    Z_INDEX_NODES
+} from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
@@ -68,6 +77,10 @@ export interface CommonGraphProps {
      * or cancel them entirely.
      */
     onChange?: (changes: GrapherChange[]) => GrapherChange[] | undefined | void
+    /**
+     * Custom markers to be used for Edges. Will be placed inside the SVG's `<defs>` element.
+     */
+    customMarkers?: React.ReactNode
 }
 
 export interface ControlledGraphProps<N, E> extends CommonGraphProps {
@@ -174,7 +187,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // TODO Implement handles
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
             const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position
-            return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}/>
+            return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
+                              markerStart={edge.markerStart} markerEnd={edge.markerEnd}/>
         })
     }, [edges, nodes, updateEdges])
 
@@ -619,7 +633,15 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     {nodeElements}
                 </Nodes>
                 <Edges nodesOverEdges={config.nodesOverEdges} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`}>
-                    <defs>{/* TODO markers */}</ defs>
+                    <defs>
+                        <marker id={`${id}-${MARKER_ARROW_FILLED_ID}`} className={MARKER_ARROW_FILLED_CLASS} viewBox={"0 0 14 14"} refX={5} refY={7} orient={"auto-start-reverse"}>
+                            <path d={"M 0 0 l 10 7 l -10 7 z"}/>
+                        </marker>
+                        <marker id={`${id}-${MARKER_ARROW_ID}`} className={MARKER_ARROW_CLASS} viewBox={"-2 -2 14 14"} refX={6} refY={5} orient={"auto-start-reverse"}>
+                            <path d={"M 0 0 l 8 5 l -8 5"}/>
+                        </marker>
+                        {props.customMarkers}
+                    </defs>
                     <g>{edgeElements}</g>
                 </Edges>
             </GrapherViewport>

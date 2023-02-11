@@ -23,13 +23,13 @@ export interface EdgeProps<T> {
      */
     classes: Set<string>
     /**
-     * ID of the custom SVG marker or true for the default arrow tip. False/undefined means no marker.
+     * ID of the predefined/custom SVG marker.
      */
-    markerStart?: boolean | string
+    markerStart?: string
     /**
-     * ID of the custom SVG marker or true for the default arrow tip. False/undefined means no marker.
+     * ID of the predefined/custom SVG marker.
      */
-    markerEnd?: boolean | string
+    markerEnd?: string
     /**
      * Label text
      */

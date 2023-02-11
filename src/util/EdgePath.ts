@@ -54,8 +54,8 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)
 
-    const w = sourceNodeImpl.width!;
-    const h = sourceNodeImpl.height!;
+    const w = sourceNodeImpl.width! + sourceNode.edgeMargin;
+    const h = sourceNodeImpl.height! + sourceNode.edgeMargin;
     const x1 = sourcePos.x - w / 2, x2 = sourcePos.x + w / 2, y1 = sourcePos.y - h / 2, y2 = sourcePos.y + h / 2
 
     // If nodes overlap, draw the line between their centers

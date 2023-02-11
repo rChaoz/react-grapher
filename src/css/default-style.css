@@ -42,9 +42,26 @@
     border-width: 3px;
 }
 
+.react-grapher-node-handle {
+    background-color: black;
+    border: 1px solid white;
+}
+
 .react-grapher-edge-path {
     fill: transparent;
     stroke: var(--react-grapher-edge-color);
     stroke-width: var(--react-grapher-edge-stroke-width);
     stroke-linecap: round
+}
+
+.react-grapher-marker-arrow {
+    fill: transparent;
+    stroke: var(--react-grapher-edge-color);
+    stroke-width: var(--react-grapher-edge-stroke-width);
+    stroke-linecap: round;
+}
+
+.react-grapher-marker-arrow-filled {
+    fill: var(--react-grapher-edge-color);
+    stroke: transparent;
 }
