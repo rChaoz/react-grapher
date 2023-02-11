@@ -1,7 +1,7 @@
 import React, {memo, useContext} from "react";
 import IDContext from "../context/IDContext";
 import {cx} from "@emotion/css";
-import {EDGE_CLASS, EDGE_MARKER_START, EDGE_MARKER_END, EDGE_PATH_CLASS, EDGE_LABEL_CLASS} from "../util/Constants";
+import {EDGE_CLASS, EDGE_MARKER_START, EDGE_MARKER_END, EDGE_PATH_CLASS, EDGE_LABEL_CLASS} from "../util/constants";
 
 export interface BaseEdgeProps {
     /**

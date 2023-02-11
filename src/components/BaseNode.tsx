@@ -1,7 +1,7 @@
 import React, {memo, useContext} from "react";
 import styled from "@emotion/styled";
 import {cx} from "@emotion/css";
-import {NODE_CLASS} from "../util/Constants";
+import {NODE_CLASS} from "../util/constants";
 import IDContext from "../context/IDContext";
 import BoundsContext from "../context/BoundsContext";
 

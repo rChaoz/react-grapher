@@ -1,7 +1,7 @@
 import React, {useContext} from "react";
 import {Controller} from "../data/Controller";
 import styled from "@emotion/styled";
-import {CONTENT_CLASS, VIEWPORT_CLASS} from "../util/Constants";
+import {CONTENT_CLASS, VIEWPORT_CLASS} from "../util/constants";
 import BoundsContext from "../context/BoundsContext";
 
 export interface GrapherViewportProps {

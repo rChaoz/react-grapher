@@ -7,7 +7,7 @@ import {useGraphState} from "../hooks/useGraphState";
 import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
-import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from "../util/Constants";
+import {REACT_GRAPHER_CLASS, VIEWPORT_CLASS, Z_INDEX_EDGES, Z_INDEX_NODES} from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
