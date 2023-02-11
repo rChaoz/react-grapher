@@ -19,5 +19,11 @@ export const EDGE_MARKER_END = "-marker-end"
 // Flipped if config option "nodesOverEdges" is enabled
 export const Z_INDEX_BACKGROUND = 1
 export const Z_INDEX_INTERFACE = 7
+/**
+ * 5 if config option "nodesOverEdges" is enabled
+  */
 export const Z_INDEX_NODES = 3
+/**
+ * 3 if config option "nodesOverEdges" is enabled
+ */
 export const Z_INDEX_EDGES = 5

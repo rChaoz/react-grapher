@@ -1,6 +1,4 @@
-import {randomID} from "../util/utils";
 import {GrapherChange} from "./GrapherChange";
-import {warnEmptyID} from "../util/log";
 import React from "react";
 import {EdgeProps} from "../components/DefaultEdge";
 
@@ -9,7 +7,14 @@ import {EdgeProps} from "../components/DefaultEdge";
  */
 export interface Edge<T> {
     id: string
+    /**
+     * Custom component for rendering the edge, to replace `DefaultEdge`.
+     */
     Component?: React.ExoticComponent<EdgeProps<T>>
+    /**
+     * CSS classes that will be passed to the DefaultEdge/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
+     * By default, these classes are kept as-is.
+     */
     classes: Set<string>
     /**
      * ID of source node
@@ -28,21 +33,21 @@ export interface Edge<T> {
      */
     target: string
     /**
+     * Label for this edge
+     */
+    label?: string
+    /**
      * Custom data this edge can hold
      */
     data?: T
     /**
-     * ID of the custom SVG marker or true for the default arrow tip. False/undefined means no marker.
+     * ID of the predefined/custom SVG marker.
      */
-    markerStart?: boolean | string
+    markerStart?: string
     /**
-     * ID of the custom SVG marker or true for the default arrow tip. False/undefined means no marker.
+     * ID of the predefined/custom SVG marker.
      */
-    markerEnd?: boolean | string
-    /**
-     * Label for this edge
-     */
-    label: string | undefined
+    markerEnd?: string
     /**
      * Whether this edge has been selected by the user (read-only). You can access all selected edges using `Edges.selection`.
      * You can modify the current selection using selection related functions on the Edges object.
@@ -50,36 +55,57 @@ export interface Edge<T> {
     selected: boolean
 }
 
-/**
- * Create a new edge between 2 nodes
- * @param source Source node ID
- * @param target Target node ID
- * @param id ID of this edge (defaults to random alphanumerical sequence)
- * @param data Custom data that you may want to store for this edge
- * @param label Label for the edge
- * @param classes Array of class names to be passed to the Edge component
- * @param Component Custom component function for rendering this edge
- */
-export function createEdge<T>(source: string, target: string, {id, data, label, classes}: {id?: string, data?: T, label?: string, classes?: string[]},
-                              Component?: React.ExoticComponent<EdgeProps<T>>): Edge<T> {
-    if (id === "" || id == null) {
-        id = randomID()
-        warnEmptyID(id)
-    }
-    return {
-        id,
-        Component,
-        classes: new Set(classes),
-        source,
-        target,
-        data,
-        label,
-        selected: false,
-    }
+export interface EdgeData<T> {
+    id: string
+    /**
+     * Custom component for rendering the edge, to replace `DefaultEdge`.
+     */
+    Component?: React.ExoticComponent<EdgeProps<T>>
+    /**
+     * CSS classes that will be passed to the DefaultEdge/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
+     * By default, these classes are kept as-is.
+     */
+    classes?: string[]
+    /**
+     * ID of source node
+     */
+    source: string
+    /**
+     * Name of the handle of the source node (null for floating edge)
+     */
+    sourceHandle?: string | null
+    /**
+     * Name of the handle of the target node (null for floating edge)
+     */
+    targetHandle?: string | null
+    /**
+     * ID of target node
+     */
+    target: string
+    /**
+     * Label for this edge
+     */
+    label?: string
+    /**
+     * Custom data this edge can hold
+     */
+    data?: T
+    /**
+     * ID of the predefined/custom SVG marker.
+     */
+    markerStart?: string
+    /**
+     * ID of the predefined/custom SVG marker.
+     */
+    markerEnd?: string
 }
 
-export function createSimpleEdge<T>(source: string, target: string, id?: string): Edge<T> {
-    return createEdge(source, target, {id})
+export function createEdge<T>(data: EdgeData<T>): Edge<T> {
+    return {...data, selected: false, classes: new Set(data.classes)}
+}
+
+export function createEdges<T>(data: EdgeData<T>[] | undefined): Edge<T>[] {
+    return data?.map(d => createEdge(d)) ?? []
 }
 
 /**

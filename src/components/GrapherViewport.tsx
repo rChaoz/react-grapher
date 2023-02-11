@@ -20,7 +20,6 @@ const ContentDiv = styled.div`
   position: absolute;
   top: 50%;
   left: 50%;
-  outline: 5px black solid;
 `
 
 export function GrapherViewport(props: GrapherViewportProps) {

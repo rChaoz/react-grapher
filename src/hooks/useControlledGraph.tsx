@@ -1,6 +1,6 @@
 import React from "react";
-import {Node, Nodes} from "../data/Node";
-import {Edge, Edges} from "../data/Edge";
+import {NodeData, Nodes} from "../data/Node";
+import {EdgeData, Edges} from "../data/Edge";
 import {Controller} from "../data/Controller";
 import {ControlledGraphProps, ReactGrapher} from "../components/ReactGrapher";
 import {useGraphState} from "./useGraphState";
@@ -19,7 +19,7 @@ export type HookGraphProps<N, E> = Omit<ControlledGraphProps<N, E>, "nodes" | "e
 /**
  * Combination of `useGraphState()` and `useController()`. Also returns a Grapher component that has `nodes`, `edges` and `controller` props pre-set.
  */
-export function useControlledGraph<N, E>(initialNodes?: Node<N>[], initialEdges?: Edge<E>[]): GraphState<N, E> {
+export function useControlledGraph<N, E>(initialNodes?: NodeData<N>[], initialEdges?: EdgeData<E>[]): GraphState<N, E> {
     const {nodes, edges} = useGraphState(initialNodes, initialEdges)
     const controller = useController()
 

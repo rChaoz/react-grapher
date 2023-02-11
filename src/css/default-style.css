@@ -6,6 +6,11 @@
     --react-grapher-node-border: #ff550a;
     --react-grapher-node-border-selected: white;
     --react-grapher-node-color: white;
+
+    --react-grapher-edge-stroke-width: 3px;
+    --react-grapher-edge-color: #858484;
+    --react-grapher-edge-color-hover: #ada7a7;
+    --react-grapher-edge-color-active: #656363;
 }
 
 .react-grapher-node {
@@ -39,7 +44,7 @@
 
 .react-grapher-edge-path {
     fill: transparent;
-    stroke: gray;
-    stroke-width: 3px;
+    stroke: var(--react-grapher-edge-color);
+    stroke-width: var(--react-grapher-edge-stroke-width);
     stroke-linecap: round
 }

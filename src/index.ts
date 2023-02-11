@@ -2,8 +2,8 @@
 import {GrapherConfig, GrapherUserControls, GrapherViewportControls, GrapherFitViewConfig} from "./data/GrapherConfig";
 import {Controller} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
-import {Node, Nodes, createNode, createTextNode} from "./data/Node";
-import {Edge, Edges, createEdge, createSimpleEdge} from "./data/Edge";
+import {Node, NodeData, Nodes, createNode, createNodes} from "./data/Node";
+import {Edge, EdgeData, Edges, createEdge, createEdges} from "./data/Edge";
 import {GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange} from "./data/GrapherChange";
 import {GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent, KeyEvent} from "./data/GrapherEvent";
 // Hooks
@@ -20,14 +20,13 @@ import {BaseEdge, BaseEdgeProps} from "./components/BaseEdge";
 import {DefaultEdge, EdgeProps} from "./components/DefaultEdge";
 // Other
 import {EdgePath, getNodeIntersection, getStraightEdgePath} from "./util/EdgePath";
-import {randomID} from "./util/utils";
 
 export {
     // Data
     GrapherConfig, GrapherUserControls, GrapherViewportControls, GrapherFitViewConfig,
     Controller, Viewport,
-    Node, Nodes, createNode, createTextNode,
-    Edge, Edges, createEdge, createSimpleEdge,
+    Node, NodeData, Nodes,
+    Edge, EdgeData, Edges,
     GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange,
     GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent, KeyEvent,
     // Hooks
@@ -35,9 +34,8 @@ export {
     // React Grapher
     ReactGrapher, GrapherViewport,
     // Sub-components
-    BaseNode, BaseNodeProps, DefaultNode, NodeProps,
-    BaseEdge, BaseEdgeProps, DefaultEdge, EdgeProps,
+    BaseNode, BaseNodeProps, DefaultNode, NodeProps, createNode, createNodes,
+    BaseEdge, BaseEdgeProps, DefaultEdge, EdgeProps, createEdge, createEdges,
     // Others
     EdgePath, getNodeIntersection, getStraightEdgePath,
-    randomID,
 }

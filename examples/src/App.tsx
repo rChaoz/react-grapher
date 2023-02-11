@@ -1,5 +1,5 @@
 import React from 'react';
-import {createTextNode, createSimpleEdge, ReactGrapher} from "reactgrapher";
+import {ReactGrapher} from "reactgrapher";
 import "reactgrapher/dist/default-style.css"
 import "./App.css"
 
@@ -12,11 +12,15 @@ export default function App() {
             height: 400,
         }}>
             <ReactGrapher defaultNodes={[
-                createTextNode("0", new DOMPoint(0, 0), "0"),
-                createTextNode("1", new DOMPoint(0, 100), "1"),
-                createTextNode("2", new DOMPoint(100, 0), "2"),
-                createTextNode("3", new DOMPoint(100, 100), "3"),
-            ]} defaultEdges={[createSimpleEdge("0", "1"), createSimpleEdge("0", "2"), createSimpleEdge("3", "2")]}/>
+                {id: "0", x: 0, y: 0, data: "0"},
+                {id: "1", x: 0, y: 100, data: "1"},
+                {id: "2", x: 100, y: 0, data: "2"},
+                {id: "3", x: 100, y: 100, data: "3"},
+            ]} defaultEdges={[
+                {id: "0", source: "0", target: "1", markerStart: "arrow", markerEnd: "arrow-filled"},
+                {id: "1", source: "0", target: "2", markerEnd: "arrow"},
+                {id: "2", source: "3", target: "2", markerEnd: "arrow"},
+            ]}/>
         </div>
     </div>
 }

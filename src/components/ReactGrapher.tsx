@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {Node, NodeImpl, Nodes, NodesImpl} from "../data/Node"
-import {Edge, Edges, EdgesImpl} from "../data/Edge";
+import {NodeData, NodeImpl, Nodes, NodesImpl} from "../data/Node"
+import {EdgeData, Edges, EdgesImpl} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
 import {useGraphState} from "../hooks/useGraphState";
@@ -76,8 +76,8 @@ export interface ControlledGraphProps<N, E> extends CommonGraphProps {
 }
 
 export interface UncontrolledGraphProps<N, E> extends CommonGraphProps {
-    defaultNodes?: Node<N>[]
-    defaultEdges?: Edge<E>[]
+    defaultNodes?: NodeData<N>[]
+    defaultEdges?: EdgeData<E>[]
 }
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
@@ -128,7 +128,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
         const useID = React.useId
         // eslint-disable-next-line react-hooks/rules-of-hooks
-        if (typeof useID === "function") id = useID()
+        if (typeof useID === "function") id = useID().replace(/:/g, "-") // replace ':' with '-' as ':' is not a valid CSS selector character
         else {
             id = "react-grapher"
             warnNoReactGrapherID()
@@ -191,7 +191,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         // Node level
         function onNodePointerDown(event: PointerEvent) {
-            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 1)
+            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 2)
             const node = nodeID != null ? nodes.get(nodeID) : null
             if (node == null) {
                 errorDOMNodeUnknownID(event.currentTarget, nodeID)
@@ -221,7 +221,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         }
 
         function onNodePointerUp(event: PointerEvent) {
-            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 1)
+            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 2)
             const node = nodeID ? nodes.get(nodeID) : null
             if (node == null) {
                 errorDOMNodeUnknownID(event.currentTarget, nodeID)
@@ -476,7 +476,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         let nodesChanged = false
         for (const node of nodes) {
-            const nodeElem = ref.current.querySelector<HTMLElement>(`#${id.replace(/:/g, "\\:")}-${node.id}`)
+            const nodeElem = ref.current.querySelector<HTMLElement>(`#${id}n-${node.id}`)
             if (nodeElem == null) {
                 errorUnknownNode(node.id)
                 continue
@@ -520,7 +520,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         // Same for edges
         for (const edge of edges) {
-            const edgeElem = ref.current.querySelector<SVGGElement>(`#${id.replace(/:/g, "\\:")}-${edge.id}`)
+            const edgeElem = ref.current.querySelector<SVGGElement>(`#${id}e-${edge.id}`)
 
             if (edgeElem == null) {
                 // Edges are not rendered initially (as we need nodes' width, height, border radius...)

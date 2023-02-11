@@ -1,16 +1,23 @@
-import {randomID} from "../util/utils"
 import {GrapherChange} from "./GrapherChange";
 import {NodeProps} from "../components/DefaultNode";
 import React from "react";
-import {warnEmptyID} from "../util/log";
 
 export interface Node<T> {
     id: string
+    /**
+     * Custom component for rendering the edge, to replace `DefaultNode`.
+     */
     Component?: React.ExoticComponent<NodeProps<T>>
+    /**
+     * Parent of this node. If non-null, its position will be relative to the center of this node.
+     */
     parent?: string | null
+    /**
+     * Custom data for this node. The default node implementation displays this value as a string.
+     */
     data: T
     /**
-     * CSS classes that will be passed to the DefaultNode component function. Ultimately, the component function decides what classes it adds to the DOM element.
+     * CSS classes that will be passed to the DefaultNode/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
      * By default, these classes are kept as-is.
      */
     classes: Set<string>
@@ -40,28 +47,45 @@ export interface NodeImpl<T> extends Node<T> {
     height: number
 }
 
-/**
- * Create a node with provided data.
- * @param id ID of the node, defaults to random alfa-numerical sequence
- * @param position Position of the Node, defaults to 0, 0
- * @param data Data passed to Node component, default implementation just displays a label with value of `String(data)`
- * @param classes Array of class names to be passed to the Node component
- * @param Component Custom component function for rendering this node
- */
-export function createNode<T>({id, position, data, classes}: { id?: string, position?: DOMPoint, data: T, classes?: string[] },
-                              Component?: React.ExoticComponent<NodeProps<T>>): Node<T> {
-    if (id === "" || id == null) {
-        id = randomID()
-        warnEmptyID(id)
-    }
+export interface NodeData<T> {
+    id: string
+    /**
+     * Custom component for rendering the edge, to replace `DefaultNode`.
+     */
+    Component?: React.ExoticComponent<NodeProps<T>>
+    /**
+     * Parent of this node. If non-null, its position will be relative to the center of this node.
+     */
+    parent?: string | null
+    /**
+     * Custom data for this node. The default node implementation displays this value as a string.
+     */
+    data: T
+    /**
+     * CSS classes that will be passed to the DefaultNode/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
+     * By default, these classes are kept as-is.
+     */
+    classes?: string[]
+    /**
+     * X coordinate of this node's position.
+     */
+    x?: number
+    /**
+     * Y coordinate of this node's position.
+     */
+    y?: number
+}
+
+export function createNode<T>(data: NodeData<T>): Node<T> {
     // noinspection UnnecessaryLocalVariableJS, we do this to get type checking for NodeImpl
     const node: NodeImpl<any> = {
-        id: id,
-        Component,
-        position: position ?? new DOMPoint(0, 0),
-        data,
-        classes: new Set(classes),
+        id: data.id,
+        data: data.data,
+        Component: data.Component,
+        parent: data.parent,
+        classes: new Set(data.classes),
         selected: false,
+        position: new DOMPoint(data.x, data.y),
 
         width: 0,
         height: 0,
@@ -69,11 +93,8 @@ export function createNode<T>({id, position, data, classes}: { id?: string, posi
     return node
 }
 
-/**
- * Create a new Node with default values and provided string as its data.
- */
-export function createTextNode(text: string, position?: DOMPoint, id?: string): Node<string> {
-    return createNode({data: text, position, id})
+export function createNodes<T>(data: NodeData<T>[] | undefined): Node<T>[] {
+    return data?.map(d => createNode(d)) ?? []
 }
 
 /**

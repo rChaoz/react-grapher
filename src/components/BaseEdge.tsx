@@ -38,7 +38,7 @@ export const BaseEdge = memo<BaseEdgeProps>(
     function BaseEdge({id, classes, path, markerStart, markerEnd, label, labelPosition}) {
         const baseID = useContext(IDContext)
 
-        return <g id={`${baseID}-${id}`} className={cx([...classes], EDGE_CLASS)}>
+        return <g id={`${baseID}e-${id}`} className={cx([...classes], EDGE_CLASS)}>
             <path d={path} className={EDGE_PATH_CLASS} markerStart={
                 markerStart === true ? baseID + EDGE_MARKER_START : typeof markerStart === "string" ? markerStart : undefined
             } markerEnd={

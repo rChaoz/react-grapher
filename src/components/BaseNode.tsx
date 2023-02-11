@@ -42,7 +42,7 @@ export const BaseNode = memo<BaseNodeProps>(
         const baseID = useContext(IDContext)
         const bounds = useContext(BoundsContext)
 
-        return <BaseDiv id={`${baseID}-${id}`} className={cx([...classes], NODE_CLASS)} data-selected={selected} data-grabbed={grabbed} style={{
+        return <BaseDiv id={`${baseID}n-${id}`} className={cx([...classes], NODE_CLASS)} data-selected={selected} data-grabbed={grabbed} style={{
             zIndex: grabbed ? 1 : "auto",
             left: absolutePosition.x - bounds.x,
             top: absolutePosition.y - bounds.y,

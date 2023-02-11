@@ -10,10 +10,6 @@ export function warnNoReactGrapherID() {
     warn("No ID provided to the ReactGrapher component. This could lead to errors if multiple ReactGrapher components are used on the same page.")
 }
 
-export function warnEmptyID(id: string) {
-    warn("Empty ID is not recommended. You should specify IDs for controlled graphs. ID was replaced with " + id)
-}
-
 export function errorDOMNodeUnknownID(node: EventTarget | null, id?: string | null) {
     error("DOM Node has unknown ID: " + (id ?? "<empty>"))
     console.error("DOM Node: ",  node)
