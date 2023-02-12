@@ -70,7 +70,21 @@ export interface CommonGraphProps {
     /**
      * Fit view when the DOM element's size changes
      */
-    fitViewOnResize?: boolean, // TODO
+    fitViewOnResize?: boolean // TODO
+    /**
+     * This config option will make the graph completely static, by implementing the following changes:
+     * - set config.hideControls = true (if undefined)
+     * - set config.fitViewConfig.abideMinMaxZoom = false (if undefined)
+     * - do not attach any pointer/key listeners
+     *
+     * Additionally, if not already set (if undefined), the following props will be set:
+     * - fitView -> "always"
+     * - fitViewOnResize -> true
+     *
+     * This is meant to be used when you want to display a graph (e.g. for a preview), but without any user interaction. By default, the view will be permanently fitted, but
+     * if you manually set fitView/fitViewOnResize props, they will not be overridden, allowing you to manually call `controller.fitView()` when needed.
+     */
+    static?: boolean
     /**
      * Listen to events such as nodes being clicked, selected
      */
@@ -119,7 +133,19 @@ const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
 
 export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
     // Get default config and prevent config object from being created every re-render
-    const config = useMemo(() => withDefaultsConfig(props.config), [props.config])
+    // Also apply settings for static graph if static prop is set
+    const config = useMemo(() => {
+        const c = withDefaultsConfig(props.config)
+        if (props.static) {
+            if (props.config?.hideControls === undefined) c.hideControls = true
+            if (props.config?.fitViewConfig?.abideMinMaxZoom === undefined) c.fitViewConfig.abideMinMaxZoom = false
+        }
+        return c
+    }, [props.config, props.static])
+    if (props.static) {
+        if (props.fitView === undefined) props.fitView = "always"
+        if (props.fitViewOnResize === undefined) props.fitViewOnResize = true
+    }
 
     let nodes: NodesImpl<N>
     let edges: EdgesImpl<E>
@@ -531,8 +557,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (bottom > nodesRect.bottom) nodesRect.height += bottom - nodesRect.bottom
 
             // Set listeners
-            nodeElem.addEventListener("pointerdown", onNodePointerDown)
-            nodeElem.addEventListener("pointerup", onNodePointerUp)
+            if (!props.static) {
+                nodeElem.addEventListener("pointerdown", onNodePointerDown)
+                nodeElem.addEventListener("pointerup", onNodePointerUp)
+            }
         }
         nodes.boundingRect = nodesRect
         // Re-render edges when nodes change in size
@@ -585,19 +613,21 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
         if (viewportElem == null) criticalNoViewport()
-        else {
+        else if (!props.static) {
             viewportElem.addEventListener("pointerdown", onViewportPointerDown)
             viewportElem.addEventListener("pointerup", onViewportPointerUp)
             viewportElem.addEventListener("wheel", onViewportWheel)
         }
 
         // Document-level listeners
-        document.addEventListener("pointermove", onPointerMove)
-        document.addEventListener("pointerup", onPointerUp)
-        document.addEventListener("keydown", onKeyDown)
+        if (!props.static) {
+            document.addEventListener("pointermove", onPointerMove)
+            document.addEventListener("pointerup", onPointerUp)
+            document.addEventListener("keydown", onKeyDown)
+        }
 
         // Cleanup
-        return () => {
+        if (!props.static) return () => {
             // Remove node listeners
             for (const node of nodes) {
                 if (node.element == null) continue
@@ -615,7 +645,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             document.removeEventListener("pointerup", onPointerUp)
             document.removeEventListener("keydown", onKeyDown)
         }
-    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id, setUpdateEdges, bounds])
+    }, [nodes, edges, onEvent, onChange, controller, config, grabbed, id, setUpdateEdges, bounds, props.static])
 
     // Fit view
     useEffect(() => {

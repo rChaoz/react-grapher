@@ -144,6 +144,11 @@ export interface GrapherConfig {
      * Defaults to false.
      */
     nodesOverEdges?: boolean
+    /**
+     * If true, all control buttons will be hidden, regardless of individual options for viewportControls/userControls.
+     * Defaults to false.
+     */
+    hideControls?: boolean
 }
 
 export interface GrapherConfigSet {
@@ -151,6 +156,7 @@ export interface GrapherConfigSet {
     userControls: Required<GrapherUserControls>
     fitViewConfig: GrapherFitViewConfigSet
     nodesOverEdges: boolean
+    hideControls?: boolean
 }
 
 export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
@@ -161,5 +167,6 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         userControls: withDefaultsUserControls(config?.userControls),
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
         nodesOverEdges: config?.nodesOverEdges ?? false,
+        hideControls: config?.hideControls ?? false,
     }
 }
