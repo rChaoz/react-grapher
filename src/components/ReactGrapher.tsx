@@ -26,6 +26,9 @@ import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
 import {getNodeIntersection} from "../util/EdgePath";
 import {resolveValue} from "../util/utils";
+// This is used for documentation link
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {Marker} from "./Marker";
 
 export interface CommonGraphProps {
     /**
@@ -78,7 +81,10 @@ export interface CommonGraphProps {
      */
     onChange?: (changes: GrapherChange[]) => GrapherChange[] | undefined | void
     /**
-     * Custom markers to be used for Edges. Will be placed inside the SVG's `<defs>` element.
+     * Custom markers to be used for Edges. They will be placed inside the SVG's `<defs>` element.
+     *
+     * You should use the {@link Marker} component instead of the standard svg `<marker>` element for them to work.
+     * For more info, read Marker's {@link Marker own documentation}.
      */
     customMarkers?: React.ReactNode
 }
