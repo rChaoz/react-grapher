@@ -1,5 +1,5 @@
 .react-grapher {
-    background: #f1f1f5;
+    --react-grapher-background: #f1f1f5;
     --react-grapher-node-background: #ce4c13;
     --react-grapher-node-background-hover: #e1581c;
     --react-grapher-node-background-active: #bb440f;
@@ -11,6 +11,8 @@
     --react-grapher-edge-color: #858484;
     --react-grapher-edge-color-hover: #ada7a7;
     --react-grapher-edge-color-active: #656363;
+
+    background-color: var(--react-grapher-background);
 }
 
 .react-grapher-node {
@@ -18,6 +20,7 @@
     border: 2px solid;
     padding: 16px;
     user-select: none;
+    font-size: 1rem;
     font-weight: bold;
     box-shadow: 1px 1px 6px -2px black;
 
@@ -52,6 +55,15 @@
     stroke: var(--react-grapher-edge-color);
     stroke-width: var(--react-grapher-edge-stroke-width);
     stroke-linecap: round
+}
+
+.react-grapher-edge-label {
+    fill: black;
+    font-size: .8rem;
+}
+
+.react-grapher-edge-label-background {
+    fill: var(--react-grapher-background);
 }
 
 .react-grapher-marker-arrow {

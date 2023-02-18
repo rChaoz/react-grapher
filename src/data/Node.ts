@@ -1,6 +1,6 @@
 import {GrapherChange} from "./GrapherChange";
-import {NodeProps} from "../components/DefaultNode";
 import React from "react";
+import {NodeProps} from "../components/BaseNode";
 
 export interface Node<T> {
     id: string

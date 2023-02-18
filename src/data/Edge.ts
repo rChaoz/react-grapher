@@ -1,6 +1,6 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
-import {EdgeProps} from "../components/DefaultEdge";
+import {EdgeProps} from "../components/BaseEdge";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'

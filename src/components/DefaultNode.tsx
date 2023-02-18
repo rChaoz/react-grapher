@@ -1,9 +1,5 @@
 import React, {memo} from "react";
-import {BaseNode, BaseNodeProps} from "./BaseNode";
-
-export interface NodeProps<T> extends Omit<BaseNodeProps, "children"> {
-    data: T
-}
+import {BaseNode, NodeProps} from "./BaseNode";
 
 export const DefaultNode = memo<NodeProps<any>>(function DefaultNode(props) {
     return <BaseNode {...props}>

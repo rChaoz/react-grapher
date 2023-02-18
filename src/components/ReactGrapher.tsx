@@ -8,10 +8,13 @@ import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {
+    EDGE_LABEL_BACKGROUND_CLASS, EDGE_LABEL_CLASS,
+    EDGES_CLASS,
     MARKER_ARROW_CLASS,
     MARKER_ARROW_FILLED_CLASS,
     MARKER_ARROW_FILLED_ID,
     MARKER_ARROW_ID,
+    NODES_CLASS,
     REACT_GRAPHER_CLASS,
     VIEWPORT_CLASS,
     Z_INDEX_EDGES,
@@ -167,18 +170,18 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }
     nodes.multipleSelection = config.userControls.multipleSelection
 
+
+    // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
+    const useID = React.useId
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const ownID = typeof useID === "function" ? useID().replace(/:/g, "-") // replace ':' with '-' as ':' is not a valid CSS selector character
+        : null
     let id: string
     if (props.id != null) id = props.id
-    else {
-        // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
-        const useID = React.useId
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        if (typeof useID === "function") id = useID().replace(/:/g, "-") // replace ':' with '-' as ':' is not a valid CSS selector character
-        else {
-            id = "react-grapher"
-            warnNoReactGrapherID()
-        }
-    }
+    else if (ownID == null) {
+        id = "react-grapher"
+        warnNoReactGrapherID()
+    } else id = ownID
 
     // Currently grabbed (being moved) node
     interface GrabbedNode {
@@ -220,7 +223,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
             const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position
             return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
-                              markerStart={edge.markerStart} markerEnd={edge.markerEnd}/>
+                              markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label}/>
         })
     }, [edges, nodes, updateEdges])
 
@@ -577,9 +580,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 continue
             }
 
+            // TODO Optimise getBBox calls to happen less often (not on every render)
             // Update bounding rect
             const r = edgeElem.getBBox() as Pick<DOMRect, "x" | "y" | "width" | "height">
-            // We are not using r.left, r.top etc. because r is an SVGRect, not a DOMRect, like typescript suggests, and does not have these properties
+            // We are not using r.left, r.top etc. because r is an SVGRect, unlike typescript suggests (DOMRect), and does not have these properties
             if (r.x < edgesRect.left) {
                 const delta = edgesRect.left - r.x
                 edgesRect.x -= delta
@@ -592,6 +596,16 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
             if (r.x + r.width > edgesRect.right) edgesRect.width += r.x + r.width - edgesRect.right
             if (r.y + r.height > edgesRect.bottom) edgesRect.height += r.y + r.height - edgesRect.bottom
+
+            // Set size of label background
+            const labelBounds = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_CLASS)?.getBBox()
+            const labelBg = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_BACKGROUND_CLASS)
+            if (labelBounds == null || labelBg == null) continue
+            // TODO Customisable padding (global and per edge)
+            labelBg.setAttribute("x", String(labelBounds.x - 2))
+            labelBg.setAttribute("y", String(labelBounds.y - 2))
+            labelBg.setAttribute("width", String(labelBounds.width + 4))
+            labelBg.setAttribute("height", String(labelBounds.height + 4))
         }
         edges.boundingRect = edgesRect
 
@@ -665,10 +679,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     return <BoundsContext.Provider value={bounds}><IDContext.Provider value={id}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
-                <Nodes nodesOverEdges={config.nodesOverEdges}>
+                <Nodes className={NODES_CLASS} nodesOverEdges={config.nodesOverEdges}>
                     {nodeElements}
                 </Nodes>
-                <Edges nodesOverEdges={config.nodesOverEdges} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`}>
+                <Edges className={EDGES_CLASS} nodesOverEdges={config.nodesOverEdges} viewBox={`${bounds.x} ${bounds.y} ${bounds.width} ${bounds.height}`}>
                     <defs>
                         <marker id={`${id}-${MARKER_ARROW_FILLED_ID}`} className={MARKER_ARROW_FILLED_CLASS} viewBox={"0 0 14 14"} refX={5} refY={7} orient={"auto-start-reverse"}>
                             <path d={"M 0 0 l 10 7 l -10 7 z"}/>

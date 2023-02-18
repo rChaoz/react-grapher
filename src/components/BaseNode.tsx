@@ -32,6 +32,10 @@ export interface BaseNodeProps {
     children: React.ReactNode
 }
 
+export interface NodeProps<T> extends Omit<BaseNodeProps, "children"> {
+    data: T
+}
+
 const BaseDiv = styled.div`
   position: absolute;
   transform: translate(-50%, -50%);

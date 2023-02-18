@@ -14,10 +14,10 @@ import {useGraphState} from "./hooks/useGraphState";
 import {ReactGrapher} from "./components/ReactGrapher";
 import {GrapherViewport} from "./components/GrapherViewport";
 // Sub-components
-import {BaseNode, BaseNodeProps} from "./components/BaseNode";
-import {DefaultNode, NodeProps} from "./components/DefaultNode";
-import {BaseEdge, BaseEdgeProps} from "./components/BaseEdge";
-import {DefaultEdge, EdgeProps} from "./components/DefaultEdge";
+import {BaseNode, BaseNodeProps, NodeProps} from "./components/BaseNode";
+import {DefaultNode} from "./components/DefaultNode";
+import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
+import {DefaultEdge} from "./components/DefaultEdge";
 // Other
 import {EdgePath, getNodeIntersection, getStraightEdgePath} from "./util/EdgePath";
 
