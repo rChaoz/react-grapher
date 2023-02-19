@@ -1,12 +1,12 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {EdgeProps} from "../components/BaseEdge";
-import {DefaultEdge, DefaultEdgeData} from "../components/DefaultEdge";
+import {SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'
  */
-export interface Edge<T = DefaultEdgeData> {
+export interface Edge<T = SimpleEdgeData> {
     id: string
     /**
      * Component function for rendering the edge, defaults to DefaultEdge
@@ -41,7 +41,7 @@ export interface Edge<T = DefaultEdgeData> {
      * Where to display the label, along the Edge's path, as a value between 0 and 1 (inclusive).
      * It will be multiplied by the path's {@link SVGGeometryElement.getTotalLength length} before being passed as an argument to {@link SVGGeometryElement.getPointAtLength}.
      *
-     * Note that, while this is the default behaviour of {@link DefaultEdge}
+     * Note that, while this is the default behaviour of {@link SimpleEdge}
      */
     labelPosition?: number
     /**
@@ -85,7 +85,7 @@ export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults)
     if (i.isInitialized) return
     i.isInitialized = true
 
-    if (i.Component == null) i.Component = defaults.Component ?? DefaultEdge
+    if (i.Component == null) i.Component = defaults.Component ?? SimpleEdge
     if (i.classes == null) i.classes = defaults.classes ?? []
     if (i.label == null) i.label = defaults.label
     if (i.markerStart == null) i.markerStart = defaults.markerStart

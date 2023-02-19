@@ -26,7 +26,7 @@ import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent,
 import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
-import {DefaultEdge} from "./DefaultEdge";
+import {SimpleEdge} from "./SimpleEdge";
 import {getNodeIntersection} from "../util/EdgePath";
 import {enlargeRect, resolveValue} from "../util/utils";
 // This is used for documentation link
@@ -219,7 +219,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 return
             }
             if (source.element == null || target.element == null) return
-            const Component = edge.Component ?? DefaultEdge
+            const Component = edge.Component ?? SimpleEdge
             // TODO Implement handles
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
             const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position

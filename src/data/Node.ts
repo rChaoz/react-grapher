@@ -1,7 +1,7 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {NodeProps} from "../components/BaseNode";
-import {DefaultNode} from "../components/DefaultNode";
+import {SimpleNode} from "../components/SimpleNode";
 
 export interface Node<T = string> {
     id: string
@@ -72,7 +72,7 @@ export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults)
     i.isInitialized = true
     i.width = i.height = 0
 
-    if (i.Component == null) i.Component = defaults.Component ?? DefaultNode
+    if (i.Component == null) i.Component = defaults.Component ?? SimpleNode
     if (i.classes == null) i.classes = defaults.classes ?? []
     if (i.position == null) i.position = defaults.position ?? new DOMPoint()
     if (i.edgeMargin == null) i.edgeMargin = defaults.edgeMargin ?? 3

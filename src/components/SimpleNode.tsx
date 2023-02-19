@@ -1,7 +1,7 @@
 import React, {memo} from "react";
 import {BaseNode, NodeProps} from "./BaseNode";
 
-export const DefaultNode = memo<NodeProps<any>>(function DefaultNode(props) {
+export const SimpleNode = memo<NodeProps<any>>(function SimpleNode(props) {
     return <BaseNode {...props}>
         {String(props.data)}
     </BaseNode>

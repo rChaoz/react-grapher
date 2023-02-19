@@ -4,7 +4,7 @@ import {getStraightEdgePath, getCurvedEdgePath} from "../util/EdgePath";
 import {warnUnknownEdgeType} from "../util/log";
 
 
-export type DefaultEdgeData = {
+export type SimpleEdgeData = {
     /**
      * - "straight" will use {@link getStraightEdgePath}
      * - "curved" will use {@link getCurvedEdgePath} with curve amount specified by `curve` property
@@ -20,8 +20,8 @@ export type DefaultEdgeData = {
 /**
  * Simple edge implementation.
  */
-export const DefaultEdge = memo<EdgeProps<DefaultEdgeData>>(
-    function DefaultEdge(props) {
+export const SimpleEdge = memo<EdgeProps<SimpleEdgeData>>(
+    function SimpleEdge(props) {
         let path: string
         console.log(props.data)
         switch (props.data?.type) {

@@ -13,11 +13,12 @@ import {useGraphState} from "./hooks/useGraphState";
 // React Grapher
 import {ReactGrapher} from "./components/ReactGrapher";
 import {GrapherViewport} from "./components/GrapherViewport";
+import {Marker} from "./components/Marker";
 // Sub-components
 import {BaseNode, BaseNodeProps, NodeProps} from "./components/BaseNode";
-import {DefaultNode} from "./components/DefaultNode";
+import {SimpleNode} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
-import {DefaultEdge, DefaultEdgeData} from "./components/DefaultEdge";
+import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
 // Other
 import {getNodeIntersection, getStraightEdgePath, getCurvedEdgePath} from "./util/EdgePath";
 
@@ -32,10 +33,10 @@ export {
     // Hooks
     useControlledGraph, useController, useGraphState,
     // React Grapher
-    ReactGrapher, GrapherViewport,
+    ReactGrapher, GrapherViewport, Marker,
     // Sub-components
-    BaseNode, BaseNodeProps, DefaultNode, NodeProps,
-    BaseEdge, BaseEdgeProps, DefaultEdge, DefaultEdgeData, EdgeProps,
+    BaseNode, BaseNodeProps, SimpleNode, NodeProps,
+    BaseEdge, BaseEdgeProps, SimpleEdge, SimpleEdgeData, EdgeProps,
     // Others
     getNodeIntersection, getStraightEdgePath, getCurvedEdgePath
 }
