@@ -8,7 +8,7 @@ import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {
     EDGE_LABEL_BACKGROUND_CLASS,
-    EDGE_LABEL_CLASS,
+    EDGE_LABEL_CLASS, EDGE_PATH_CLASS,
     EDGES_CLASS,
     MARKER_ARROW_CLASS,
     MARKER_ARROW_FILLED_CLASS,
@@ -23,7 +23,7 @@ import {
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
-import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
+import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
 import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
@@ -224,7 +224,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
             const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position
             return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
-                              markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label}/>
+                              markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label} labelPosition={edge.labelPosition} data={edge.data}/>
         })
     }, [edges, nodes, updateEdges, config.defaultEdge])
 
@@ -572,10 +572,26 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // Update bounding rect
             enlargeRect(edgesRect, edgeElem.getBBox())
 
-            // Set size of label background
-            const labelBounds = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_CLASS)?.getBBox()
+            // Set position of label
+            const labelElem = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_CLASS)
             const labelBg = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_BACKGROUND_CLASS)
-            if (labelBounds == null || labelBg == null) continue
+            if (labelElem == null || labelBg == null) continue
+            if ("labelPos" in labelElem.dataset) {
+                const labelPos = Number(labelElem.dataset.labelPos)
+                if (labelPos < 0 || labelPos > 1) warnInvalidEdgeLabelPos(edge.id, labelElem.dataset.labelPos)
+                else {
+                    const pathElem = edgeElem.querySelector<SVGGeometryElement>("." + EDGE_PATH_CLASS)
+                    if (pathElem == null) errorUnknownDomID(`#${id}e-${edge.id} .${EDGE_PATH_CLASS}`, `SVG path element of edge ${edge.id}`)
+                    else {
+                        const pos = pathElem.getPointAtLength(labelPos * pathElem.getTotalLength())
+                        labelElem.setAttribute("x", String(pos.x))
+                        labelElem.setAttribute("y", String(pos.y))
+                    }
+                }
+            }
+
+            // Set size of label background
+            const labelBounds = labelElem.getBBox()
             enlargeRect(edgesRect, labelBounds) // Also make sure to include label in bounds calculation
             // TODO Customisable padding (global and per edge)
             labelBg.setAttribute("x", String(labelBounds.x - 2))

@@ -169,29 +169,18 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
     return sourcePos
 }
 
-export type EdgePath = {
-    path: string,
-    labelPosition: DOMPoint,
-}
-
 /**
  * Returns the EdgePath for a straight line edge
  */
-export function getStraightEdgePath(a: DOMPoint, b: DOMPoint): EdgePath {
-    return {
-        path: `M ${a.x} ${a.y} L ${b.x} ${b.y}`,
-        labelPosition: new DOMPoint((a.x + b.x) / 2, (a.y + b.y) / 2),
-    }
+export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
+    return `M ${a.x} ${a.y} L ${b.x} ${b.y}`
 }
 
 /**
  * Returns a curved path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values.
  */
-export function getCurvedEdgePath(a: DOMPoint, b: DOMPoint, curve: number): EdgePath {
+export function getCurvedEdgePath(a: DOMPoint, b: DOMPoint, curve: number) {
     const dx = b.x - a.x, dy = b.y - a.y
     const px = (b.x + a.x) / 2 + dy * curve, py = (b.y + a.y) / 2 - dx * curve
-    return {
-        path: `M ${a.x} ${a.y} Q ${px} ${py} ${b.x} ${b.y}`,
-        labelPosition: new DOMPoint(a.x / 4 + px / 2 + b.x / 4, a.y / 4 + py / 2 + b.y / 4)
-    }
+    return `M ${a.x} ${a.y} Q ${px} ${py} ${b.x} ${b.y}`
 }

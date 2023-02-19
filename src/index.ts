@@ -17,9 +17,9 @@ import {GrapherViewport} from "./components/GrapherViewport";
 import {BaseNode, BaseNodeProps, NodeProps} from "./components/BaseNode";
 import {DefaultNode} from "./components/DefaultNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
-import {DefaultEdge} from "./components/DefaultEdge";
+import {DefaultEdge, DefaultEdgeData} from "./components/DefaultEdge";
 // Other
-import {EdgePath, getNodeIntersection, getStraightEdgePath} from "./util/EdgePath";
+import {getNodeIntersection, getStraightEdgePath, getCurvedEdgePath} from "./util/EdgePath";
 
 export {
     // Data
@@ -35,7 +35,7 @@ export {
     ReactGrapher, GrapherViewport,
     // Sub-components
     BaseNode, BaseNodeProps, DefaultNode, NodeProps,
-    BaseEdge, BaseEdgeProps, DefaultEdge, EdgeProps,
+    BaseEdge, BaseEdgeProps, DefaultEdge, DefaultEdgeData, EdgeProps,
     // Others
-    EdgePath, getNodeIntersection, getStraightEdgePath,
+    getNodeIntersection, getStraightEdgePath, getCurvedEdgePath
 }

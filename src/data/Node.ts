@@ -3,7 +3,7 @@ import React from "react";
 import {NodeProps} from "../components/BaseNode";
 import {DefaultNode} from "../components/DefaultNode";
 
-export interface Node<T> {
+export interface Node<T = string> {
     id: string
     /**
      * Component function for rendering the node, defaults to DefaultNode
@@ -59,7 +59,7 @@ export interface NodeImpl<T> extends Node<T> {
 /**
  * Node with all properties made optional except ID. Upon rendering, all properties will be set to their default values.
  */
-export type NodeData<T> = Partial<Node<T>> & {id: string}
+export type NodeData<T = string> = Partial<Node<T>> & {id: string}
 
 /**
  * Default values for nodes.

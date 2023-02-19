@@ -42,11 +42,11 @@ function withDefaultsViewportControls(controls: GrapherViewportControls | boolea
 
 export interface GrapherUserControls {
     /**
-     * Allows the user to select nodes. Defaults to true
+     * Allows the user to select nodes or edges. Defaults to true
      */
     allowSelection?: boolean
     /**
-     * Allows selecting multiple nodes. Defaults to true
+     * Allows selecting multiple nodes or edges. Defaults to true
      */
     multipleSelection?: boolean
     /**
