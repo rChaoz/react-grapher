@@ -12,7 +12,7 @@ export interface BaseEdgeProps {
     /**
      * List of classes this node should use (besides the default "react-grapher-edge")
      */
-    classes: Set<string>
+    classes: string[]
     /**
      * SVG path
      */
@@ -53,7 +53,7 @@ export interface EdgeProps<T> {
     /**
      * List of classes this node should use (besides the default "react-grapher-edge")
      */
-    classes: Set<string>
+    classes: string[]
     /**
      * ID of the predefined/custom SVG marker.
      */

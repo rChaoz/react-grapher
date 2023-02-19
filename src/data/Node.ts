@@ -1,13 +1,14 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {NodeProps} from "../components/BaseNode";
+import {DefaultNode} from "../components/DefaultNode";
 
 export interface Node<T> {
     id: string
     /**
-     * Custom component for rendering the edge, to replace `DefaultNode`.
+     * Component function for rendering the node, defaults to DefaultNode
      */
-    Component?: React.ExoticComponent<NodeProps<T>>
+    Component: React.ExoticComponent<NodeProps<T>>
     /**
      * Parent of this node. If non-null, its position will be relative to the center of this node.
      */
@@ -20,9 +21,9 @@ export interface Node<T> {
      * CSS classes that will be passed to the DefaultNode/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
      * By default, these classes are kept as-is.
      */
-    classes: Set<string>
+    classes: string[]
     /**
-     * Position relative to the parent (or absolute if parent is null)
+     * Position relative to the parent (or absolute if parent is null). Defaults to 0,0
      */
     position: DOMPoint
     /**
@@ -49,61 +50,33 @@ export interface NodeImpl<T> extends Node<T> {
      * Automatically set during rendering. DOM height of this node
      */
     height: number
+    /**
+     * Used internally to check if a node was initialized (all fields set).
+     */
+    isInitialized?: boolean
 }
 
-export interface NodeData<T> {
-    id: string
-    /**
-     * Custom component for rendering the edge, to replace `DefaultNode`.
-     */
-    Component?: React.ExoticComponent<NodeProps<T>>
-    /**
-     * Parent of this node. If non-null, its position will be relative to the center of this node.
-     */
-    parent?: string | null
-    /**
-     * Custom data for this node. The default node implementation displays this value as a string.
-     */
-    data: T
-    /**
-     * CSS classes that will be passed to the DefaultNode/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
-     * By default, these classes are kept as-is.
-     */
-    classes?: string[]
-    /**
-     * X coordinate of this node's position.
-     */
-    x?: number
-    /**
-     * Y coordinate of this node's position.
-     */
-    y?: number
-    /**
-     * Spacing between this node and the edges that connect to it. Defaults to 3
-     */
-    edgeMargin?: number
-}
+/**
+ * Node with all properties made optional except ID. Upon rendering, all properties will be set to their default values.
+ */
+export type NodeData<T> = Partial<Node<T>> & {id: string}
 
-export function createNode<T>(data: NodeData<T>): Node<T> {
-    // noinspection UnnecessaryLocalVariableJS, we do this to get type checking for NodeImpl
-    const node: NodeImpl<any> = {
-        id: data.id,
-        data: data.data,
-        Component: data.Component,
-        parent: data.parent,
-        classes: new Set(data.classes),
-        selected: false,
-        position: new DOMPoint(data.x, data.y),
-        edgeMargin: data.edgeMargin ?? 3,
+/**
+ * Default values for nodes.
+ */
+export type NodeDefaults = Omit<NodeData<any>, "id" | "data">
 
-        width: 0,
-        height: 0,
-    }
-    return node
-}
+export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
+    const i = target as NodeImpl<any>
+    if (i.isInitialized) return
+    i.isInitialized = true
+    i.width = i.height = 0
 
-export function createNodes<T>(data: NodeData<T>[] | undefined): Node<T>[] {
-    return data?.map(d => createNode(d)) ?? []
+    if (i.Component == null) i.Component = defaults.Component ?? DefaultNode
+    if (i.classes == null) i.classes = defaults.classes ?? []
+    if (i.position == null) i.position = defaults.position ?? new DOMPoint()
+    if (i.edgeMargin == null) i.edgeMargin = defaults.edgeMargin ?? 3
+    if (i.selected == null) i.selected = defaults.selected ?? false
 }
 
 /**
@@ -120,12 +93,12 @@ export interface NodesFunctions<T> {
     absolute(node: Node<any> | string): DOMPoint
 
     /**
-     * Gets currently selected nodes. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
+     * Gets currently selected node IDs. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
      */
     getSelection(): string[]
 
     /**
-     * Sets currently selected nodes
+     * Sets currently selected nodes by IDs
      */
     setSelection(selected: string[]): void
 
@@ -150,25 +123,25 @@ export interface NodesFunctions<T> {
     /**
      * Replaces all existing nodes
      */
-    set(newNodes: Node<T>[]): void
+    set(newNodes: Node<T>[] | NodeData<T>[]): void
 
     /**
      * Add one or more nodes to the Graph
      */
-    add(newNode: Node<T> | Node<T>[]): void
+    add(newNode: Node<T> | Node<T>[] | NodeData<T> | NodeData<T>[]): void
 
     /**
      * Map in-place, return null/undefined to remove a node. If you return a node but modified, make sure to set its "hasChanged" property to true to
      * trigger internal re-calculations for the node.
      */
-    update(mapFunc: (node: Node<T>) => Node<T> | null | undefined): void
+    update(mapFunc: (node: Node<T>) => Node<T> | NodeData<T> | null | undefined): void
 
     /**
      * Replace or remove a node by ID
      * @param targetID ID of the node that should be replaced
      * @param replacement New node or function that returns a new node and receives the old node (null to remove)
      */
-    replace(targetID: string, replacement?: Node<T> | null | ((node: Node<T>) => Node<T> | null | undefined)): void
+    replace(targetID: string, replacement?: Node<T> | NodeData<T> | null | ((node: Node<T>) => Node<T> | NodeData<T> | null | undefined)): void
 
     /**
      * Process given changes, updating this Nodes list (ignores non-Node changes)

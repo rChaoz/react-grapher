@@ -1,6 +1,7 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {EdgeProps} from "../components/BaseEdge";
+import {DefaultEdge} from "../components/DefaultEdge";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'
@@ -8,14 +9,14 @@ import {EdgeProps} from "../components/BaseEdge";
 export interface Edge<T> {
     id: string
     /**
-     * Custom component for rendering the edge, to replace `DefaultEdge`.
+     * Component function for rendering the edge, defaults to DefaultEdge
      */
-    Component?: React.ExoticComponent<EdgeProps<T>>
+    Component: React.ExoticComponent<EdgeProps<T>>
     /**
      * CSS classes that will be passed to the DefaultEdge/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
      * By default, these classes are kept as-is.
      */
-    classes: Set<string>
+    classes: string[]
     /**
      * ID of source node
      */
@@ -25,13 +26,13 @@ export interface Edge<T> {
      */
     sourceHandle?: string | null
     /**
-     * Name of the handle of the target node (null for floating edge)
-     */
-    targetHandle?: string | null
-    /**
      * ID of target node
      */
     target: string
+    /**
+     * Name of the handle of the target node (null for floating edge)
+     */
+    targetHandle?: string | null
     /**
      * Label for this edge
      */
@@ -55,57 +56,34 @@ export interface Edge<T> {
     selected: boolean
 }
 
-export interface EdgeData<T> {
-    id: string
+export interface EdgeImpl<T> extends Edge<T> {
     /**
-     * Custom component for rendering the edge, to replace `DefaultEdge`.
+     * Used internally to check if a node was initialized (all fields set).
      */
-    Component?: React.ExoticComponent<EdgeProps<T>>
-    /**
-     * CSS classes that will be passed to the DefaultEdge/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
-     * By default, these classes are kept as-is.
-     */
-    classes?: string[]
-    /**
-     * ID of source node
-     */
-    source: string
-    /**
-     * Name of the handle of the source node (null for floating edge)
-     */
-    sourceHandle?: string | null
-    /**
-     * Name of the handle of the target node (null for floating edge)
-     */
-    targetHandle?: string | null
-    /**
-     * ID of target node
-     */
-    target: string
-    /**
-     * Label for this edge
-     */
-    label?: string
-    /**
-     * Custom data this edge can hold
-     */
-    data?: T
-    /**
-     * ID of the predefined/custom SVG marker.
-     */
-    markerStart?: string
-    /**
-     * ID of the predefined/custom SVG marker.
-     */
-    markerEnd?: string
+    isInitialized?: boolean
 }
 
-export function createEdge<T>(data: EdgeData<T>): Edge<T> {
-    return {...data, selected: false, classes: new Set(data.classes)}
-}
+/**
+ * Edge with all properties made optional except ID, source and target. Upon rendering, all properties will be set to their default values.
+ */
+export type EdgeData<T> = Partial<Edge<T>> & {id: string, source: string, target: string}
 
-export function createEdges<T>(data: EdgeData<T>[] | undefined): Edge<T>[] {
-    return data?.map(d => createEdge(d)) ?? []
+/**
+ * Default values for edges.
+ */
+export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data">
+
+export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
+    const i = target as EdgeImpl<any>
+    if (i.isInitialized) return
+    i.isInitialized = true
+
+    if (i.Component == null) i.Component = defaults.Component ?? DefaultEdge
+    if (i.classes == null) i.classes = defaults.classes ?? []
+    if (i.label == null) i.label = defaults.label
+    if (i.markerStart == null) i.markerStart = defaults.markerStart
+    if (i.markerEnd == null) i.markerEnd = defaults.markerEnd
+    if (i.selected == null) i.selected = defaults.selected ?? false
 }
 
 /**
@@ -115,12 +93,12 @@ export function createEdges<T>(data: EdgeData<T>[] | undefined): Edge<T>[] {
  */
 export interface EdgesFunctions<T> {
     /**
-     * Gets currently selected edges. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
+     * Gets currently selected edge IDs. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
      */
     getSelection(): string[]
 
     /**
-     * Sets currently selected edges
+     * Sets currently selected edges by IDs
      */
     setSelection(selected: string[]): void
 
@@ -140,24 +118,24 @@ export interface EdgesFunctions<T> {
     /**
      * Replace all existing edges
      */
-    set(newEdges: Edge<T>[]): void
+    set(newEdges: Edge<T>[] | EdgeData<T>[]): void
 
     /**
      * Add one or more edges to the Graph
      */
-    add(newEdge: Edge<T> | Edge<T>[]): void
+    add(newEdge: Edge<T> | Edge<T>[] | EdgeData<T> | EdgeData<T>[]): void
 
     /**
      * Map in-place, return null/undefined to remove an edge
      */
-    update(mapFunc: (node: Edge<T>) => Edge<T> | null | undefined): void
+    update(mapFunc: (node: Edge<T>) => Edge<T> | EdgeData<T> | null | undefined): void
 
     /**
      * Replace or remove an edge by ID
      * @param targetID ID of the edge you want to remove
      * @param replacement New edge or function that returns a new edge and receives the old edge (null to remove)
      */
-    replace(targetID: string, replacement?: Edge<T> | null | ((edge: Edge<T>) => Edge<T> | null | undefined)): void
+    replace(targetID: string, replacement?: Edge<T> | EdgeData<T> | null | ((edge: Edge<T>) => Edge<T> | EdgeData<T> | null | undefined)): void
 
     /**
      * Process given changes, updating this Edges list (ignores non-Edge changes)

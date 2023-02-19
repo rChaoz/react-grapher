@@ -13,7 +13,7 @@ export interface BaseNodeProps {
     /**
      * List of classes this node should use (besides the default "react-grapher-node")
      */
-    classes: Set<string>
+    classes: string[]
     /**
      * Absolute position of this node
      */

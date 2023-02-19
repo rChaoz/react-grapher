@@ -1,14 +1,14 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {NodeData, NodeImpl, Nodes, NodesImpl} from "../data/Node"
-import {EdgeData, Edges, EdgesImpl} from "../data/Edge";
+import {applyNodeDefaults, NodeData, NodeImpl, Nodes, NodesImpl} from "../data/Node"
+import {applyEdgeDefaults, EdgeData, Edges, EdgesImpl} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
 import {useGraphState} from "../hooks/useGraphState";
-import {DefaultNode} from "./DefaultNode";
 import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {
-    EDGE_LABEL_BACKGROUND_CLASS, EDGE_LABEL_CLASS,
+    EDGE_LABEL_BACKGROUND_CLASS,
+    EDGE_LABEL_CLASS,
     EDGES_CLASS,
     MARKER_ARROW_CLASS,
     MARKER_ARROW_FILLED_CLASS,
@@ -28,7 +28,7 @@ import BoundsContext from "../context/BoundsContext";
 import IDContext from "../context/IDContext";
 import {DefaultEdge} from "./DefaultEdge";
 import {getNodeIntersection} from "../util/EdgePath";
-import {resolveValue} from "../util/utils";
+import {enlargeRect, resolveValue} from "../util/utils";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {Marker} from "./Marker";
@@ -170,7 +170,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }
     nodes.multipleSelection = config.userControls.multipleSelection
 
-
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
     const useID = React.useId
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -196,10 +195,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Create components from Nodes array
     const nodeElements = useMemo(() => nodes.map(node => {
-        const Component = node.Component ?? DefaultNode
+        applyNodeDefaults(node, config.defaultNode)
+        const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} absolutePosition={nodes.absolute(node)}
                           grabbed={grabbed.id === node.id} classes={node.classes} selected={node.selected}/>
-    }), [nodes, grabbed])
+    }), [nodes, grabbed, config.defaultNode])
 
     // Same for edges
     const [updateEdges, setUpdateEdges] = useState(0)
@@ -208,6 +208,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // and 2. ES lint will complain about useMemo dependencies otherwise
         if (updateEdges == 0) return []
         return edges.map(edge => {
+            applyEdgeDefaults(edge, config.defaultEdge)
             const source = nodes.get(edge.source) as NodeImpl<any>, target = nodes.get(edge.target) as NodeImpl<any>
             if (source == null) {
                 errorUnknownNode(edge.source)
@@ -225,7 +226,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
                               markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label}/>
         })
-    }, [edges, nodes, updateEdges])
+    }, [edges, nodes, updateEdges, config.defaultEdge])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -544,20 +545,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             'right' needs to be x + width and not x + width/2 because nodes use translateX(-50%) to center themselves. This means, although its true 'right'
             is indeed x + width/2, its layout 'right' does not take transforms into account. And, if the node's layout right is out of bounds, text inside the node
             will start wrapping, and we don't want that! Same thing for 'bottom' - it needs to be y + height, not y + height/2. */
-            const left = node.position.x - node.width! / 2, right = node.position.x + node.width!
-            const top = node.position.y - node.height! / 2, bottom = node.position.y + node.height!
-            if (left < nodesRect.left) {
-                const delta = nodesRect.left - left
-                nodesRect.x -= delta
-                nodesRect.width += delta
-            }
-            if (top < nodesRect.top) {
-                const delta = nodesRect.top - top
-                nodesRect.y -= delta
-                nodesRect.height += delta
-            }
-            if (right > nodesRect.right) nodesRect.width += right - nodesRect.right
-            if (bottom > nodesRect.bottom) nodesRect.height += bottom - nodesRect.bottom
+            enlargeRect(nodesRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width * 1.5, height: node.height * 1.5})
 
             // Set listeners
             if (!props.static) {
@@ -582,25 +570,13 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
             // TODO Optimise getBBox calls to happen less often (not on every render)
             // Update bounding rect
-            const r = edgeElem.getBBox() as Pick<DOMRect, "x" | "y" | "width" | "height">
-            // We are not using r.left, r.top etc. because r is an SVGRect, unlike typescript suggests (DOMRect), and does not have these properties
-            if (r.x < edgesRect.left) {
-                const delta = edgesRect.left - r.x
-                edgesRect.x -= delta
-                edgesRect.width += delta
-            }
-            if (r.y < edgesRect.top) {
-                const delta = edgesRect.top - r.y
-                edgesRect.y -= delta
-                edgesRect.height += delta
-            }
-            if (r.x + r.width > edgesRect.right) edgesRect.width += r.x + r.width - edgesRect.right
-            if (r.y + r.height > edgesRect.bottom) edgesRect.height += r.y + r.height - edgesRect.bottom
+            enlargeRect(edgesRect, edgeElem.getBBox())
 
             // Set size of label background
             const labelBounds = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_CLASS)?.getBBox()
             const labelBg = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_BACKGROUND_CLASS)
             if (labelBounds == null || labelBg == null) continue
+            enlargeRect(edgesRect, labelBounds) // Also make sure to include label in bounds calculation
             // TODO Customisable padding (global and per edge)
             labelBg.setAttribute("x", String(labelBounds.x - 2))
             labelBg.setAttribute("y", String(labelBounds.y - 2))
@@ -621,8 +597,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         if (Math.abs(finalRect.left - bounds.left) > 100 || Math.abs(finalRect.top - bounds.top) > 100
             || Math.abs(finalRect.right - bounds.right) > 100 || Math.abs(finalRect.bottom - bounds.bottom) > 100)
             setBounds(finalRect)
-
-        // TODO Edges
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)

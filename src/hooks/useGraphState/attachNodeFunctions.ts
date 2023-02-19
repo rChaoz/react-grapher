@@ -1,15 +1,14 @@
-import {Node, NodeImpl, NodesFunctionsImpl, NodesImpl} from "../../data/Node";
+import {Node, NodeData, NodeImpl, NodesFunctionsImpl, NodesImpl} from "../../data/Node";
 import React from "react";
 import {GrapherChange, isNodeChange} from "../../data/GrapherChange";
 import {errorUnknownNode} from "../../util/log";
 import {BaseFunctionsImpl, createBaseFunctions} from "./baseFunctions";
 
-// TODO DRY this code
 export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React.Dispatch<React.SetStateAction<Node<T>[]>>,
                                                selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>,
                                                map: Map<string, Node<T>>): NodesImpl<T> {
-    const base = createBaseFunctions(nodes, setNodes, selection, setSelection, map)
-    const extra: Omit<NodesFunctionsImpl<T>, keyof BaseFunctionsImpl<T>> = {
+    const base = createBaseFunctions<Node<T>, NodeData<T>>(nodes, setNodes, selection, setSelection, map)
+    const extra: Omit<NodesFunctionsImpl<T>, keyof BaseFunctionsImpl<Node<T>, NodeData<T>>> = {
         absolute(node: Node<any> | string): DOMPoint {
             if (typeof node === "string") {
                 const n = map.get(node)

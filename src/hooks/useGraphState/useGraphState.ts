@@ -1,5 +1,5 @@
-import {createNodes, NodeData, Nodes} from "../../data/Node";
-import {createEdges, EdgeData, Edges} from "../../data/Edge";
+import {Node, NodeData, Nodes} from "../../data/Node";
+import {Edge, EdgeData, Edges} from "../../data/Edge";
 import {useMemo, useState} from "react";
 import attachNodeFunctions from "./attachNodeFunctions";
 import attachEdgeFunctions from "./attachEdgeFunctions";
@@ -10,9 +10,9 @@ import attachEdgeFunctions from "./attachEdgeFunctions";
  * Use the provided helper functions, attached to the returned objects, that will update the internal React state associated with it.
  */
 export function useGraphState<N, E>(initialNodes?: NodeData<N>[], initialEdges?: EdgeData<E>[]): { nodes: Nodes<N>, edges: Edges<E> } {
-    const [nodes, setNodes] = useState(createNodes(initialNodes))
+    const [nodes, setNodes] = useState(initialNodes as Node<N>[] ?? [])
     const [nodesSelection, setNodesSelection] = useState<string[]>([])
-    const [edges, setEdges] = useState(createEdges(initialEdges))
+    const [edges, setEdges] = useState(initialEdges as Edge<E>[] ?? [])
     const [edgesSelection, setEdgesSelection] = useState<string[]>([])
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const nodesMap = useMemo(() => new Map(nodes.map(node => [node.id, node])), [])

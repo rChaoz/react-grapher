@@ -2,31 +2,38 @@ import React from "react";
 
 export interface BaseObject {
     id: string
+    classes: string[]
     selected: boolean
 }
-export interface BaseFunctions<T> {
+
+export interface BaseObjectData {
+    id: string
+    classes?: string[]
+}
+
+export interface BaseFunctions<T, TData> {
     getSelection(): string[]
     setSelection(selected: string[]): void
     setSelected(id: string, selected: boolean, newSelection?: boolean): void
     clear(): void
     get(id: string): T | undefined
-    set(newObjects: T[]): void
-    add(newObject: T | T[]): void
-    update(mapFunc: (obj: T) => T | null | undefined): void
-    replace(targetID: string, replacement?: T | null | ((obj: T) => T | null | undefined)): void
+    set(newObjects: T[] | TData[]): void
+    add(newObject: T | T[] | TData | TData[]): void
+    update(mapFunc: (obj: T) => T | TData | null | undefined): void
+    replace(targetID: string, replacement?: T | TData | null | ((obj: T) => T | TData | null | undefined)): void
 }
 
-export interface BaseFunctionsImpl<T> extends BaseFunctions<T> {
+export interface BaseFunctionsImpl<T, TData> extends BaseFunctions<T, TData> {
     boundingRect?: DOMRect
     multipleSelection: boolean
     selection: string[]
     internalMap: Map<string, T>
 }
 
-export function createBaseFunctions<T extends BaseObject>(state: T[], setState: React.Dispatch<React.SetStateAction<T[]>>,
+export function createBaseFunctions<T extends BaseObject, TData extends BaseObjectData>(state: T[], setState: React.Dispatch<React.SetStateAction<T[]>>,
                                                selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>,
                                                map: Map<string, T>) {
-    const base: BaseFunctionsImpl<T> = {
+    const base: BaseFunctionsImpl<T, TData> = {
         multipleSelection: false,
         selection,
         internalMap: map,
@@ -72,10 +79,14 @@ export function createBaseFunctions<T extends BaseObject>(state: T[], setState: 
             setState(newObjects)
             for (const obj of newObjects) map.set(obj.id, obj)
         },
-        add(newObject: T[] | T) {
-            if (Array.isArray(newObject)) for (const node of newObject) map.set(node.id, node)
-            else map.set(newObject.id, newObject)
-            setState(state => state.concat(newObject))
+        add(newObject: T | T[]) {
+            if (Array.isArray(newObject)) {
+                setState(newObject)
+                for (const node of newObject) map.set(node.id, node)
+            } else {
+                setState(state => state.concat(newObject))
+                map.set(newObject.id, newObject)
+            }
         },
         update(mapFunc: (node: T) => (T | null | undefined)) {
             setState(state => {
@@ -84,8 +95,7 @@ export function createBaseFunctions<T extends BaseObject>(state: T[], setState: 
                     const r = mapFunc(obj)
                     if (r != null) {
                         if (r !== obj) {
-                            // Use != instead of !== just in case someone might use try to use integers as IDs
-                            if (r.id != obj.id) map.delete(obj.id)
+                            if (r.id !== obj.id) map.delete(obj.id)
                             map.set(r.id, r)
                         }
                         newState.push(r)
@@ -94,7 +104,7 @@ export function createBaseFunctions<T extends BaseObject>(state: T[], setState: 
                 return newState
             })
         },
-        replace(targetID: string, replacement?: T | (<T>(node: T) => (T | null | undefined)) | null) {
+        replace(targetID: string, replacement?: T | TData | (<T>(node: T) => (T | TData | null | undefined)) | null) {
             this.update(obj => {
                 if (obj.id === targetID) return typeof replacement === "function" ? replacement(obj) : replacement
                 else return obj

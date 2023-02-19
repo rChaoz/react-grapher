@@ -1,3 +1,6 @@
+import {NodeDefaults} from "./Node";
+import {EdgeDefaults} from "./Edge";
+
 export interface GrapherViewportControls {
     /**
      * Minimum zoom allowed by user input. Defaults to .4
@@ -149,6 +152,14 @@ export interface GrapherConfig {
      * Defaults to false.
      */
     hideControls?: boolean
+    /**
+     * Default config for a Node. When a new node is created, undefined fields will be set from this object.
+     */
+    defaultNode?: NodeDefaults
+    /**
+     * Default config for an Edge. When a new edge is created, undefined fields will be set from this object.
+     */
+    defaultEdge?: EdgeDefaults
 }
 
 export interface GrapherConfigSet {
@@ -157,6 +168,8 @@ export interface GrapherConfigSet {
     fitViewConfig: GrapherFitViewConfigSet
     nodesOverEdges: boolean
     hideControls?: boolean
+    defaultNode: NodeDefaults
+    defaultEdge: EdgeDefaults
 }
 
 export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
@@ -168,5 +181,7 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
         nodesOverEdges: config?.nodesOverEdges ?? false,
         hideControls: config?.hideControls ?? false,
+        defaultNode: config?.defaultNode ?? {},
+        defaultEdge: config?.defaultEdge ?? {},
     }
 }
