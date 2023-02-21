@@ -23,7 +23,7 @@ import {
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
-import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
+import {checkInvalidID, criticalNoViewport, errorDOMNodeUnknownID, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
 import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
@@ -172,11 +172,13 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
     const useID = React.useId
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const ownID = typeof useID === "function" ? useID().replace(/:/g, "-") // replace ':' with '-' as ':' is not a valid CSS selector character
+    const ownID = typeof useID === "function" ? useID().replace(/:/g, "X") // replace ':' with 'X' as ':' is not a valid CSS selector character
         : null
     let id: string
-    if (props.id != null) id = props.id
-    else if (ownID == null) {
+    if (props.id != null) {
+        checkInvalidID("ReactGrapher", props.id)
+        id = props.id
+    } else if (ownID == null) {
         id = "react-grapher"
         warnNoReactGrapherID()
     } else id = ownID

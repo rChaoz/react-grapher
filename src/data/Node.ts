@@ -2,6 +2,7 @@ import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {NodeProps} from "../components/BaseNode";
 import {SimpleNode} from "../components/SimpleNode";
+import {checkInvalidID} from "../util/log";
 
 export interface Node<T = string> {
     id: string
@@ -69,6 +70,7 @@ export type NodeDefaults = Omit<NodeData<any>, "id" | "data">
 export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
     const i = target as NodeImpl<any>
     if (i.isInitialized) return
+    checkInvalidID("node", i.id)
     i.isInitialized = true
     i.width = i.height = 0
 

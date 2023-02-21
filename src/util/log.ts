@@ -18,6 +18,12 @@ export function warnInvalidEdgeLabelPos(edge: string, pos: string | undefined) {
     warn(`Invalid label position for edge "${edge}": ${pos}`)
 }
 
+export function checkInvalidID(target: string, id: string) {
+    if (id.match(/^[a-zA-Z0-9\-_]+$/)) return
+    error(`${target} has invalid ID: ${id}`)
+    console.error("ID must be composed of a-z, A-Z, 0-9, - and _")
+}
+
 export function errorDOMNodeUnknownID(node: EventTarget | null, id?: string | null) {
     error("DOM Node has unknown ID: " + (id ?? "<empty>"))
     console.error("DOM Node: ",  node)

@@ -2,6 +2,7 @@ import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {EdgeProps} from "../components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
+import {checkInvalidID} from "../util/log";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'
@@ -83,6 +84,7 @@ export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "dat
 export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
     const i = target as EdgeImpl<any>
     if (i.isInitialized) return
+    checkInvalidID("edge", i.id)
     i.isInitialized = true
 
     if (i.Component == null) i.Component = defaults.Component ?? SimpleEdge
