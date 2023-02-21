@@ -30,7 +30,8 @@ export const Z_INDEX_INTERFACE = 7
 /**
  * 5 if config option "nodesOverEdges" is enabled
   */
-export const Z_INDEX_NODES = 3
+export const Z_INDEX_NODE = 3
+export const Z_INDEX_GRABBED_NODE = 6
 /**
  * 3 if config option "nodesOverEdges" is enabled
  */

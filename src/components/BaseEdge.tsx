@@ -1,5 +1,5 @@
 import React, {memo, useContext} from "react";
-import IDContext from "../context/IDContext";
+import {GrapherContext} from "../context/GrapherContext";
 import {cx} from "@emotion/css";
 import {EDGE_CLASS, EDGE_LABEL_BACKGROUND_CLASS, EDGE_LABEL_CLASS, EDGE_PATH_CLASS} from "../util/constants";
 import {Node} from "../data/Node";
@@ -82,16 +82,17 @@ export interface EdgeProps<T> {
 
 export const BaseEdge = memo<BaseEdgeProps>(
     function BaseEdge({id, classes, path, markerStart, markerEnd, label, labelPosition}) {
-        const baseID = useContext(IDContext)
+        const baseID = useContext(GrapherContext).id
 
         return <g id={`${baseID}e-${id}`} className={cx([...classes], EDGE_CLASS)}>
+            <path d={path} stroke={"transparent"} fill={"none"} strokeWidth={25}/>
             <path d={path} className={EDGE_PATH_CLASS} markerStart={
                 markerStart != null ? `url(#${baseID}-${markerStart})` : undefined
             } markerEnd={
                 markerEnd != null ? `url(#${baseID}-${markerEnd})` : undefined
             }/>
             {label && <>
-                <rect className={EDGE_LABEL_BACKGROUND_CLASS}/>
+                <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={5}/>
                 {typeof labelPosition === "number" || labelPosition == null
                     ? <text className={EDGE_LABEL_CLASS} data-label-pos={String(labelPosition ?? .5)} textAnchor={"middle"} dominantBaseline={"middle"}>{label}</text>
                     : <text className={EDGE_LABEL_CLASS} x={labelPosition.x} y={labelPosition.y} textAnchor={"middle"} dominantBaseline={"middle"}>{label}</text>}

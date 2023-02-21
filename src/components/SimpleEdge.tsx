@@ -1,18 +1,17 @@
 import {BaseEdge, EdgeProps} from "./BaseEdge";
 import React, {memo} from "react";
-import {getStraightEdgePath, getCurvedEdgePath} from "../util/EdgePath";
+import {getStraightEdgePath, getRoundEdgePath} from "../util/EdgePath";
 import {warnUnknownEdgeType} from "../util/log";
-
 
 export type SimpleEdgeData = {
     /**
      * - "straight" will use {@link getStraightEdgePath}
-     * - "curved" will use {@link getCurvedEdgePath} with curve amount specified by `curve` property
+     * - "round" will use {@link getRoundEdgePath} with curve amount specified by `curve` property
      * TODO More types
      */
-    type: "straight" | "curved"
+    type: "straight" | "round"
     /**
-     * Used as a parameter for {@link getCurvedEdgePath} when `type` is `curved`. Defaults to .2
+     * Used as a parameter for {@link getRoundEdgePath} when `type` is `curved`. Defaults to .2
      */
     curve?: number
 }
@@ -23,14 +22,13 @@ export type SimpleEdgeData = {
 export const SimpleEdge = memo<EdgeProps<SimpleEdgeData>>(
     function SimpleEdge(props) {
         let path: string
-        console.log(props.data)
         switch (props.data?.type) {
             case undefined:
             case "straight":
                 path = getStraightEdgePath(props.sourcePos, props.targetPos)
                 break
-            case "curved":
-                path = getCurvedEdgePath(props.sourcePos, props.targetPos, props.data?.curve ?? .2)
+            case "round":
+                path = getRoundEdgePath(props.sourcePos, props.targetPos, props.data?.curve ?? .2)
                 break
             default:
                 path = getStraightEdgePath(props.sourcePos, props.targetPos)

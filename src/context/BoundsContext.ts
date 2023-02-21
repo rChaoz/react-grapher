@@ -6,4 +6,4 @@ import React from "react";
  * their text wrapped. So, we use the bounds to shift all nodes towards bottom-right to make sure the top-left-most point in the Graph has positive coordinates.
  * Then, we shift the content-div towards top-left to bring the 0,0 point back in the center of the Graph. This context holds the bounding rect to allow this.
  */
-export default React.createContext<DOMRect>(new DOMRect())
+export const BoundsContext = React.createContext<DOMRect>(new DOMRect())

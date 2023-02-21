@@ -8,9 +8,12 @@
     --react-grapher-node-color: white;
 
     --react-grapher-edge-stroke-width: 3px;
-    --react-grapher-edge-color: #858484;
-    --react-grapher-edge-color-hover: #ada7a7;
-    --react-grapher-edge-color-active: #656363;
+    --react-grapher-edge-color: #777777;
+    --react-grapher-edge-color-hover: #989898;
+    --react-grapher-edge-color-active: #5e5e5e;
+    --react-grapher-edge-label-color: #000000;
+    --react-grapher-edge-label-color-hover: #676767;
+    --react-grapher-edge-label-color-active: #3b3b3b;
 
     background-color: var(--react-grapher-background);
 }
@@ -51,23 +54,45 @@
 }
 
 .react-grapher-edge-path {
-    fill: transparent;
+    fill: none;
     stroke: var(--react-grapher-edge-color);
+    transition: stroke .1s;
     stroke-width: var(--react-grapher-edge-stroke-width);
     stroke-linecap: round
 }
 
+.react-grapher-edge:hover .react-grapher-edge-path {
+    stroke: var(--react-grapher-edge-color-hover);
+}
+
+.react-grapher-edge:active .react-grapher-edge-path {
+    stroke: var(--react-grapher-edge-color-active);
+}
+
 .react-grapher-edge-label {
-    fill: black;
+    fill: var(--react-grapher-edge-label-color);
     font-size: .8rem;
+    user-select: none;
+}
+
+.react-grapher-edge:hover .react-grapher-edge-label {
+    fill: var(--react-grapher-edge-label-color-hover);
+}
+
+.react-grapher-edge:active .react-grapher-edge-label {
+    fill: var(--react-grapher-edge-label-color-active);
 }
 
 .react-grapher-edge-label-background {
     fill: var(--react-grapher-background);
 }
 
+.react-grapher-edge {
+    pointer-events: stroke;
+}
+
 .react-grapher-marker-arrow {
-    fill: transparent;
+    fill: none;
     stroke: var(--react-grapher-edge-color);
     stroke-width: var(--react-grapher-edge-stroke-width);
     stroke-linecap: round;
@@ -75,5 +100,5 @@
 
 .react-grapher-marker-arrow-filled {
     fill: var(--react-grapher-edge-color);
-    stroke: transparent;
+    stroke: none;
 }

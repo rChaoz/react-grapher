@@ -18,14 +18,14 @@ import {
     REACT_GRAPHER_CLASS,
     VIEWPORT_CLASS,
     Z_INDEX_EDGES,
-    Z_INDEX_NODES
+    Z_INDEX_NODE
 } from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {GrapherEvent, KeyEvent, NodePointerEvent, UpEvent, ViewportPointerEvent, ViewportWheelEvent} from "../data/GrapherEvent";
 import {criticalNoViewport, errorDOMNodeUnknownID, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
-import BoundsContext from "../context/BoundsContext";
-import IDContext from "../context/IDContext";
+import {BoundsContext} from "../context/BoundsContext";
+import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
 import {getNodeIntersection} from "../util/EdgePath";
 import {enlargeRect, resolveValue} from "../util/utils";
@@ -125,13 +125,12 @@ const Edges = styled.svg<{ nodesOverEdges: boolean }>`
   pointer-events: none;
   position: absolute;
   inset: 0;
-  z-index: ${props => props.nodesOverEdges ? Z_INDEX_NODES : Z_INDEX_EDGES};
+  z-index: ${props => props.nodesOverEdges ? Z_INDEX_NODE : Z_INDEX_EDGES};
 `
 
 const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
   position: absolute;
   inset: 0;
-  z-index: ${props => props.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODES};
 `
 
 export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
@@ -666,7 +665,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller])
 
-    return <BoundsContext.Provider value={bounds}><IDContext.Provider value={id}>
+    const contextValue: GrapherContextValue = useMemo(() => ({id, nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE}), [id, config.nodesOverEdges])
+    return <BoundsContext.Provider value={bounds}><GrapherContext.Provider value={contextValue}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
                 <Nodes className={NODES_CLASS} nodesOverEdges={config.nodesOverEdges}>
@@ -687,7 +687,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             </GrapherViewport>
             {props.children}
         </GraphDiv>
-    </IDContext.Provider></BoundsContext.Provider>
+    </GrapherContext.Provider></BoundsContext.Provider>
 }
 
 // Utility functions

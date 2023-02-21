@@ -20,7 +20,7 @@ import {SimpleNode} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
 // Other
-import {getNodeIntersection, getStraightEdgePath, getCurvedEdgePath} from "./util/EdgePath";
+import {getNodeIntersection, getStraightEdgePath, getRoundEdgePath} from "./util/EdgePath";
 
 export {
     // Data
@@ -38,5 +38,5 @@ export {
     BaseNode, BaseNodeProps, SimpleNode, NodeProps,
     BaseEdge, BaseEdgeProps, SimpleEdge, SimpleEdgeData, EdgeProps,
     // Others
-    getNodeIntersection, getStraightEdgePath, getCurvedEdgePath
+    getNodeIntersection, getStraightEdgePath, getRoundEdgePath
 }

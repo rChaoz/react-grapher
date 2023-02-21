@@ -177,9 +177,9 @@ export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
 }
 
 /**
- * Returns a curved path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values.
+ * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values.
  */
-export function getCurvedEdgePath(a: DOMPoint, b: DOMPoint, curve: number) {
+export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, curve: number) {
     const dx = b.x - a.x, dy = b.y - a.y
     const px = (b.x + a.x) / 2 + dy * curve, py = (b.y + a.y) / 2 - dx * curve
     return `M ${a.x} ${a.y} Q ${px} ${py} ${b.x} ${b.y}`
