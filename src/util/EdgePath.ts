@@ -37,14 +37,21 @@ function resolveValues(strValue: string, width: number, height: number): [number
 export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>): DOMPoint {
     const sourcePos = sourceNode.position
     const targetPos = targetNode.position;
+    const sourceNodeImpl = sourceNode as NodeImpl<any>
+
+    const w = sourceNodeImpl.width! + sourceNode.edgeMargin;
+    const h = sourceNodeImpl.height! + sourceNode.edgeMargin;
+    const x1 = sourcePos.x - w / 2, x2 = sourcePos.x + w / 2, y1 = sourcePos.y - h / 2, y2 = sourcePos.y + h / 2
+
+    // If nodes overlap, draw the line between their centers
+    if (targetPos.x + w / 2 > x1 && targetPos.x - w / 2 < x2 && targetPos.y + h / 2 > y1 && targetPos.y - h / 2 < y2) return sourcePos
+
+    // Calculate border radius of source node
+    const style = getComputedStyle(sourceNodeImpl.element!)
     /* border[pos][axis] - border radius for every corner
     pos = 0 (top-left) / 1 (top-right) / 2 (bottom-right) / 3 (bottom-left)
     axis = 0 (x-axis) / 1 (y-axis)
      */
-    const sourceNodeImpl = sourceNode as NodeImpl<any>
-
-    // Calculate border radius of source node
-    const style = getComputedStyle(sourceNodeImpl.element!)
     const border = [
         resolveValues(style.borderTopLeftRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
         resolveValues(style.borderTopRightRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
@@ -53,13 +60,6 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
     ]
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)
-
-    const w = sourceNodeImpl.width! + sourceNode.edgeMargin;
-    const h = sourceNodeImpl.height! + sourceNode.edgeMargin;
-    const x1 = sourcePos.x - w / 2, x2 = sourcePos.x + w / 2, y1 = sourcePos.y - h / 2, y2 = sourcePos.y + h / 2
-
-    // If nodes overlap, draw the line between their centers
-    if (targetPos.x > x1 && targetPos.x < x2 && targetPos.y > y1 && targetPos.y < y2) return sourcePos
 
     // Utility function
     /**

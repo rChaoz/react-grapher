@@ -62,10 +62,23 @@ export interface Edge<T = SimpleEdgeData> {
      * ID of the predefined/custom SVG marker.
      */
     markerEnd: string | null
-    // TODO Permissions
+    // Config
+    /**
+     * Whether this edge is selectable by the user. Defaults to true
+     */
+    allowSelection?: boolean
+    /**
+     * Whether this edge can be "grabbed" by the user. An edge is grabbed on pointerdown, and this prevents the viewport from being grabbed (as it is the second to receive
+     * the event). If false, attempting to drag this edge will pan the viewport instead; the event will completely ignore this edge. Defaults to true
+     */
+    allowGrabbing?: boolean
 }
 
 export interface EdgeImpl<T> extends Edge<T> {
+    /**
+     * Automatically set during rendering. DOM Element for this edge.
+     */
+    element?: SVGElement
     /**
      * Used internally to check if a node was initialized (all fields set).
      */
@@ -82,7 +95,7 @@ export type EdgeData<T> = Partial<Edge<T>> & {id: string, source: string, target
  */
 export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
 
-const edgeDefaults: Required<EdgeDefaults> = {
+const edgeDefaults: Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelection"> = {
     Component: SimpleEdge,
     classes: [],
     sourceHandle: null,
@@ -133,6 +146,11 @@ export interface EdgesFunctions<T> {
     clear(): void
 
     /**
+     * Finds the edge with the given ID
+     */
+    get(id: string): Edge<T> | undefined
+
+    /**
      * Replace all existing edges
      */
     set(newEdges: Edge<T>[] | EdgeData<T>[]): void
@@ -181,4 +199,4 @@ export interface EdgesFunctionsImpl<T> extends EdgesFunctions<T> {
 
 export type Edges<T> = EdgesFunctions<T> & Edge<T>[]
 
-export type EdgesImpl<T> = EdgesFunctionsImpl<T> & Edge<T>[]
+export type EdgesImpl<T> = EdgesFunctionsImpl<T> & EdgeImpl<T>[]

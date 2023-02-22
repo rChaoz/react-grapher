@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {applyNodeDefaults, NodeData, NodeImpl, Nodes, NodesImpl} from "../data/Node"
-import {applyEdgeDefaults, EdgeData, Edges, EdgesImpl} from "../data/Edge";
+import {applyNodeDefaults, Node, NodeData, NodeImpl, Nodes, NodesImpl} from "../data/Node"
+import {applyEdgeDefaults, Edge, EdgeData, Edges, EdgesImpl} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
 import {useGraphState} from "../hooks/useGraphState";
@@ -8,12 +8,14 @@ import {GrapherViewport} from "./GrapherViewport";
 import {Controller, ControllerImpl} from "../data/Controller";
 import {
     EDGE_LABEL_BACKGROUND_CLASS,
-    EDGE_LABEL_CLASS, EDGE_PATH_CLASS,
+    EDGE_LABEL_CLASS,
+    EDGE_PATH_CLASS,
     EDGES_CLASS,
     MARKER_ARROW_CLASS,
     MARKER_ARROW_FILLED_CLASS,
     MARKER_ARROW_FILLED_ID,
-    MARKER_ARROW_ID, MULTI_CLICK_TIME,
+    MARKER_ARROW_ID,
+    MULTI_CLICK_TIME,
     NODES_CLASS,
     REACT_GRAPHER_CLASS,
     VIEWPORT_CLASS,
@@ -22,7 +24,7 @@ import {
 } from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
-import {checkInvalidID, criticalNoViewport, errorDOMNodeUnknownID, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
+import {checkInvalidID, criticalNoViewport, errorQueryFailed, errorUnknownDomID, errorUnknownNode, warnInvalidEdgeLabelPos, warnNoReactGrapherID} from "../util/log";
 import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
@@ -169,7 +171,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         nodes = ownNodes as NodesImpl<N>
         edges = ownEdges as EdgesImpl<E>
     }
-    nodes.multipleSelection = config.userControls.multipleSelection
+    nodes.multipleSelection = edges.multipleSelection = config.userControls.multipleSelection
 
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
     const useID = React.useId
@@ -213,7 +215,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         applyNodeDefaults(node, config.nodeDefaults)
         const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} absolutePosition={nodes.absolute(node)}
-                          grabbed={grabbed.id === node.id} classes={node.classes} selected={node.selected}/>
+                          grabbed={grabbed.type === "node" && grabbed.id === node.id} classes={node.classes} selected={node.selected}/>
     }), [nodes, grabbed, config.nodeDefaults])
 
     // Same for edges
@@ -239,9 +241,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
             const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position
             return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
-                              markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label} labelPosition={edge.labelPosition} data={edge.data}/>
+                              markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label} labelPosition={edge.labelPosition} data={edge.data}
+                              grabbed={grabbed.type === "edge" && grabbed.id === edge.id} selected={edge.selected}/>
         })
-    }, [edges, nodes, updateEdges, config.edgeDefaults])
+    }, [updateEdges, edges, config.edgeDefaults, nodes, grabbed])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -250,18 +253,16 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     const [bounds, setBounds] = useState(new DOMRect())
     const onEvent = props.onEvent
     const onChange = props.onChange
+    // TODO Split into 2 effects - one that sets listeners, one that does everything else
+    // To prevent listeners being added/removed every frame on node movement, maybe?
     useEffect(() => {
         if (ref.current == null) return
         // Listener functions
 
-        // Node level
-        function onNodePointerDown(event: PointerEvent) {
-            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 2)
-            let node
-            if (nodeID == null || (node = nodes.get(nodeID)) == null) {
-                errorDOMNodeUnknownID(event.currentTarget, nodeID)
-                return
-            }
+        // Node & Edge level
+        function onObjectPointerDown(event: PointerEvent) {
+            const r = processDomElement(event.currentTarget, nodes, edges, id)
+            if (r == null) return
             let prevented = false
             if (onEvent != null) {
                 const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
@@ -270,31 +271,30 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     subType: "down",
                     clickCount: 0,
                     pointerEvent: event,
-                    target: "node",
-                    targetID: nodeID,
+                    target: r.type,
+                    targetID: r.objID,
                 }
                 onEvent(grapherEvent)
                 prevented = grapherEvent.prevented
             }
-            // "Grab" the node
-            if (node.allowGrabbing === false || (node.allowGrabbing === undefined && config.nodeDefaults.allowGrabbing === false)) return
+            // Check if grabbing is allowed
+            if (r.obj.allowGrabbing === false || (r.obj.allowGrabbing === undefined && (
+                (r.type === "node" && config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && config.edgeDefaults.allowGrabbing === false)
+            ))) return
+            // "Grab" the object
             if (!prevented && grabbed.type == null) setGrabbed({
-                type: "node",
-                id: nodeID,
-                clickCount: (lastClicked.type === "node" && lastClicked.id === nodeID && lastClicked.time + MULTI_CLICK_TIME > Date.now()) ? lastClicked.times + 1 : 1,
+                type: r.type,
+                id: r.objID,
+                clickCount: (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + MULTI_CLICK_TIME > Date.now()) ? lastClicked.times + 1 : 1,
                 hasMoved: false,
                 startX: event.clientX,
                 startY: event.clientY,
             })
         }
 
-        function onNodePointerUp(event: PointerEvent) {
-            const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 2)
-            let node
-            if (nodeID == null || (node = nodes.get(nodeID)) == null) {
-                errorDOMNodeUnknownID(event.currentTarget, nodeID)
-                return
-            }
+        function onObjectPointerUp(event: PointerEvent) {
+            const r = processDomElement(event.currentTarget, nodes, edges, id)
+            if (r == null) return
             if (onEvent != null) {
                 const upEvent: GrapherPointerEvent = {
                     ...createEvent(grabbed, nodes, edges),
@@ -302,16 +302,16 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     subType: "up",
                     clickCount: 0,
                     pointerEvent: event,
-                    target: "node",
-                    targetID: nodeID,
+                    target: r.type,
+                    targetID: r.objID,
                 }
                 onEvent(upEvent)
             }
 
-            if (grabbed.type === "node" && grabbed.id === nodeID && !grabbed.hasMoved) {
-                // Remember that the node was clicked
-                lastClicked.type = "node"
-                lastClicked.id = nodeID
+            if (grabbed.type === r.type && grabbed.id === r.objID && !grabbed.hasMoved) {
+                // Remember that the object was clicked
+                lastClicked.type = r.type
+                lastClicked.id = r.objID
                 lastClicked.times = grabbed.clickCount
                 lastClicked.time = Date.now()
                 // Send event
@@ -323,15 +323,26 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         subType: "click",
                         clickCount: grabbed.clickCount,
                         pointerEvent: event,
-                        target: "node",
-                        targetID: nodeID,
+                        target: r.type,
+                        targetID: r.objID,
                     }
                     onEvent(upEvent)
                     prevented = upEvent.prevented
                 }
-                // Select the node
-                if (node.allowSelection === false || (node.allowSelection === undefined && config.nodeDefaults.allowSelection === false)) return
-                if (!prevented) nodes.setSelected(nodeID, true, !event.shiftKey)
+                // Check if selection is allowed
+                if (r.obj.allowSelection === false || (r.obj.allowSelection === undefined && (
+                    (r.type === "node" && config.nodeDefaults.allowSelection === false) || (r.type === "edge" && config.edgeDefaults.allowSelection === false)
+                ))) return
+                // Select the object
+                if (!prevented) {
+                    if (r.type === "node") {
+                        nodes.setSelected(r.objID, event.shiftKey ? !r.obj.selected : true, !event.shiftKey)
+                        if (!event.shiftKey || !config.userControls.multipleSelection) edges.setSelection([])
+                    } else {
+                        edges.setSelected(r.objID, event.shiftKey ? !r.obj.selected : true, !event.shiftKey)
+                        if (!event.shiftKey || !config.userControls.multipleSelection) nodes.setSelection([])
+                    }
+                }
             }
         }
 
@@ -395,8 +406,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     onEvent(clickEvent)
                     prevented = clickEvent.prevented
                 }
-                // Unselect all nodes
-                if (!prevented) nodes.setSelection([])
+                // Deselect all objects
+                if (!prevented) {
+                    nodes.setSelection([])
+                    edges.setSelection([])
+                }
             }
         }
 
@@ -427,7 +441,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 prevented = keyEvent.prevented
             }
             // On escape press, deselect all
-            if (!prevented && event.code === "Escape") nodes.setSelection([])
+            if (!prevented && event.code === "Escape") {
+                nodes.setSelection([])
+                edges.setSelection([])
+            }
         }
 
         // Document level
@@ -522,6 +539,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         })
                     }
                 } else nodes.setSelection([])
+                edges.setSelection([])
 
                 sendChanges(changes, nodes, edges, onChange)
             }
@@ -581,8 +599,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
             // Set listeners
             if (!props.static) {
-                nodeElem.addEventListener("pointerdown", onNodePointerDown)
-                nodeElem.addEventListener("pointerup", onNodePointerUp)
+                nodeElem.addEventListener("pointerdown", onObjectPointerDown)
+                nodeElem.addEventListener("pointerup", onObjectPointerUp)
             }
         }
         nodes.boundingRect = nodesRect
@@ -592,17 +610,24 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // Same for edges
         for (const edge of edges) {
             const edgeElem = ref.current.querySelector<SVGGElement>(`#${id}e-${edge.id}`)
-
             if (edgeElem == null) {
                 // Edges are not rendered initially (as we need nodes' width, height, border radius...)
                 // So this is not an error usually
                 //errorUnknownEdge(edge.id)
                 continue
             }
+            edge.element = edgeElem
 
             // TODO Optimise getBBox calls to happen less often (not on every render)
             // Update bounding rect
             enlargeRect(edgesRect, edgeElem.getBBox())
+
+            // Set listeners
+            // TODO Instead of the entire edge being clickable, make only the tips clickable
+            if (!props.static) {
+                edgeElem.addEventListener("pointerdown", onObjectPointerDown)
+                edgeElem.addEventListener("pointerup", onObjectPointerUp)
+            }
 
             // Set position of label
             const labelElem = edgeElem.querySelector<SVGGraphicsElement>("." + EDGE_LABEL_CLASS)
@@ -613,7 +638,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 if (labelPos < 0 || labelPos > 1) warnInvalidEdgeLabelPos(edge.id, labelElem.dataset.labelPos)
                 else {
                     const pathElem = edgeElem.querySelector<SVGGeometryElement>("." + EDGE_PATH_CLASS)
-                    if (pathElem == null) errorUnknownDomID(`#${id}e-${edge.id} .${EDGE_PATH_CLASS}`, `SVG path element of edge ${edge.id}`)
+                    if (pathElem == null) errorQueryFailed(`#${id}e-${edge.id} .${EDGE_PATH_CLASS}`, `SVG path element of edge ${edge.id}`)
                     else {
                         const pos = pathElem.getPointAtLength(labelPos * pathElem.getTotalLength())
                         labelElem.setAttribute("x", String(pos.x))
@@ -667,8 +692,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // Remove node listeners
             for (const node of nodes) {
                 if (node.element == null) continue
-                node.element.removeEventListener("pointerdown", onNodePointerDown)
-                node.element.removeEventListener("pointerup", onNodePointerUp)
+                node.element.removeEventListener("pointerdown", onObjectPointerDown)
+                node.element.removeEventListener("pointerup", onObjectPointerUp)
+            }
+            // Remove edge listeners
+            for (const edge of edges) {
+                if (edge.element == null) continue
+                edge.element.removeEventListener("pointerdown", onObjectPointerDown)
+                edge.element.removeEventListener("pointerup", onObjectPointerUp)
             }
             // Remove viewport listeners
             if (viewportElem != null) {
@@ -724,6 +755,30 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 }
 
 // Utility functions
+
+// Extract DOM ID, type (node/edge) and internal ID from event target
+function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>, id: string)
+    : { domID: string, type: "node" | "edge", objID: string, obj: Node<N> | Edge<E> } | null {
+    const domID = (element as HTMLElement | null)?.id
+    if (domID == null) {
+        errorUnknownDomID(element, null)
+        return null
+    }
+    const objID = domID.substring(id.length + 2)
+    let type: "node" | "edge", obj: Node<N> | Edge<E> | undefined
+    if (domID.charAt(id.length) === "n") {
+        type = "node"
+        obj = nodes.get(objID)
+    } else {
+        type = "edge"
+        obj = edges.get(objID)
+    }
+    if (obj == null) {
+        errorUnknownDomID(element, `${domID} -> ${type} ${objID}`)
+        return null
+    }
+    return {domID, type, objID, obj}
+}
 
 // Send a change to the graph
 function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges<any>, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {

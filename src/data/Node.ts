@@ -36,7 +36,7 @@ export interface Node<T = string> {
      * Spacing between this node and the edges that connect to it. Defaults to 3
      */
     edgeMargin: number
-    // Permissions
+    // Config
     /**
      * Whether this node is selectable by the user. Defaults to true
      */

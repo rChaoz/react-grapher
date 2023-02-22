@@ -24,9 +24,10 @@ export function checkInvalidID(target: string, id: string) {
     console.error("ID must be composed of a-z, A-Z, 0-9, - and _")
 }
 
-export function errorDOMNodeUnknownID(node: EventTarget | null, id?: string | null) {
-    error("DOM Node has unknown ID: " + (id ?? "<empty>"))
-    console.error("DOM Node: ",  node)
+export function errorUnknownDomID(node: EventTarget | null, id?: string | null) {
+    if (id == null) error("DOM Node/Edge has no ID")
+    else error("DOM Element has unknown ID: " + id)
+    console.error("Element: ",  node)
 }
 
 export function errorUnknownNode(id: string) {
@@ -37,7 +38,7 @@ export function errorUnknownEdge(id: string) {
     error(`Error: unable to find edge with ID ${id}`)
 }
 
-export function errorUnknownDomID(query: string, desc: string) {
+export function errorQueryFailed(query: string, desc: string) {
     error(`Unable to find DOM element (${desc}) with query: ${query}`)
 }
 

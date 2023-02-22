@@ -12,11 +12,16 @@ export const CONTENT_CLASS = "react-grapher-content"
 export const NODES_CLASS = "react-grapher-nodes"
 export const EDGES_CLASS = "react-grapher-edges"
 
+
+
 export const NODE_CLASS = "react-grapher-node"
 export const NODE_HANDLE_CLASS = "react-grapher-node-handle"
 
+
 export const EDGE_CLASS = "react-grapher-edge"
 export const EDGE_PATH_CLASS = "react-grapher-edge-path"
+export const EDGE_HANDLE_CLASS = "react-grapher-edge-handle" // TODO Handle source & target
+
 export const EDGE_LABEL_CLASS = "react-grapher-edge-label"
 export const EDGE_LABEL_BACKGROUND_CLASS = "react-grapher-edge-label-background"
 

@@ -1,16 +1,19 @@
+/* Variables */
 .react-grapher {
     --react-grapher-background: #f1f1f5;
     --react-grapher-node-background: #ce4c13;
     --react-grapher-node-background-hover: #e1581c;
     --react-grapher-node-background-active: #bb440f;
     --react-grapher-node-border: #ff550a;
-    --react-grapher-node-border-selected: white;
-    --react-grapher-node-color: white;
+    --react-grapher-node-border-selected: #C0FFFF;
+    --react-grapher-node-text-color: white;
 
     --react-grapher-edge-stroke-width: 3px;
+    --react-grapher-edge-stroke-width-selected: 4px;
     --react-grapher-edge-color: #777777;
     --react-grapher-edge-color-hover: #989898;
     --react-grapher-edge-color-active: #5e5e5e;
+    --react-grapher-edge-selected-color: #B0EEEE;
     --react-grapher-edge-label-color: #000000;
     --react-grapher-edge-label-color-hover: #676767;
     --react-grapher-edge-label-color-active: #3b3b3b;
@@ -18,6 +21,9 @@
     background-color: var(--react-grapher-background);
 }
 
+
+
+/* Node */
 .react-grapher-node {
     border-radius: 16px;
     border: 2px solid;
@@ -31,7 +37,7 @@
 
     background: var(--react-grapher-node-background);
     border-color: var(--react-grapher-node-border);
-    color: var(--react-grapher-node-color);
+    color: var(--react-grapher-node-text-color);
 }
 
 .react-grapher-node:hover {
@@ -48,11 +54,20 @@
     border-width: 3px;
 }
 
+/* Node Handle TODO Replace colors with variables */
 .react-grapher-node-handle {
     background-color: black;
     border: 1px solid white;
 }
 
+
+
+/* Edge */
+.react-grapher-edge {
+    pointer-events: all;
+}
+
+/* Edge Path */
 .react-grapher-edge-path {
     fill: none;
     stroke: var(--react-grapher-edge-color);
@@ -65,10 +80,16 @@
     stroke: var(--react-grapher-edge-color-hover);
 }
 
-.react-grapher-edge:active .react-grapher-edge-path {
+.react-grapher-edge[data-grabbed=true] .react-grapher-edge-path {
     stroke: var(--react-grapher-edge-color-active);
 }
 
+.react-grapher-edge[data-selected=true] .react-grapher-edge-path {
+    stroke-width: var(--react-grapher-edge-stroke-width-selected);
+    filter: drop-shadow(0 0 4px var(--react-grapher-edge-selected-color)) drop-shadow(0 0 4px var(--react-grapher-edge-selected-color));
+}
+
+/* Edge Label */
 .react-grapher-edge-label {
     fill: var(--react-grapher-edge-label-color);
     font-size: .8rem;
@@ -79,18 +100,18 @@
     fill: var(--react-grapher-edge-label-color-hover);
 }
 
-.react-grapher-edge:active .react-grapher-edge-label {
+.react-grapher-edge[data-grabbed=true] .react-grapher-edge-label {
     fill: var(--react-grapher-edge-label-color-active);
 }
 
+/* Edge Label Background */
 .react-grapher-edge-label-background {
     fill: var(--react-grapher-background);
 }
 
-.react-grapher-edge {
-    pointer-events: stroke;
-}
 
+
+/* Markers */
 .react-grapher-marker-arrow {
     fill: none;
     stroke: var(--react-grapher-edge-color);
