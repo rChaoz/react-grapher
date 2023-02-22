@@ -55,7 +55,9 @@ export interface CommonGraphProps {
      */
     children?: React.ReactNode
     /**
-     * Fine configuration for the Graph
+     * Fine configuration for the Graph.
+     *
+     * Note: You should *really* memoize this value to avoid performance issues.
      */
     config?: GrapherConfig
     /**
@@ -208,11 +210,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Create components from Nodes array
     const nodeElements = useMemo(() => nodes.map(node => {
-        applyNodeDefaults(node, config.defaultNode)
+        applyNodeDefaults(node, config.nodeDefaults)
         const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} absolutePosition={nodes.absolute(node)}
                           grabbed={grabbed.id === node.id} classes={node.classes} selected={node.selected}/>
-    }), [nodes, grabbed, config.defaultNode])
+    }), [nodes, grabbed, config.nodeDefaults])
 
     // Same for edges
     const [updateEdges, setUpdateEdges] = useState(0)
@@ -221,7 +223,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // and 2. ES lint will complain about useMemo dependencies otherwise
         if (updateEdges == 0) return []
         return edges.map(edge => {
-            applyEdgeDefaults(edge, config.defaultEdge)
+            applyEdgeDefaults(edge, config.edgeDefaults)
             const source = nodes.get(edge.source) as NodeImpl<any>, target = nodes.get(edge.target) as NodeImpl<any>
             if (source == null) {
                 errorUnknownNode(edge.source)
@@ -239,7 +241,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
                               markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label} labelPosition={edge.labelPosition} data={edge.data}/>
         })
-    }, [edges, nodes, updateEdges, config.defaultEdge])
+    }, [edges, nodes, updateEdges, config.edgeDefaults])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -255,7 +257,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // Node level
         function onNodePointerDown(event: PointerEvent) {
             const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 2)
-            if (nodeID == null || nodes.get(nodeID) == null) {
+            let node
+            if (nodeID == null || (node = nodes.get(nodeID)) == null) {
                 errorDOMNodeUnknownID(event.currentTarget, nodeID)
                 return
             }
@@ -274,6 +277,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 prevented = grapherEvent.prevented
             }
             // "Grab" the node
+            if (node.allowGrabbing === false || (node.allowGrabbing === undefined && config.nodeDefaults.allowGrabbing === false)) return
             if (!prevented && grabbed.type == null) setGrabbed({
                 type: "node",
                 id: nodeID,
@@ -286,7 +290,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         function onNodePointerUp(event: PointerEvent) {
             const nodeID = (event.currentTarget as HTMLElement | null)?.id?.substring(id.length + 2)
-            if (nodeID == null || nodes.get(nodeID) == null) {
+            let node
+            if (nodeID == null || (node = nodes.get(nodeID)) == null) {
                 errorDOMNodeUnknownID(event.currentTarget, nodeID)
                 return
             }
@@ -325,6 +330,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     prevented = upEvent.prevented
                 }
                 // Select the node
+                if (node.allowSelection === false || (node.allowSelection === undefined && config.nodeDefaults.allowSelection === false)) return
                 if (!prevented) nodes.setSelected(nodeID, true, !event.shiftKey)
             }
         }
@@ -465,8 +471,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     errorUnknownNode(grabbed.id)
                     return
                 }
-                // TODO Each node should have it's own config to override global config
-                if (!config.userControls.allowMovingNodes) return
+                if (node.allowMoving === false || (node.allowMoving === undefined && config.nodeDefaults.allowMoving === false)) return
                 // Send event
                 let prevented = false
                 if (onEvent != null) {

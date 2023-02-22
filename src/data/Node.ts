@@ -7,17 +7,22 @@ import {checkInvalidID} from "../util/log";
 export interface Node<T = string> {
     id: string
     /**
-     * Component function for rendering the node, defaults to DefaultNode
+     * Custom data for this node. The default node implementation displays this value as a string.
      */
-    Component: React.ExoticComponent<NodeProps<T>>
+    data: T
     /**
      * Parent of this node. If non-null, its position will be relative to the center of this node.
      */
     parent?: string | null
     /**
-     * Custom data for this node. The default node implementation displays this value as a string.
+     * Whether this node has been selected by the user (read-only). You can access all selected nodes using `Nodes.selection`.
+     * You can modify the current selection using selection related functions on the Nodes object.
      */
-    data: T
+    selected: boolean
+    /**
+     * Component function for rendering the node, defaults to DefaultNode
+     */
+    Component: React.ExoticComponent<NodeProps<T>>
     /**
      * CSS classes that will be passed to the DefaultNode/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
      * By default, these classes are kept as-is.
@@ -31,11 +36,24 @@ export interface Node<T = string> {
      * Spacing between this node and the edges that connect to it. Defaults to 3
      */
     edgeMargin: number
+    // Permissions
     /**
-     * Whether this node has been selected by the user (read-only). You can access all selected nodes using `Nodes.selection`.
-     * You can modify the current selection using selection related functions on the Nodes object.
+     * Whether this node is selectable by the user. Defaults to true
      */
-    selected: boolean
+    allowSelection?: boolean
+    /**
+     * Whether this node can be "grabbed" by the user. A node is grabbed on pointerdown, and this prevents the viewport from being grabbed (as it is the second to receive
+     * the event). If false, attempting to drag this node will pan the viewport instead; the event will completely ignore this node. Defaults to true
+     */
+    allowGrabbing?: boolean
+    /**
+     * Whether this node can the moved by the user. Defaults to true
+     */
+    allowMoving?: boolean
+    /**
+     * Whether this node can be deleted by the user. Defaults to false
+     */
+    allowDeletion?: boolean
 }
 
 export interface NodeImpl<T> extends Node<T> {
@@ -65,20 +83,25 @@ export type NodeData<T = string> = Partial<Node<T>> & {id: string}
 /**
  * Default values for nodes.
  */
-export type NodeDefaults = Omit<NodeData<any>, "id" | "data">
+export type NodeDefaults = Omit<NodeData<any>, "id" | "data" | "parent" | "selected">
+
+const nodeDefaults: Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion"> = {
+    Component: SimpleNode,
+    classes: [],
+    position: new DOMPoint(),
+    edgeMargin: 3,
+}
 
 export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
     const i = target as NodeImpl<any>
     if (i.isInitialized) return
-    checkInvalidID("node", i.id)
     i.isInitialized = true
+    checkInvalidID("node", i.id)
+    i.selected = false
     i.width = i.height = 0
 
-    if (i.Component == null) i.Component = defaults.Component ?? SimpleNode
-    if (i.classes == null) i.classes = defaults.classes ?? []
-    if (i.position == null) i.position = defaults.position ?? new DOMPoint()
-    if (i.edgeMargin == null) i.edgeMargin = defaults.edgeMargin ?? 3
-    if (i.selected == null) i.selected = defaults.selected ?? false
+    // @ts-ignore
+    for (const prop in nodeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? nodeDefaults[prop]
 }
 
 /**

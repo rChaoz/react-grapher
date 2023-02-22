@@ -23,15 +23,15 @@ export interface BaseEdgeProps {
     /**
      * ID of the predefined/custom SVG marker.
      */
-    markerStart?: string
+    markerStart?: string | null
     /**
      * ID of the predefined/custom SVG marker.
      */
-    markerEnd?: string
+    markerEnd?: string | null
     /**
      * Label text
      */
-    label?: string
+    label?: string | null
     /**
      * Label center position. Can be a number 0..1, as a position on the SVG path (as specified by {@link Edge.labelPosition}), or absolute coordinates.
      */
@@ -60,15 +60,15 @@ export interface EdgeProps<T> {
     /**
      * ID of the predefined/custom SVG marker.
      */
-    markerStart?: string
+    markerStart?: string | null
     /**
      * ID of the predefined/custom SVG marker.
      */
-    markerEnd?: string
+    markerEnd?: string | null
     /**
      * Label text
      */
-    label?: string
+    label?: string | null
     /**
      * Label position, as set in the Edge object
      * @see Edge.labelPosition

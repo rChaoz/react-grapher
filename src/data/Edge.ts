@@ -10,6 +10,15 @@ import {checkInvalidID} from "../util/log";
 export interface Edge<T = SimpleEdgeData> {
     id: string
     /**
+     * Custom data this edge can hold
+     */
+    data?: T
+    /**
+     * Whether this edge has been selected by the user (read-only). You can access all selected edges using `Edges.selection`.
+     * You can modify the current selection using selection related functions on the Edges object.
+     */
+    selected: boolean
+    /**
      * Component function for rendering the edge, defaults to DefaultEdge
      */
     Component: React.ExoticComponent<EdgeProps<T>>
@@ -25,7 +34,7 @@ export interface Edge<T = SimpleEdgeData> {
     /**
      * Name of the handle of the source node (null for floating edge)
      */
-    sourceHandle?: string | null
+    sourceHandle: string | null
     /**
      * ID of target node
      */
@@ -33,35 +42,27 @@ export interface Edge<T = SimpleEdgeData> {
     /**
      * Name of the handle of the target node (null for floating edge)
      */
-    targetHandle?: string | null
+    targetHandle: string | null
     /**
-     * Label for this edge
+     * Label for this edge (can be null, in which case the text element won't be rendered at all)
      */
-    label?: string
+    label: string | null
     /**
-     * Where to display the label, along the Edge's path, as a value between 0 and 1 (inclusive).
+     * Where to display the label, along the Edge's path, as a value between 0 and 1 (inclusive). Defaults to 0.5
      * It will be multiplied by the path's {@link SVGGeometryElement.getTotalLength length} before being passed as an argument to {@link SVGGeometryElement.getPointAtLength}.
      *
-     * Note that, while this is the default behaviour of {@link SimpleEdge}
+     * Note that, while this is the default behaviour of {@link SimpleEdge}, a custom Edge component function can decide to override this behaviour and place the label wherever.
      */
-    labelPosition?: number
-    /**
-     * Custom data this edge can hold
-     */
-    data?: T
+    labelPosition: number
     /**
      * ID of the predefined/custom SVG marker.
      */
-    markerStart?: string
+    markerStart: string | null
     /**
      * ID of the predefined/custom SVG marker.
      */
-    markerEnd?: string
-    /**
-     * Whether this edge has been selected by the user (read-only). You can access all selected edges using `Edges.selection`.
-     * You can modify the current selection using selection related functions on the Edges object.
-     */
-    selected: boolean
+    markerEnd: string | null
+    // TODO Permissions
 }
 
 export interface EdgeImpl<T> extends Edge<T> {
@@ -79,7 +80,18 @@ export type EdgeData<T> = Partial<Edge<T>> & {id: string, source: string, target
 /**
  * Default values for edges.
  */
-export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data">
+export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
+
+const edgeDefaults: Required<EdgeDefaults> = {
+    Component: SimpleEdge,
+    classes: [],
+    sourceHandle: null,
+    targetHandle: null,
+    label: null,
+    labelPosition: .5,
+    markerStart: null,
+    markerEnd: null,
+}
 
 export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
     const i = target as EdgeImpl<any>
@@ -87,12 +99,8 @@ export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults)
     checkInvalidID("edge", i.id)
     i.isInitialized = true
 
-    if (i.Component == null) i.Component = defaults.Component ?? SimpleEdge
-    if (i.classes == null) i.classes = defaults.classes ?? []
-    if (i.label == null) i.label = defaults.label
-    if (i.markerStart == null) i.markerStart = defaults.markerStart
-    if (i.markerEnd == null) i.markerEnd = defaults.markerEnd
-    if (i.selected == null) i.selected = defaults.selected ?? false
+    // @ts-ignore
+    for (const prop in edgeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? edgeDefaults[prop]
 }
 
 /**

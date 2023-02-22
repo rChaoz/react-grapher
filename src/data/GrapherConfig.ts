@@ -49,27 +49,8 @@ export interface GrapherUserControls {
      * Allows selecting multiple nodes or edges. Defaults to true
      */
     multipleSelection?: boolean
-    /**
-     * Allow moving nodes around. Defaults to true
-     */
-    allowMovingNodes?: boolean
-    /**
-     * Allow deletion of nodes. Deleting a node also deletes all edges that connect to it. Defaults to false
-     */
-    allowDeletingNodes?: boolean
     // TODO Options to allow creating new nodes
-    /**
-     * Allow editing (reassignment) of edges. Defaults to false
-     */
-    allowEditingEdges?: boolean
-    /**
-     * Allow deleting edges. Defaults to false
-     */
-    allowDeletingEdges?: boolean
-    /**
-     * Allow creating new edges. Defaults to false
-     */
-    allowCreatingEdges?: boolean
+    // TODO Options to allow creating new edges
 }
 
 const defaultUserControls = {
@@ -155,11 +136,11 @@ export interface GrapherConfig {
     /**
      * Default config for a Node. When a new node is created, undefined fields will be set from this object.
      */
-    defaultNode?: NodeDefaults
+    nodeDefaults?: NodeDefaults
     /**
      * Default config for an Edge. When a new edge is created, undefined fields will be set from this object.
      */
-    defaultEdge?: EdgeDefaults
+    edgeDefaults?: EdgeDefaults
 }
 
 export interface GrapherConfigSet {
@@ -168,8 +149,8 @@ export interface GrapherConfigSet {
     fitViewConfig: GrapherFitViewConfigSet
     nodesOverEdges: boolean
     hideControls?: boolean
-    defaultNode: NodeDefaults
-    defaultEdge: EdgeDefaults
+    nodeDefaults: NodeDefaults
+    edgeDefaults: EdgeDefaults
 }
 
 export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
@@ -181,7 +162,7 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
         nodesOverEdges: config?.nodesOverEdges ?? false,
         hideControls: config?.hideControls ?? false,
-        defaultNode: config?.defaultNode ?? {},
-        defaultEdge: config?.defaultEdge ?? {},
+        nodeDefaults: config?.nodeDefaults ?? {},
+        edgeDefaults: config?.edgeDefaults ?? {},
     }
 }
