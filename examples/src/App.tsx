@@ -5,7 +5,7 @@ import "./App.css"
 
 export default function App() {
     return <div style={{
-        width: "800px",
+        width: 800,
         marginInline: "auto",
     }}>
         <div style={{

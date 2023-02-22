@@ -5,7 +5,7 @@
     --react-grapher-node-background-hover: #e1581c;
     --react-grapher-node-background-active: #bb440f;
     --react-grapher-node-border: #ff550a;
-    --react-grapher-node-border-selected: #C0FFFF;
+    --react-grapher-node-border-selected: #FFFDD0;
     --react-grapher-node-text-color: white;
 
     --react-grapher-edge-stroke-width: 3px;
@@ -13,7 +13,7 @@
     --react-grapher-edge-color: #777777;
     --react-grapher-edge-color-hover: #989898;
     --react-grapher-edge-color-active: #5e5e5e;
-    --react-grapher-edge-selected-color: #B0EEEE;
+    --react-grapher-edge-selected-color: #EEECC0;
     --react-grapher-edge-label-color: #000000;
     --react-grapher-edge-label-color-hover: #676767;
     --react-grapher-edge-label-color-active: #3b3b3b;

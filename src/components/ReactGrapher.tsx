@@ -77,7 +77,7 @@ export interface CommonGraphProps {
     /**
      * Fit view when the DOM element's size changes
      */
-    fitViewOnResize?: boolean // TODO
+    fitViewOnResize?: boolean
     /**
      * This config option will make the graph completely static, by implementing the following changes:
      * - set config.hideControls = true (if undefined)
@@ -728,6 +728,22 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller])
+
+    // Fit view on resize
+    useEffect(() => {
+        if (props.fitViewOnResize && ref.current != null) {
+            let firstObserve = true
+            const observer = new ResizeObserver(() => {
+                if (firstObserve) firstObserve = false
+                else {
+                    console.log("Fitting view")
+                    controller.fitView()
+                }
+            })
+            observer.observe(ref.current)
+            return () => observer.disconnect()
+        }
+    }, [props.fitViewOnResize, controller])
 
     const contextValue: GrapherContextValue = useMemo(() => ({id, nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE}), [id, config.nodesOverEdges])
     return <BoundsContext.Provider value={bounds}><GrapherContext.Provider value={contextValue}>
