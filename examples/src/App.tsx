@@ -19,7 +19,7 @@ export default function App() {
             ]} defaultEdges={[
                 {id: "0", source: "0", target: "1", label: "hehe", markerStart: "arrow", markerEnd: "arrow-filled"},
                 {id: "1", source: "0", target: "2", label: "hihi", markerEnd: "arrow"},
-                {id: "2", source: "3", target: "2", markerEnd: "arrow", data: {type: "curved"}},
+                {id: "2", source: "3", target: "2", markerEnd: "arrow", data: {type: "round"}},
             ]}/>
         </div>
     </div>

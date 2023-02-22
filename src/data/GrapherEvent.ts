@@ -1,102 +1,102 @@
-import {Node} from "./Node"
+import {NodesImpl} from "./Node";
+import {EdgesImpl} from "./Edge";
 
-export type GrapherEvent = NodePointerEvent | ViewportPointerEvent | ViewportWheelEvent | UpEvent | KeyEvent
+export type GrapherEvent = GrapherPointerEvent | GrapherWheelEvent | GrapherKeyEvent
 
-export interface BaseGrapherEvent {
+export interface GrapherBaseEvent {
     /**
      * Similar to DOM's Event.preventDefault(), this function will ensure that the default action for the specified event will not occur. For example,
      * when clicked, a Node or Edge will be selected. Or, on a  'down' event, a movable node will be "grabbed" (that means, from now on, moving the pointer without
      * releasing the hold will move the node).
      */
     preventDefault(): void
+
+    /**
+     * The currently grabbed object, if any. A node/edge/viewport is 'grabbed' after receiving a pointerdown event, until a pointerup is received.
+     * Can be null if nothing is grabbed.
+     */
+    grabbed: "node" | "edge" | "viewport" | null
+    /**
+     * ID of grabbed node/edge, only valid if {@link grabbed} is 'node' or 'edge', otherwise empty string.
+     */
+    grabbedID: string
+    /**
+     * Read-only array of selected node IDs.
+     */
+    selectedNodes: string[]
+    /**
+     * Read-only array of selected edge IDs.
+     */
+    selectedEdges: string[]
 }
 
-export interface NodeEvent extends BaseGrapherEvent {
-    /**
-     * Node on which the event occurred
-     */
-    target: Node<any>
+export interface GrapherEventImpl {
+    prevented: boolean
 }
 
-export interface NodePointerEvent extends NodeEvent {
-    type: "node"
-    /**
-     * A down event occurs triggers when the node receives a 'pointerdown' event. By default, the node is "grabbed".
-     *
-     * A move event occurs at the document level when the pointer is moved while the node is "grabbed". By default, a NodeMoveChange<T> is emitted for all the nodes.
-     *
-     * An up event occurs when a pointer button is released inside the node.
-     *
-     * A click event occurs if down and up events occur on the same node and no node move events occurred in-between. By default, the node is selected.
-     */
-    action: "down" | "move" | "up" | "click"
-    /**
-     * Relevant for "up" events: whether the node that received the 'pointerup' event is also the one that was "grabbed" (received 'pointerdown') earlier.
-     */
-    grabbed: boolean
-    /**
-     * The PointerEvent that caused this event. Note that for the "click" event, this is actually a "pointerup" event.
-     */
-    pointerEvent: PointerEvent
-}
-
-export interface ViewportPointerEvent extends BaseGrapherEvent {
-    type: "viewport"
-    /**
-     * A down event occurs triggers when the viewport receives a 'pointerdown' event. By default, the viewport is "grabbed", if no node was grabbed.
-     *
-     * A move event occurs at the document level when the pointer is moved while the viewport if "grabbed". By default, the viewport is updated (moved).
-     *
-     * An up event occurs when the pointer button is released inside the viewport.
-     *
-     * A click event occurs if down and up events occur on the viewport, no node is grabbed and no move events occurred in-between.
-     */
-    action: "down" | "move" | "up" | "click"
-    /**
-     * Relevant for the "up" and "wheel" events.
-     */
-    grabbed: boolean
-    /**
-     * The PointerEvent that caused this event. Note that for the "click" event, this is actually a "pointerup" event.
-     */
-    pointerEvent: PointerEvent
+export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | null, id: string },
+                            nodes: NodesImpl<any>, edges: EdgesImpl<any>): GrapherBaseEvent & GrapherEventImpl {
+    return {
+        prevented: false,
+        preventDefault() {
+            this.prevented = true
+        },
+        grabbed: type,
+        grabbedID: id,
+        selectedNodes: nodes.selection,
+        selectedEdges: edges.selection,
+    }
 }
 
 /**
- * This event occurs when the mouse wheel is actioned while the pointer is hovered.
+ * This event occurs on pointerdown, pointermove or pointerup in relation to the graph's viewport, nodes or edges.
+ */
+export interface GrapherPointerEvent extends GrapherBaseEvent {
+    type: "pointer"
+    /**
+     * A click event is registered when a pointerdown event is followed by a pointerup, without the pointer moving more than a few pixels in-between.
+     * Multiple clicks withing 0.5s of each other are counted, you can use {@link clickCount} to detect double/triple clicks if needed.
+     */
+    subType: "down" | "move" | "up" | "click"
+    /**
+     * Useful for detecting multiple clicks. Value is always 0 for non-click events.
+     */
+    clickCount: number
+    /**
+     * DOM event that caused this event
+     */
+    pointerEvent: PointerEvent
+    /**
+     * Target of the event.
+     * // TODO Docs for up event, is it sent twice?
+     */
+    target: "node" | "edge" | "viewport"
+    /**
+     * ID of targeted node/edge. Only valid if {@link target} is 'node' or 'edge', otherwise empty string.
+     */
+    targetID: string
+}
+
+
+/**
+ * This event occurs when the mouse wheel is actioned while the viewport is hovered.
  * By default, the viewport zoom is changed.
  */
-export interface ViewportWheelEvent extends BaseGrapherEvent {
-    type: "viewport"
+export interface GrapherWheelEvent extends GrapherBaseEvent {
+    type: "wheel"
     /**
-     * This event occurs when the mouse wheel is actioned while the pointer is hovered.
-     * By default, the viewport zoom is changed.
+     * DOM event that caused this event
      */
-    action: "wheel"
-    grabbed: boolean
     wheelEvent: WheelEvent
-}
-
-/**
- * This event occurs at the document level, on 'pointerup' and it's used to let (remove "grabbed" flag) of a node/viewport (by default).
- */
-export interface UpEvent extends BaseGrapherEvent {
-    type: "up"
-    /**
-     * The currently grabbed object, if any: the node's ID, empty string for viewport and null if nothing is grabbed.
-     */
-    grabbed: string | null
-    pointerEvent: PointerEvent
 }
 
 /**
  * This event occurs when a key is pressed while the viewport is focused.
  */
-export interface KeyEvent extends BaseGrapherEvent {
+export interface GrapherKeyEvent extends GrapherBaseEvent {
     type: "key"
     /**
-     * The currently grabbed object, if any: the node's ID, empty string for viewport and null if nothing is grabbed.
+     * DOM event that caused this event
      */
-    grabbed: string | null
     keyboardEvent: KeyboardEvent
 }

@@ -5,7 +5,7 @@ import {Viewport} from "./data/Viewport";
 import {Node, NodeData, NodeDefaults, Nodes} from "./data/Node";
 import {Edge, EdgeData, EdgeDefaults, Edges} from "./data/Edge";
 import {GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange} from "./data/GrapherChange";
-import {GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent, KeyEvent} from "./data/GrapherEvent";
+import {GrapherEvent, GrapherBaseEvent, GrapherPointerEvent, GrapherWheelEvent, GrapherKeyEvent} from './data/GrapherEvent'
 // Hooks
 import {useControlledGraph} from "./hooks/useControlledGraph";
 import {useController} from "./hooks/useController";
@@ -29,7 +29,7 @@ export {
     Node, NodeData, NodeDefaults, Nodes,
     Edge, EdgeData, EdgeDefaults, Edges,
     GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange,
-    GrapherEvent, BaseGrapherEvent, NodePointerEvent, ViewportPointerEvent, ViewportWheelEvent, UpEvent, KeyEvent,
+    GrapherEvent, GrapherBaseEvent, GrapherPointerEvent, GrapherWheelEvent, GrapherKeyEvent,
     // Hooks
     useControlledGraph, useController, useGraphState,
     // React Grapher

@@ -27,7 +27,7 @@ export function GrapherViewport(props: GrapherViewportProps) {
     const viewport = props.controller.getViewport()
     const dx = bounds.x - viewport.centerX, dy = bounds.y - viewport.centerY
 
-    return <BaseDiv className={VIEWPORT_CLASS}>
+    return <BaseDiv className={VIEWPORT_CLASS} tabIndex={0}>
         <ContentDiv className={CONTENT_CLASS} style={{
             width: bounds.width,
             height: bounds.height,

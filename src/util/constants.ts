@@ -36,3 +36,8 @@ export const Z_INDEX_GRABBED_NODE = 6
  * 3 if config option "nodesOverEdges" is enabled
  */
 export const Z_INDEX_EDGES = 5
+
+/**
+ * Time allowed between clicks to be counted as a multi-click, in milliseconds
+ */
+export const MULTI_CLICK_TIME = 500
