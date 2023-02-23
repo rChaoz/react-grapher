@@ -23,8 +23,15 @@ export interface Edge<T = SimpleEdgeData> {
      */
     Component: React.ExoticComponent<EdgeProps<T>>
     /**
-     * CSS classes that will be passed to the DefaultEdge/custom component function. Ultimately, the component function decides what classes it adds to the DOM element.
-     * By default, these classes are kept as-is.
+     * CSS classes that will be passed to the SimpleEdge/custom component function.
+     * By default, these classes are kept as-is, however a custom component function can change these on render.
+     *
+     * In order to trigger a re-rendering of the Edge component, you should set this to a new array when changing it using {@link Edges.replace}:
+     * @example
+     * edges.replace("targetID", edge => {
+     *     edge.classes = edge.classes.slice().concat("new-css-class")
+     *     return edge
+     * })
      */
     classes: string[]
     /**

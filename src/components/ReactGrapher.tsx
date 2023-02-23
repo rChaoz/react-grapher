@@ -213,9 +213,15 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // Create components from Nodes array
     const nodeElements = useMemo(() => nodes.map(node => {
         applyNodeDefaults(node, config.nodeDefaults)
+        let parent: Node<any> | null = null
+        if (node.parent != null) {
+            const p = nodes.get(node.parent)
+            if (p == null) errorUnknownNode(node.parent)
+            else parent = p
+        }
         const Component = node.Component
-        return <Component key={node.id} id={node.id} data={node.data} absolutePosition={nodes.absolute(node)}
-                          grabbed={grabbed.type === "node" && grabbed.id === node.id} classes={node.classes} selected={node.selected}/>
+        return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={nodes.absolute(node)} edgeMargin={node.edgeMargin}
+                          grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
     }), [nodes, grabbed, config.nodeDefaults])
 
     // Same for edges
@@ -240,9 +246,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // TODO Implement handles
             const sourcePos = edge.sourceHandle == null ? getNodeIntersection(source, target) : source.position
             const targetPos = edge.targetHandle == null ? getNodeIntersection(target, source) : target.position
-            return <Component key={edge.id} id={edge.id} source={source} target={target} sourcePos={sourcePos} targetPos={targetPos} classes={edge.classes}
-                              markerStart={edge.markerStart} markerEnd={edge.markerEnd} label={edge.label} labelPosition={edge.labelPosition} data={edge.data}
-                              grabbed={grabbed.type === "edge" && grabbed.id === edge.id} selected={edge.selected}/>
+            return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} label={edge.label} labelPosition={edge.labelPosition}
+                              source={source} sourcePos={sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
+                              target={target} targetPos={targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
+                              selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
         })
     }, [updateEdges, edges, config.edgeDefaults, nodes, grabbed])
 

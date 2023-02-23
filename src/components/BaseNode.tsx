@@ -4,14 +4,15 @@ import {cx} from "@emotion/css";
 import {NODE_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
 import {GrapherContext} from "../context/GrapherContext";
 import {BoundsContext} from "../context/BoundsContext";
+import {Node} from "../data/Node";
 
 export interface BaseNodeProps {
     /**
-     * ID of this node
+     * ID of the node
      */
     id: string
     /**
-     * List of classes this node should use (besides the default "react-grapher-node")
+     * CSS classes to be added to the node element
      */
     classes: string[]
     /**
@@ -19,13 +20,13 @@ export interface BaseNodeProps {
      */
     absolutePosition: DOMPoint
     /**
-     * Whether this node is selected or not
-     */
-    selected: boolean
-    /**
-     * Whether this node is grabbed (being moved) or not
+     * Whether this node is grabbed (being moved)
      */
     grabbed: boolean
+    /**
+     * Whether this node is selected
+     */
+    selected: boolean
     /**
      * Contents of your node should be placed here
      */
@@ -33,7 +34,22 @@ export interface BaseNodeProps {
 }
 
 export interface NodeProps<T> extends Omit<BaseNodeProps, "children"> {
+    /**
+     * Custom node data
+     */
     data: T
+    /**
+     * Parent of this node, if it exists
+     */
+    parent?: Node<unknown> | null
+    /**
+     * Position relative to parent, if parent is not null, or same as {@link absolutePosition} if it is null
+     */
+    position: DOMPoint
+    /**
+     * Spacing between this node and the edges that connect to it. This space is *automatically taken into consideration* for the calculation of edges.
+     */
+    edgeMargin: number
 }
 
 const BaseDiv = styled.div<{baseZIndex: number, grabbed: boolean}>`
@@ -43,12 +59,12 @@ const BaseDiv = styled.div<{baseZIndex: number, grabbed: boolean}>`
 `
 
 export const BaseNode = memo<BaseNodeProps>(
-    function BaseNode({id, absolutePosition, classes, selected, grabbed, children}) {
+    function BaseNode({id, classes, absolutePosition, grabbed, selected, children}) {
         const grapherContext = useContext(GrapherContext)
         const bounds = useContext(BoundsContext)
 
         return <BaseDiv id={`${grapherContext.id}n-${id}`} baseZIndex={grapherContext.nodeZIndex} grabbed={grabbed}
-                        className={cx([...classes], NODE_CLASS)} data-selected={selected} data-grabbed={grabbed} style={{
+                        className={cx(classes, NODE_CLASS)} data-grabbed={grabbed} data-selected={selected} style={{
             left: absolutePosition.x - bounds.x,
             top: absolutePosition.y - bounds.y,
         }}>

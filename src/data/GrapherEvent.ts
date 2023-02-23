@@ -67,8 +67,8 @@ export interface GrapherPointerEvent extends GrapherBaseEvent {
      */
     pointerEvent: PointerEvent
     /**
-     * Target of the event.
-     * // TODO Docs for up event, is it sent twice?
+     * Target of the event (component affected by this event). Not necessarily the element that captured the event, e.g. pointermove is captured at the
+     * document level but may affect a node, edge or the viewport.
      */
     target: "node" | "edge" | "viewport"
     /**
