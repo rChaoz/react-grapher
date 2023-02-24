@@ -123,11 +123,6 @@ export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults)
     for (const prop in edgeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? edgeDefaults[prop]
 }
 
-/**
- * Represents a Graph's collection of Edges. Provides array-like acces, but never use this to cause modifications - only
- * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
- * be registered.
- */
 export interface EdgesFunctions<T> {
     /**
      * Gets currently selected edge IDs. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
@@ -204,6 +199,13 @@ export interface EdgesFunctionsImpl<T> extends EdgesFunctions<T> {
     internalMap: Map<string, Edge<T>>
 }
 
+/**
+ * Represents a Graph's collection of Edges. Provides array-like acces, but never use this to cause modifications - only
+ * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
+ * be registered.
+ *
+ * Note that the custom functions' implementation uses `this`, so you should bind `this` value to the Nodes object should you use them as callback.
+ */
 export type Edges<T> = EdgesFunctions<T> & Edge<T>[]
 
 export type EdgesImpl<T> = EdgesFunctionsImpl<T> & EdgeImpl<T>[]

@@ -56,10 +56,13 @@ export interface GrapherPointerEvent extends GrapherBaseEvent {
     /**
      * A click event is registered when a pointerdown event is followed by a pointerup, without the pointer moving more than a few pixels in-between.
      * Multiple clicks withing 0.5s of each other are counted, you can use {@link clickCount} to detect double/triple clicks if needed.
+     *
+     * A long-click event is sent if there is no up/move event for a specified delay after a down event. {@link clickCount} is always 0 in this case. The
+     * delay defaults to 500 milliseconds and can be changed using the `config` prop, `userControls` section.
      */
-    subType: "down" | "move" | "up" | "click"
+    subType: "down" | "move" | "up" | "click" | "long-click"
     /**
-     * Useful for detecting multiple clicks. Value is always 0 for non-click events.
+     * Useful for detecting multiple clicks. Value is always 0 for non-click events, including long-click.
      */
     clickCount: number
     /**

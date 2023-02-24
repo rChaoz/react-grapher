@@ -49,28 +49,42 @@ export interface GrapherUserControls {
      * Allows selecting multiple nodes or edges. Defaults to true
      */
     multipleSelection?: boolean
+    /**
+     * Minimum amount, in pixels, that the pointer must travel after a down event, before a move event being registered and a click event becoming impossible.
+     *
+     * In other words: if the user taps a node but during the tap the pointer moves by just a pixel, without this a click wouldn't be registered, and the node
+     * would be moved (dragged) instead. Defaults to 5.
+     */
+    minimumPointerMovement?: number
+    /**
+     * Delay allowed between clicks of a multi-click, in milliseconds.
+     * Practically, maximum time between a pointerup event and the next pointerdown event, for the clicks to be counted as a multi-click.
+     * Defaults to 500.
+     */
+    multiClickDelay?: number
+    /**
+     * How long a click must be held for it to count as a long-click, in milliseconds. A negative value long-click detection is disabled.
+     * Defaults to 500.
+     */
+    longClickDelay?: number
     // TODO Options to allow creating new nodes
     // TODO Options to allow creating new edges
 }
 
-const defaultUserControls = {
+const defaultUserControls: Required<GrapherUserControls> = {
     allowSelection: true,
     multipleSelection: true,
-    allowMovingNodes: true,
-    allowDeletingNodes: false,
-    allowEditingEdges: false,
-    allowDeletingEdges: false,
-    allowCreatingEdges: false,
+    minimumPointerMovement: 5,
+    multiClickDelay: 500,
+    longClickDelay: 500,
 }
 
-const noUserControls = {
+const noUserControls: Required<GrapherUserControls> = {
     allowSelection: false,
     multipleSelection: false,
-    allowMovingNodes: false,
-    allowDeletingNodes: false,
-    allowEditingEdges: false,
-    allowDeletingEdges: false,
-    allowCreatingEdges: false,
+    minimumPointerMovement: 5,
+    multiClickDelay: 500,
+    longClickDelay: 500,
 }
 
 function withDefaultsUserControls(controls: GrapherUserControls | false | undefined): Required<GrapherUserControls> {
@@ -93,7 +107,7 @@ export interface GrapherFitViewConfig {
     // TODO Animation, other options
 }
 
-const defaultFitViewConfig = {
+const defaultFitViewConfig: GrapherFitViewConfigSet = {
     padding: "10%",
     abideMinMaxZoom: true,
 }

@@ -111,12 +111,6 @@ export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults)
     for (const prop in nodeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? nodeDefaults[prop]
 }
 
-/**
- * Represents a Graph's collection of Nodes. Provides array-like acces, but never use this to cause modifications - only
- * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
- * be registered. If you need complex array manipulation, use `.slice()` on this object to obtain a copy, modify it as you please,
- * then use `.set()` to update the Graph
- */
 export interface NodesFunctions<T> {
     /**
      * Calculate absolute position of a node
@@ -200,6 +194,14 @@ export interface NodesFunctionsImpl<T> extends NodesFunctions<T> {
     internalMap: Map<string, Node<T>>
 }
 
+/**
+ * Represents a Graph's collection of Nodes. Provides array-like acces, but never use this to cause modifications - only
+ * use the provided functions to modify, as these will cause an internal `setState` call - otherwise your changes will not
+ * be registered. If you need complex array manipulation, use `.slice()` on this object to obtain a copy, modify it as you please,
+ * then use `.set()` to update the Graph.
+ *
+ * Note that the custom functions' implementation uses `this`, so you should bind `this` value to the Nodes object should you use them as callback.
+ */
 export type Nodes<T> = NodesFunctions<T> & Node<T>[]
 
 export type NodesImpl<T> = NodesFunctionsImpl<T> & NodeImpl<T>[]

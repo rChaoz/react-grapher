@@ -15,7 +15,6 @@ import {
     MARKER_ARROW_FILLED_CLASS,
     MARKER_ARROW_FILLED_ID,
     MARKER_ARROW_ID,
-    MULTI_CLICK_TIME,
     NODES_CLASS,
     REACT_GRAPHER_CLASS,
     VIEWPORT_CLASS,
@@ -197,6 +196,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         startX: number
         startY: number
         hasMoved: boolean
+        timeoutID: number
     }
 
     // Information on what was last clicked and when (to detect multi-clicks)
@@ -207,7 +207,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         time: number
     }
 
-    const [grabbed, setGrabbed] = useState<GrabbedNode>({type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false})
+    const [grabbed, setGrabbed] = useState<GrabbedNode>({type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1})
     const lastClicked = useMemo<LastClicked>(() => ({type: null, id: "", times: 0, time: 0}), [])
 
     // Create components from Nodes array
@@ -289,14 +289,32 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 (r.type === "node" && config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && config.edgeDefaults.allowGrabbing === false)
             ))) return
             // "Grab" the object
-            if (!prevented && grabbed.type == null) setGrabbed({
-                type: r.type,
-                id: r.objID,
-                clickCount: (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + MULTI_CLICK_TIME > Date.now()) ? lastClicked.times + 1 : 1,
-                hasMoved: false,
-                startX: event.clientX,
-                startY: event.clientY,
-            })
+            if (!prevented && grabbed.type == null) {
+                // And initiate timer for long-click detection
+                const timeoutID = config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
+                    const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
+                        ...createEvent(grabbed, nodes, edges),
+                        type: "pointer",
+                        subType: "long-click",
+                        clickCount: 0,
+                        pointerEvent: event,
+                        target: r.type,
+                        targetID: r.objID,
+                    }
+                    onEvent(grapherEvent)
+                }, config.userControls.longClickDelay)
+                setGrabbed({
+                    type: r.type,
+                    id: r.objID,
+                    clickCount: (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + config.userControls.multiClickDelay > Date.now())
+                        ? lastClicked.times + 1
+                        : 1,
+                    hasMoved: false,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    timeoutID,
+                })
+            }
         }
 
         function onObjectPointerUp(event: PointerEvent) {
@@ -369,14 +387,33 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 onEvent(grapherEvent)
                 prevented = grapherEvent.prevented
             }
-            if (!prevented && grabbed.type == null) setGrabbed({
-                type: "viewport",
-                id: "",
-                clickCount: (lastClicked.type === "viewport" && lastClicked.time + MULTI_CLICK_TIME > Date.now()) ? lastClicked.times + 1 : 1,
-                hasMoved: false,
-                startX: event.clientX,
-                startY: event.clientY,
-            })
+            // "Grab" the viewport
+            if (!prevented && grabbed.type == null) {
+                // And initiate timer for long-click detection
+                const timeoutID = config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
+                    const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
+                        ...createEvent(grabbed, nodes, edges),
+                        type: "pointer",
+                        subType: "long-click",
+                        clickCount: 0,
+                        pointerEvent: event,
+                        target: "viewport",
+                        targetID: "",
+                    }
+                    onEvent(grapherEvent)
+                }, config.userControls.longClickDelay)
+                setGrabbed({
+                    type: "viewport",
+                    id: "",
+                    clickCount: (lastClicked.type === "viewport" && lastClicked.time + config.userControls.multiClickDelay > Date.now())
+                        ? lastClicked.times + 1
+                        : 1,
+                    hasMoved: false,
+                    startX: event.clientX,
+                    startY: event.clientY,
+                    timeoutID,
+                })
+            }
         }
 
         function onViewportPointerUp(event: PointerEvent) {
@@ -456,9 +493,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         // Document level
         function onPointerMove(event: PointerEvent) {
+            // Clear long-click timeout if there is one
+            if (grabbed.timeoutID !== -1) {
+                clearTimeout(grabbed.timeoutID)
+                grabbed.timeoutID = -1
+            }
             // Allow small movement (5px) without beginning the move
-            if (grabbed.type != null && !grabbed.hasMoved
-                && Math.abs(event.clientX - grabbed.startX) ** 2 + Math.abs(event.clientY - grabbed.startY) ** 2 < 25) return
+            if (grabbed.type != null && !grabbed.hasMoved && Math.abs(event.clientX - grabbed.startX) ** 2
+                + Math.abs(event.clientY - grabbed.startY) ** 2 < config.userControls.minimumPointerMovement ** 2) return
             if (grabbed.type === "viewport") {
                 // User is moving the viewport (panning the graph)
                 if (!config.viewportControls.allowPanning) return
@@ -553,6 +595,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         }
 
         function onPointerUp(event: PointerEvent) {
+            // Clear long-click timeout if there is one
+            if (grabbed.timeoutID !== -1) {
+                clearTimeout(grabbed.timeoutID)
+                grabbed.timeoutID = -1
+            }
             if (grabbed.type == null) return
             let prevented = false;
             if (onEvent != null) {
@@ -569,7 +616,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 prevented = grapherEvent.prevented
             }
             if (!prevented) setGrabbed({
-                type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false,
+                type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1
             })
         }
 
