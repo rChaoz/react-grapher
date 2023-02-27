@@ -33,6 +33,7 @@ import {Marker} from "./Marker";
 import {useUpdate} from "../hooks/useUpdate";
 import {Selection, SelectionImpl} from "../data/Selection";
 import {CallbacksContext, CallbacksContextValue} from "../context/CallbacksContext";
+import {usePersistent} from "../hooks/usePersistent";
 
 export interface CommonGraphProps {
     /**
@@ -82,7 +83,7 @@ export interface CommonGraphProps {
      * - set config.hideControls = true (if undefined)
      * - set config.fitViewConfig.abideMinMaxZoom = false (if undefined)
      * - do not attach any pointer/key listeners
-     * TODO Disable all pointer events (per-grapher & Edges)
+     * - disable pointer events on nodes & edges to prevent CSS hover effects
      *
      * Additionally, if not already set (if undefined), the following props will be set:
      * - fitView -> "always"
@@ -90,6 +91,7 @@ export interface CommonGraphProps {
      *
      * This is meant to be used when you want to display a graph (e.g. for a preview), but without any user interaction. By default, the view will be permanently fitted, but
      * if you manually set fitView/fitViewOnResize props, they will not be overridden, allowing you to manually call `controller.fitView()` when needed.
+     * TODO Test/improve this prop; make sure all pointer events are disabled when true
      */
     static?: boolean
     /**
@@ -156,7 +158,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     let nodes: NodesImpl<N>
     let edges: EdgesImpl<E>
-    let selection: Selection
+    let selection: SelectionImpl
 
     // Ensure rules of hooks are always met - we never know when this component is uncontrolled one render and controlled the next render
     const {nodes: ownNodes, edges: ownEdges, selection: ownSelection}
@@ -213,10 +215,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }
 
     // Currently grabbed node
-    const grabbed = useMemo<GrabbedNode>(() => ({type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1}), [])
+    const grabbed = usePersistent<GrabbedNode>({type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1})
     const [shouldUpdateGrabbed, updateGrabbed] = useUpdate()
     // Last clicked node (used to detect multi-clicks)
-    const lastClicked = useMemo<LastClicked>(() => ({type: null, id: "", times: 0, time: 0}), [])
+    const lastClicked = usePersistent<LastClicked>({type: null, id: "", times: 0, time: 0})
 
     // Render the Nodes TODO Try useMemo as well
     const nodeElements = useMemo(() => nodes.map(node => {
@@ -308,7 +310,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // We want the callbacks to use the new state values but without re-creating the callbacks
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const d = useMemo(() => ({nodes, edges, selection, controller}), [])
+    const d = useRef() as any as {nodes: NodesImpl<N>, edges: EdgesImpl<E>, selection: SelectionImpl, controller: ControllerImpl}
     d.nodes = nodes
     d.edges = edges
     d.selection = selection
@@ -741,6 +743,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // As the result of the function itself does not change
     contextValue.getNode = nodes.internalMap.get.bind(nodes.internalMap)
     contextValue.getEdge = edges.internalMap.get.bind(edges.internalMap)
+    // These 2 functions will never change anyway (2nd value returned by useState remains constant)
     contextValue.rerenderEdges = updateEdges
     contextValue.recalculateBounds = recalculateBounds
 
