@@ -4,6 +4,7 @@ import {Controller} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
 import {Node, NodeData, NodeDefaults, Nodes} from "./data/Node";
 import {Edge, EdgeData, EdgeDefaults, Edges} from "./data/Edge";
+import {Selection} from "./data/Selection";
 import {GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange} from "./data/GrapherChange";
 import {GrapherEvent, GrapherBaseEvent, GrapherPointerEvent, GrapherWheelEvent, GrapherKeyEvent} from './data/GrapherEvent'
 // Hooks
@@ -28,6 +29,7 @@ export {
     Controller, Viewport,
     Node, NodeData, NodeDefaults, Nodes,
     Edge, EdgeData, EdgeDefaults, Edges,
+    Selection,
     GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange,
     GrapherEvent, GrapherBaseEvent, GrapherPointerEvent, GrapherWheelEvent, GrapherKeyEvent,
     // Hooks

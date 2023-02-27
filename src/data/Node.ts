@@ -3,6 +3,7 @@ import React from "react";
 import {NodeProps} from "../components/BaseNode";
 import {SimpleNode} from "../components/SimpleNode";
 import {checkInvalidID} from "../util/log";
+import {MemoObject} from "../util/utils";
 
 export interface Node<T = string> {
     id: string
@@ -36,7 +37,9 @@ export interface Node<T = string> {
      */
     classes: string[]
     /**
-     * Position relative to the parent (or absolute if parent is null). Defaults to 0,0
+     * Position relative to the parent (or absolute if parent is null). Defaults to 0,0.
+     * Note: never change a node's position by modifying the x & y values directly. Always use `node.position = ` to change to a new object, as reference
+     * equality is used to detect position change.
      */
     position: DOMPoint
     /**
@@ -61,13 +64,13 @@ export interface Node<T = string> {
      * Whether this node can be deleted by the user. Defaults to false
      */
     allowDeletion?: boolean
+    /**
+     * Read-only absolute position, calculated during rendering.
+     */
+    absolutePosition: DOMPoint
 }
 
 export interface NodeImpl<T> extends Node<T> {
-    /**
-     * Automatically set during rendering. DOM Element for this node.
-     */
-    element?: HTMLElement
     /**
      * Automatically set during rendering. DOM width of this node
      */
@@ -76,6 +79,14 @@ export interface NodeImpl<T> extends Node<T> {
      * Automatically set during rendering. DOM height of this node
      */
     height: number
+    /**
+     * Automatically set during rendering. Border radii of this node: top/right/bottom/left, each having x-radius and y-radius.
+     */
+    borderRadius: [[number, number], [number, number], [number, number], [number, number]]
+    /**
+     * Memo object used to detect when the absolute position changes
+     */
+    absolutePositionMemoObject: MemoObject<DOMPoint>
     /**
      * Used internally to check if a node was initialized (all fields set).
      */
@@ -97,6 +108,7 @@ const nodeDefaults: Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbi
     classes: [],
     position: new DOMPoint(),
     edgeMargin: 3,
+    absolutePosition: new DOMPoint(),
 }
 
 export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
@@ -106,6 +118,8 @@ export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults)
     checkInvalidID("node", i.id)
     i.selected = false
     i.width = i.height = 0
+    i.borderRadius = [[0, 0], [0, 0], [0, 0], [0, 0]]
+    i.absolutePositionMemoObject = {}
 
     // @ts-ignore
     for (const prop in nodeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? nodeDefaults[prop]
@@ -117,24 +131,6 @@ export interface NodesFunctions<T> {
      * @param node ID or Node object
      */
     absolute(node: Node<any> | string): DOMPoint
-
-    /**
-     * Gets currently selected node IDs. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
-     */
-    getSelection(): string[]
-
-    /**
-     * Sets currently selected nodes by IDs
-     */
-    setSelection(selected: string[]): void
-
-    /**
-     * Selects/deselects a node.
-     * @param node ID of the node
-     * @param selected Whether to select or unselect the node.
-     * @param newSelection If this parameter is true or `ReactGrapher` does not allow multiple selections and `selected` is true, previously selected nodes are unselected.
-     */
-    setSelected(node: string, selected: boolean, newSelection?: boolean): void
 
     /**
      * Remove all nodes
@@ -177,21 +173,9 @@ export interface NodesFunctions<T> {
 
 export interface NodesFunctionsImpl<T> extends NodesFunctions<T> {
     /**
-     * Automatically set during rendering. Bounding box of nodes, used when fitting view.
-     */
-    boundingRect?: DOMRect
-    /**
-     * Whether multiple selection is enabled.
-     */
-    multipleSelection: boolean
-    /**
-     * Currently selected nodes
-     */
-    selection: string[]
-    /**
      * Internal map used to get node by ID
      */
-    internalMap: Map<string, Node<T>>
+    internalMap: Map<string, NodeImpl<T>>
 }
 
 /**

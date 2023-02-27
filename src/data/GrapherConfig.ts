@@ -95,8 +95,8 @@ function withDefaultsUserControls(controls: GrapherUserControls | false | undefi
 
 export interface GrapherFitViewConfig {
     /**
-     * Any CSS string applicable to the "padding" CSS property. This padding will be resolved and used when fitting view to space the nodes/edges away from
-     * the edges of the ReactGrapher. Defaults to "10%".
+     * Any CSS string applicable to the "padding" CSS property (including multiple, eg. for top/right/bottom/left).
+     * This padding will be resolved and used when fitting view to space the nodes/edges away from the edges of the ReactGrapher. Defaults to "10%".
      */
     padding?: string,
     /**

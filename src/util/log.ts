@@ -11,7 +11,11 @@ export function warnNoReactGrapherID() {
 }
 
 export function warnUnknownEdgeType(type: string) {
-    warn(`Edge type passed to DefaultEdge is unknown: edge.data.type is "${type}"`)
+    warn(`Edge type passed to DefaultEdge is unknown: edge.data.type = "${type}"`)
+}
+
+export function warnUnknownHandlePosition(position: string) {
+    warn(`Position passed to NodeHandle is unknown: position = "${position}"`)
 }
 
 export function warnInvalidEdgeLabelPos(edge: string, pos: string | undefined) {

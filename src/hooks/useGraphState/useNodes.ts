@@ -1,17 +1,15 @@
 import {Node, NodeData, NodeImpl, NodesFunctionsImpl, NodesImpl} from "../../data/Node";
-import React from "react";
+import {useMemo} from "react";
 import {GrapherChange, isNodeChange} from "../../data/GrapherChange";
 import {errorUnknownNode} from "../../util/log";
-import {BaseFunctionsImpl, createBaseFunctions} from "./baseFunctions";
+import {BaseFunctionsImpl, useBase} from "./useBase";
 
-export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React.Dispatch<React.SetStateAction<Node<T>[]>>,
-                                               selection: string[], setSelection: React.Dispatch<React.SetStateAction<string[]>>,
-                                               map: Map<string, Node<T>>): NodesImpl<T> {
-    const base = createBaseFunctions<Node<T>, NodeData<T>>(nodes, setNodes, selection, setSelection, map)
-    const extra: Omit<NodesFunctionsImpl<T>, keyof BaseFunctionsImpl<Node<T>, NodeData<T>>> = {
+export default function useNodes<T>(initialNodes: NodeImpl<T>[]): NodesImpl<T> {
+    const base = useBase<NodeImpl<T>, NodeData<T>>(initialNodes)
+    const extra = useMemo<Omit<NodesFunctionsImpl<T>, keyof BaseFunctionsImpl<NodeImpl<T>, NodeData<T>>>>(() => ({
         absolute(node: Node<any> | string): DOMPoint {
             if (typeof node === "string") {
-                const n = map.get(node)
+                const n = base.internalMap.get(node)
                 if (n == null) {
                     errorUnknownNode(node)
                     return new DOMPoint(0, 0)
@@ -24,15 +22,15 @@ export default function attachNodeFunctions<T>(nodes: Node<T>[], setNodes: React
             }
         },
         processChanges(changes: GrapherChange[]) {
-            const n = nodes.slice()
+            const n = base.slice()
             let changed = false
             for (const change of changes) {
                 if (!isNodeChange(change)) continue
                 changed = true
                 if (change.type == "node-move") change.node.position = change.position
             }
-            if (changed) setNodes(n)
+            if (changed) base.set(n)
         },
-    }
-    return Object.assign(nodes as NodeImpl<T>[], base, extra)
+    }), [base])
+    return Object.assign(base, extra)
 }

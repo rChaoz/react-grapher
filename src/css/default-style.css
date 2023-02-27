@@ -62,11 +62,7 @@
 }
 
 
-
 /* Edge */
-.react-grapher-edge {
-    pointer-events: all;
-}
 
 /* Edge Path */
 .react-grapher-edge-path {
@@ -84,6 +80,7 @@
 .react-grapher-edge[data-selected=true] .react-grapher-edge-path {
     stroke: var(--react-grapher-edge-color-selected);
     stroke-width: var(--react-grapher-edge-stroke-width-selected);
+    /* TODO Better selected design */
     filter: drop-shadow(0 0 3px var(--react-grapher-edge-shadow-color)) drop-shadow(0 0 4px var(--react-grapher-edge-shadow-color));
 }
 
@@ -110,7 +107,6 @@
 .react-grapher-edge-label-background {
     fill: var(--react-grapher-background);
 }
-
 
 
 /* Markers */

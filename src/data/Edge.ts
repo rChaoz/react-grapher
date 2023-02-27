@@ -3,6 +3,7 @@ import React from "react";
 import {EdgeProps} from "../components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
 import {checkInvalidID} from "../util/log";
+import {MemoObject} from "../util/utils";
 
 /**
  * An edge from a node with ID 'source' to another with ID 'target'
@@ -83,13 +84,29 @@ export interface Edge<T = SimpleEdgeData> {
 
 export interface EdgeImpl<T> extends Edge<T> {
     /**
-     * Automatically set during rendering. DOM Element for this edge.
+     * Automatically set during rendering. Bounding rect of this edge.
      */
-    element?: SVGElement
+    bounds: DOMRect
     /**
      * Used internally to check if a node was initialized (all fields set).
      */
     isInitialized?: boolean
+    /**
+     * Source position, used for memoization
+     */
+    sourcePos?: DOMPoint
+    /**
+     * SourcePos memoization is done by source node position, width, height & border radius
+     */
+    sourcePosMemoObject: MemoObject<DOMPoint>
+    /**
+     * Target position, used for memoization
+     */
+    targetPos?: DOMPoint
+    /**
+     * TargetPos memoization is done by source node position, width, height & border radius
+     */
+    targetPosMemoObject: MemoObject<DOMPoint>
 }
 
 /**
@@ -116,32 +133,18 @@ const edgeDefaults: Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelecti
 export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
     const i = target as EdgeImpl<any>
     if (i.isInitialized) return
-    checkInvalidID("edge", i.id)
     i.isInitialized = true
+    checkInvalidID("edge", i.id)
+    i.selected = false
+    i.bounds = new DOMRect()
+    i.sourcePosMemoObject = {}
+    i.targetPosMemoObject = {}
 
     // @ts-ignore
     for (const prop in edgeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? edgeDefaults[prop]
 }
 
 export interface EdgesFunctions<T> {
-    /**
-     * Gets currently selected edge IDs. Do not modify the returned array; instead, use `setSelection` or `setSelected` to modify the selection.
-     */
-    getSelection(): string[]
-
-    /**
-     * Sets currently selected edges by IDs
-     */
-    setSelection(selected: string[]): void
-
-    /**
-     * Selects/deselects an edge.
-     * @param node ID of the edge
-     * @param selected Whether to select or unselect the edge.
-     * @param newSelection If this parameter is true or `ReactGrapher` does not allow multiple selections and `selected` is true, previously selected edges are unselected.
-     */
-    setSelected(node: string, selected: boolean, newSelection?: boolean): void
-
     /**
      * Remove all edges
      */
@@ -182,21 +185,9 @@ export interface EdgesFunctions<T> {
 
 export interface EdgesFunctionsImpl<T> extends EdgesFunctions<T> {
     /**
-     * Automatically set during rendering. Bounding box of edges used when fitting view.
-     */
-    boundingRect?: DOMRect
-    /**
-     * Whether multiple selection is enabled.
-     */
-    multipleSelection: boolean
-    /**
-     * Currently selected edges
-     */
-    selection: string[]
-    /**
      * Internal map used to get edge by ID
      */
-    internalMap: Map<string, Edge<T>>
+    internalMap: Map<string, EdgeImpl<T>>
 }
 
 /**

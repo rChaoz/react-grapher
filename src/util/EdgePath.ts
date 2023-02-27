@@ -1,5 +1,4 @@
 import {Node, NodeImpl} from "../data/Node";
-import {resolveValue} from "./utils";
 
 /**
  * Create slope-intercept form of line defined by 2 points
@@ -13,31 +12,14 @@ function getSlopeIntercept(p1: DOMPoint, p2: DOMPoint): [number, number] {
     return [m, b]
 }
 
-
-/**
- * Convert a pair of CSS values to pixel values (useful for border radius, which may be 1 or 2 values)
- */
-function resolveValues(strValue: string, width: number, height: number): [number, number] {
-    /* Computed border radius may be of form:
-    - 6px
-    - 2px 5px
-    - 20%
-    - 10% 5%
-    - <empty>
-     */
-    const vals = strValue.split(" ")
-    if (vals.length === 0) return [0, 0]
-    else if (vals.length === 1) return [resolveValue(vals[0], width), resolveValue(vals[0], height)]
-    else return [resolveValue(vals[0], width), resolveValue(vals[1], height)]
-}
-
 /**
  * Find the point closest to `targetNode` on the border of `sourceNode`. Used for floating edges.
  */
 export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>): DOMPoint {
-    const sourcePos = sourceNode.position
-    const targetPos = targetNode.position;
     const sourceNodeImpl = sourceNode as NodeImpl<any>
+    const sourcePos = sourceNodeImpl.absolutePosition
+    const targetPos = (targetNode as NodeImpl<any>).absolutePosition;
+    const border = sourceNodeImpl.borderRadius
 
     const w = sourceNodeImpl.width! + sourceNode.edgeMargin;
     const h = sourceNodeImpl.height! + sourceNode.edgeMargin;
@@ -46,18 +28,6 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
     // If nodes overlap, draw the line between their centers
     if (targetPos.x + w / 2 > x1 && targetPos.x - w / 2 < x2 && targetPos.y + h / 2 > y1 && targetPos.y - h / 2 < y2) return sourcePos
 
-    // Calculate border radius of source node
-    const style = getComputedStyle(sourceNodeImpl.element!)
-    /* border[pos][axis] - border radius for every corner
-    pos = 0 (top-left) / 1 (top-right) / 2 (bottom-right) / 3 (bottom-left)
-    axis = 0 (x-axis) / 1 (y-axis)
-     */
-    const border = [
-        resolveValues(style.borderTopLeftRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
-        resolveValues(style.borderTopRightRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
-        resolveValues(style.borderBottomRightRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
-        resolveValues(style.borderBottomLeftRadius, sourceNodeImpl.width!, sourceNodeImpl.height!),
-    ]
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)
 

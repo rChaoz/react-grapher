@@ -1,5 +1,4 @@
-import {NodesImpl} from "./Node";
-import {EdgesImpl} from "./Edge";
+import {Selection} from "./Selection";
 
 export type GrapherEvent = GrapherPointerEvent | GrapherWheelEvent | GrapherKeyEvent
 
@@ -34,8 +33,7 @@ export interface GrapherEventImpl {
     prevented: boolean
 }
 
-export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | null, id: string },
-                            nodes: NodesImpl<any>, edges: EdgesImpl<any>): GrapherBaseEvent & GrapherEventImpl {
+export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | null, id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
     return {
         prevented: false,
         preventDefault() {
@@ -43,8 +41,8 @@ export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | n
         },
         grabbed: type,
         grabbedID: id,
-        selectedNodes: nodes.selection,
-        selectedEdges: edges.selection,
+        selectedNodes: selection.getNodesSelection(),
+        selectedEdges: selection.getEdgesSelection(),
     }
 }
 
