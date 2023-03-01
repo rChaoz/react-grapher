@@ -17,6 +17,7 @@ function getSlopeIntercept(p1: DOMPoint, p2: DOMPoint): [number, number] {
  */
 export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>): DOMPoint {
     const sourceNodeImpl = sourceNode as NodeImpl<any>
+    const targetNodeImpl = targetNode as NodeImpl<any>
     const sourcePos = sourceNodeImpl.absolutePosition
     const targetPos = (targetNode as NodeImpl<any>).absolutePosition;
     const border = sourceNodeImpl.borderRadius
@@ -26,7 +27,8 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
     const x1 = sourcePos.x - w / 2, x2 = sourcePos.x + w / 2, y1 = sourcePos.y - h / 2, y2 = sourcePos.y + h / 2
 
     // If nodes overlap, draw the line between their centers
-    if (targetPos.x + w / 2 > x1 && targetPos.x - w / 2 < x2 && targetPos.y + h / 2 > y1 && targetPos.y - h / 2 < y2) return sourcePos
+    const tw = targetNodeImpl.width!, th = targetNodeImpl.height!
+    if (targetPos.x + tw / 2 > x1 && targetPos.x - tw / 2 < x2 && targetPos.y + th / 2 > y1 && targetPos.y - th / 2 < y2) return sourcePos
 
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)

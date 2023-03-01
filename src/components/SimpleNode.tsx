@@ -1,8 +1,7 @@
 import React, {memo} from "react";
-import {BaseNode, NodeProps} from "./BaseNode";
+import {BaseNode, NodeProps, BaseResizableNode} from "./BaseNode";
 
 export const SimpleNode = memo<NodeProps<any>>(function SimpleNode(props) {
-    return <BaseNode {...props}>
-        {String(props.data)}
-    </BaseNode>
+    if (props.resize === "none" || props.resize === "initial") return <BaseNode {...props}>{String(props.data)}</BaseNode>
+    else return <BaseResizableNode {...props}>{String(props.data)}</BaseResizableNode>
 })

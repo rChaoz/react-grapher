@@ -178,6 +178,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         edges = ownEdges as EdgesImpl<E>
         selection = ownSelection as SelectionImpl
     }
+    selection.multipleSelection = config.userControls.multipleSelection
 
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
     const useID = React.useId
@@ -196,7 +197,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // Currently grabbed (being moved) node
     interface GrabbedNode {
         // When these properties are changed, a new object is created to update the state
-        type: "node" | "edge" | "viewport" | null
+        type: "node" | "edge" | "viewport" | "resizing" | null
         id: string
         // These properties don't cause a state update
         clickCount: number
@@ -238,7 +239,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={node.absolutePosition} edgeMargin={node.edgeMargin}
-                          grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
+                          resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
     }), [config.nodeDefaults, grabbed, nodes, selection, shouldUpdateGrabbed])
 
     // Same for Edges TODO Same
@@ -647,7 +648,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 clearTimeout(grabbed.timeoutID)
                 grabbed.timeoutID = -1
             }
-            if (grabbed.type == null) return
+            if (grabbed.type == "resizing") {
+                grabbed.type = null
+                return
+            } else if (grabbed.type == null) return
+
             let prevented = false;
             if (onEvent != null) {
                 const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
@@ -733,19 +738,19 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         id,
         static: props.static,
         nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE,
+        rerenderEdges: updateEdges,
+        recalculateBounds,
+        onResizeStart: () => {
+            if (grabbed.type == null) grabbed.type = "resizing"
+        },
         // Null because it's set below
         getNode: null as any,
         getEdge: null as any,
-        rerenderEdges: null as any,
-        recalculateBounds: null as any,
-    }), [id, config.nodesOverEdges, props.static])
+    }), [id, props.static, config.nodesOverEdges, updateEdges, recalculateBounds, grabbed])
     // This is not put in the useMemo above because nodes/edges objects changing should not trigger a context value change & subsequent re-renders
     // As the result of the function itself does not change
     contextValue.getNode = nodes.internalMap.get.bind(nodes.internalMap)
     contextValue.getEdge = edges.internalMap.get.bind(edges.internalMap)
-    // These 2 functions will never change anyway (2nd value returned by useState remains constant)
-    contextValue.rerenderEdges = updateEdges
-    contextValue.recalculateBounds = recalculateBounds
 
     return <BoundsContext.Provider value={bounds}><GrapherContext.Provider value={contextValue}><CallbacksContext.Provider value={objectCallbacks}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>

@@ -16,6 +16,8 @@ export interface GrapherContextValue {
     rerenderEdges(): void
 
     recalculateBounds(): void
+
+    onResizeStart(): void
 }
 
 /**
@@ -25,5 +27,5 @@ export interface GrapherContextValue {
  */
 export const GrapherContext = React.createContext<GrapherContextValue>(
     {id: "react-grapher", nodeZIndex: Z_INDEX_NODE, static: false,
-        getNode: null as any, getEdge: null as any, rerenderEdges: null as any, recalculateBounds: null as any}
+        getNode: null as any, getEdge: null as any, rerenderEdges: null as any, recalculateBounds: null as any, onResizeStart: null as any}
 )

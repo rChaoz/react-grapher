@@ -16,7 +16,7 @@ import {ReactGrapher} from "./components/ReactGrapher";
 import {GrapherViewport} from "./components/GrapherViewport";
 import {Marker} from "./components/Marker";
 // Sub-components
-import {BaseNode, BaseNodeProps, NodeProps} from "./components/BaseNode";
+import {BaseNode, BaseNodeProps, NodeProps, BaseResizableNode, BaseResizableNodeProps} from "./components/BaseNode";
 import {SimpleNode} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
@@ -37,8 +37,10 @@ export {
     // React Grapher
     ReactGrapher, GrapherViewport, Marker,
     // Sub-components
-    BaseNode, BaseNodeProps, SimpleNode, NodeProps,
-    BaseEdge, BaseEdgeProps, SimpleEdge, SimpleEdgeData, EdgeProps,
+    BaseNode, BaseNodeProps, NodeProps, BaseResizableNode, BaseResizableNodeProps,
+    SimpleNode,
+    BaseEdge, BaseEdgeProps, EdgeProps,
+    SimpleEdge, SimpleEdgeData,
     // Others
     getNodeIntersection, getStraightEdgePath, getRoundEdgePath
 }

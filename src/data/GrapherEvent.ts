@@ -33,13 +33,13 @@ export interface GrapherEventImpl {
     prevented: boolean
 }
 
-export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | null, id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
+export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | "resizing" | null, id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
     return {
         prevented: false,
         preventDefault() {
             this.prevented = true
         },
-        grabbed: type,
+        grabbed: type === "resizing" ? null : type,
         grabbedID: id,
         selectedNodes: selection.getNodesSelection(),
         selectedEdges: selection.getEdgesSelection(),
@@ -73,7 +73,7 @@ export interface GrapherPointerEvent extends GrapherBaseEvent {
      */
     target: "node" | "edge" | "viewport"
     /**
-     * ID of targeted node/edge. Only valid if {@link target} is 'node' or 'edge', otherwise empty string.
+     * ID of targeted node/edge. Only valid if {@link target} is 'node' or 'edge'.
      */
     targetID: string
 }

@@ -4,6 +4,7 @@ import {NodeProps} from "../components/BaseNode";
 import {SimpleNode} from "../components/SimpleNode";
 import {checkInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
+import {Property} from "csstype";
 
 export interface Node<T = string> {
     id: string
@@ -21,9 +22,9 @@ export interface Node<T = string> {
      */
     selected: boolean
     /**
-     * Component function for rendering the node, defaults to DefaultNode
+     * Component function for rendering the node, defaults to {@link SimpleNode}
      */
-    Component: React.ExoticComponent<NodeProps<T>>
+    Component: React.ComponentType<NodeProps<T>>
     /**
      * CSS classes that will be passed to the SimpleNode/custom component function.
      * By default, these classes are kept as-is, however a custom component function can change these on render.
@@ -38,14 +39,20 @@ export interface Node<T = string> {
     classes: string[]
     /**
      * Position relative to the parent (or absolute if parent is null). Defaults to 0,0.
-     * Note: never change a node's position by modifying the x & y values directly. Always use `node.position = ` to change to a new object, as reference
+     * Note: never change a node's position by modifying the x & y values directly. Always use `node.position = ...` to update to a new object, as reference
      * equality is used to detect position change.
      */
     position: DOMPoint
     /**
+     * Whether this node should be user-resizable. The default implementation always respects this, a custom Component function is responsible for making the node resizable.
+     * If you want to set min/max width or height, you should use a custom CSS class for that, and add it to {@link classes}.
+     */
+    resize: Property.Resize
+    /**
      * Spacing between this node and the edges that connect to it. Defaults to 3
      */
     edgeMargin: number
+
     // Config
     /**
      * Whether this node is selectable by the user. Defaults to true
@@ -106,6 +113,7 @@ export type NodeDefaults = Omit<NodeData<any>, "id" | "data" | "parent" | "selec
 const nodeDefaults: Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion"> = {
     Component: SimpleNode,
     classes: [],
+    resize: "none",
     position: new DOMPoint(),
     edgeMargin: 3,
     absolutePosition: new DOMPoint(),

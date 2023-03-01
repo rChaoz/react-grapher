@@ -14,6 +14,7 @@ export const EDGES_CLASS = "react-grapher-edges"
 
 
 
+export const NODE_RESIZABLE_WRAPPER = "react-grapher-node-resizable"
 export const NODE_CLASS = "react-grapher-node"
 export const NODE_HANDLE_CLASS = "react-grapher-node-handle"
 
