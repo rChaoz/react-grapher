@@ -25,7 +25,7 @@ import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
 import {getNodeIntersection} from "../util/EdgePath";
-import {enlargeRect, localMemo, resolveValue} from "../util/utils";
+import {enlargeRect, localMemo, parseCssStringOrNumber, resolveValue} from "../util/utils";
 import {createEvent, GrapherEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../data/GrapherEvent";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -827,7 +827,7 @@ function fitView(fitConfig: GrapherFitViewConfigSet, config: GrapherConfigSet, c
     if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
 
     // Apply padding
-    element.style.padding = fitConfig.padding
+    element.style.padding = parseCssStringOrNumber(fitConfig.padding)
     const comp = getComputedStyle(element)
     const pl = resolveValue(comp.paddingLeft, w) / zoom, pt = resolveValue(comp.paddingTop, h) / zoom,
         pr = resolveValue(comp.paddingRight, w) / zoom, pb = resolveValue(comp.paddingBottom, h) / zoom

@@ -1,5 +1,6 @@
 import {NodeDefaults} from "./Node";
 import {EdgeDefaults} from "./Edge";
+import {Property} from "csstype";
 
 export interface GrapherViewportControls {
     /**
@@ -96,9 +97,9 @@ function withDefaultsUserControls(controls: GrapherUserControls | false | undefi
 export interface GrapherFitViewConfig {
     /**
      * Any CSS string applicable to the "padding" CSS property (including multiple, eg. for top/right/bottom/left).
-     * This padding will be resolved and used when fitting view to space the nodes/edges away from the edges of the ReactGrapher. Defaults to "10%".
+     * This padding will be resolved, then used when fitting view to space the nodes/edges away from the edges of the ReactGrapher. Defaults to "10%".
      */
-    padding?: string,
+    padding?: Property.Padding<number>,
     /**
      * Whether to take minZoom and maxZoom (from viewportControls) when fitting view. If false and user zooming is enabled, the zoom value might
      * get a snap effect upon user zooming if the zoom value was outside limits. Defaults to true.
