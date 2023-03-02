@@ -319,7 +319,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     const objectCallbacks = useMemo<CallbacksContextValue>(() => ({
         onObjectPointerDown(event: PointerEvent) {
-            const r = processDomElement(event.currentTarget, d.nodes, d.edges, id)
+            const r = processDomElement<N, E>(event.currentTarget, d.nodes, d.edges, id)
             if (r == null) return
             let prevented = false
             if (onEvent != null) {
@@ -367,7 +367,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         },
         onObjectPointerUp(event: PointerEvent) {
-            const r = processDomElement(event.currentTarget, d.nodes, d.edges, id)
+            const r = processDomElement<N, E>(event.currentTarget, d.nodes, d.edges, id)
             if (r == null) return
             if (onEvent != null) {
                 const upEvent: GrapherPointerEvent = {
@@ -636,6 +636,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         })
                     }
                 } else d.selection.setNodesSelection([])
+                // Deselect edges TODO should edges stay selected?
                 d.selection.setEdgesSelection([])
 
                 sendChanges(changes, d.nodes, d.edges, onChange)
@@ -791,9 +792,12 @@ function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, e
     if (domID.charAt(id.length) === "n") {
         type = "node"
         obj = nodes.get(objID)
-    } else {
+    } else if (domID.charAt(id.length) === "e") {
         type = "edge"
         obj = edges.get(objID)
+    } else {
+        errorUnknownDomID(element, domID)
+        return null
     }
     if (obj == null) {
         errorUnknownDomID(element, `${domID} -> ${type} ${objID}`)
