@@ -6,7 +6,7 @@ import {checkInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 import {Property} from "csstype";
 
-export interface Node<T = any> {
+export interface Node<T = string> {
     id: string
     /**
      * Custom data for this node. The default node implementation displays this value as a string.
