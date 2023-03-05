@@ -152,7 +152,19 @@ export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
  * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values.
  */
 export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, curve: number) {
+    // Vector from a to b (delta)
     const dx = b.x - a.x, dy = b.y - a.y
-    const px = (b.x + a.x) / 2 + dy * curve, py = (b.y + a.y) / 2 - dx * curve
-    return `M ${a.x} ${a.y} Q ${px} ${py} ${b.x} ${b.y}`
+    // Calculate curvature
+    let cx = dy * curve, cy = -dx * curve
+    // Mid-point for bezier curve
+    const px = (b.x + a.x) / 2 + cx, py = (b.y + a.y) / 2 + cy
+    // Set length of curvature (c) vector to 2
+    const cLen = Math.sqrt(cx ** 2 + cy ** 2)
+    if (cLen == 0) cx = cy = 0
+    else {
+        cx = cx / cLen * 2
+        cy = cy / cLen * 2
+    }
+    // Shift start & end points by c to avoid overlapping edges when there's an edge a->b and an edge b->a
+    return `M ${a.x + cx} ${a.y + cy} Q ${px} ${py} ${b.x + cx} ${b.y + cy}`
 }
