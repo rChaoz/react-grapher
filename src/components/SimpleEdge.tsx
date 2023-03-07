@@ -11,9 +11,14 @@ export type SimpleEdgeData = {
      */
     type: "straight" | "round"
     /**
-     * Used as a parameter for {@link getRoundEdgePath} when `type` is `curved`. Defaults to .2
+     * Used as a parameter for {@link getRoundEdgePath} when `type` is `curved`. Defaults to '.2' if {@link absoluteCurve} is false/undefined, otherwise 25.
      */
     curve?: number
+    /**
+     * If true, edge will extend an absolute amount of pixels perpendicular to its direction, set by the {@link curve} property. Defaults to false
+     * @see getRoundEdgePath
+     */
+    absoluteCurve?: boolean
 }
 
 /**
@@ -28,7 +33,7 @@ export const SimpleEdge = memo<EdgeProps<SimpleEdgeData>>(
                 path = getStraightEdgePath(props.sourcePos, props.targetPos)
                 break
             case "round":
-                path = getRoundEdgePath(props.sourcePos, props.targetPos, props.data?.curve ?? .2)
+                path = getRoundEdgePath(props.sourcePos, props.targetPos, props.data.curve ?? props.data.absoluteCurve ? 25 : .2, props.data.absoluteCurve)
                 break
             default:
                 path = getStraightEdgePath(props.sourcePos, props.targetPos)

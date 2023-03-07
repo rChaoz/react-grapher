@@ -149,17 +149,27 @@ export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
 }
 
 /**
- * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values.
+ * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values. This value acts like a percentage/angle, if you
+ * want the edge to extend a certain distance regardless of its length, set `absoluteCurve = true`.
  */
-export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, curve: number) {
+export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, curve: number, absoluteCurve?: boolean) {
     // Vector from a to b (delta)
     const dx = b.x - a.x, dy = b.y - a.y
     // Calculate curvature
     let cx = dy * curve, cy = -dx * curve
+    let cLen = Math.sqrt(cx ** 2 + cy ** 2)
+    if (absoluteCurve === true) {
+        // Normalize c vector and set its length to 'curve'
+        if (cLen == 0) cx = cy = 0
+        else {
+            cx = cx / cLen * Math.abs(curve)
+            cy = cy / cLen * Math.abs(curve)
+        }
+        cLen = Math.abs(curve)
+    }
     // Mid-point for bezier curve
     const px = (b.x + a.x) / 2 + cx, py = (b.y + a.y) / 2 + cy
     // Set length of curvature (c) vector to 2
-    const cLen = Math.sqrt(cx ** 2 + cy ** 2)
     if (cLen == 0) cx = cy = 0
     else {
         cx = cx / cLen * 2
