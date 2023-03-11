@@ -1,25 +1,18 @@
 import {useRef} from "react";
 
 /**
- * Like {@link useRef}, but instead of setting just the `.current` property, this will copy all properties of the `initialValue` parameter into the ref.
+ * Like {@link useRef}, but returns the '.current' value of the ref, which is initially set to the given value.
  */
 export function usePersistent<T>(initialValue: T): T {
-    const ref = useRef(true)
-    if (ref.current) {
-        Object.assign(ref, initialValue)
-        ref.current = false
-    }
-    return ref as T
+    const ref = useRef(initialValue)
+    return ref.current
 }
 
 /**
  * Same as {@link usePersistent}, but use a factory function to obtain the initial value. For more expensive computations.
  */
 export function usePersistentComplex<T>(initialValueFactory: () => T): T {
-    const ref = useRef(true)
-    if (ref.current) {
-        Object.assign(ref, initialValueFactory())
-        ref.current = false
-    }
-    return ref as T
+    const ref = useRef<T>()
+    if (ref.current === undefined) ref.current = initialValueFactory()
+    return ref.current
 }

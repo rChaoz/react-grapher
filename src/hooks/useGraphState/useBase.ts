@@ -1,4 +1,5 @@
 import {useMemo, useState} from "react";
+import {usePersistentComplex} from "../usePersistent";
 
 export interface BaseObject {
     id: string
@@ -25,7 +26,7 @@ export interface BaseFunctionsImpl<T, TData> extends BaseFunctions<T, TData> {
 export function useBase<T extends BaseObject, TData extends BaseObject>(initialObjects: T[]): T[] & BaseFunctionsImpl<T, TData> {
     const [state, setState] = useState(initialObjects ?? [])
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const map = useMemo(() => new Map(state.map(obj => [obj.id, obj])), [])
+    const map = usePersistentComplex(() => new Map(state.map(obj => [obj.id, obj])))
     return Object.assign(state, useMemo<BaseFunctionsImpl<T, TData>>(() => ({
         internalMap: map,
         clear() {
