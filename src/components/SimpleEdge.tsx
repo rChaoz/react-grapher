@@ -1,5 +1,5 @@
 import {BaseEdge, EdgeProps} from "./BaseEdge";
-import React, {memo} from "react";
+import React from "react";
 import {getStraightEdgePath, getRoundEdgePath} from "../util/EdgePath";
 import {warnUnknownEdgeType} from "../util/log";
 
@@ -24,7 +24,7 @@ export type SimpleEdgeData = {
 /**
  * Simple edge implementation.
  */
-export const SimpleEdge = memo<EdgeProps<SimpleEdgeData>>(
+export const SimpleEdge = React.memo<EdgeProps<SimpleEdgeData>>(
     function SimpleEdge(props) {
         let path: string
         switch (props.data?.type) {

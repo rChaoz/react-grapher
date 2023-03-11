@@ -1,12 +1,12 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {NodeProps} from "../components/BaseNode";
-import {SimpleNode} from "../components/SimpleNode";
+import {SimpleNode, SimpleNodeData} from "../components/SimpleNode";
 import {checkInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 import {Property} from "csstype";
 
-export interface Node<T = string> {
+export interface Node<T = SimpleNodeData> {
     id: string
     /**
      * Custom data for this node. The default node implementation displays this value as a string.
@@ -103,7 +103,7 @@ export interface NodeImpl<T> extends Node<T> {
 /**
  * Node with all properties made optional except ID. Upon rendering, all properties will be set to their default values.
  */
-export type NodeData<T = string> = Partial<Node<T>> & {id: string}
+export type NodeData<T = SimpleNodeData> = Partial<Node<T>> & {id: string}
 
 /**
  * Default values for nodes.

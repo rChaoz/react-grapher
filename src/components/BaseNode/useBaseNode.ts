@@ -56,6 +56,7 @@ export function useBaseNode(id: string): [GrapherContextValue, React.RefObject<H
     useEffect(() => {
         const elem = ref.current
         if (elem == null || node == null || grapherContext.static) return
+        recalculateNode()
 
         elem.addEventListener("pointerdown", listeners.onObjectPointerDown)
         elem.addEventListener("pointerup", listeners.onObjectPointerUp)

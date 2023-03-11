@@ -18,7 +18,7 @@ import {
     Z_INDEX_EDGES,
     Z_INDEX_NODE
 } from "../util/constants";
-import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, withDefaultsConfig} from "../data/GrapherConfig";
+import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
 import {checkInvalidID, criticalNoViewport, errorUnknownDomID, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
 import {BoundsContext} from "../context/BoundsContext";
@@ -178,6 +178,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         edges = ownEdges as EdgesImpl<E>
         selection = ownSelection as SelectionImpl
     }
+    // 'Notify' selection if multiple selection is allowed
     selection.multipleSelection = config.userControls.multipleSelection
 
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
@@ -193,6 +194,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         id = "react-grapher"
         warnNoReactGrapherID()
     } else id = ownID
+
+    // We want callbacks to be able to use new state values but without re-creating the callbacks
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const d = useRef() as any as { nodes: NodesImpl<N>, edges: EdgesImpl<E>, selection: SelectionImpl, controller: ControllerImpl }
+    d.nodes = nodes
+    d.edges = edges
+    d.selection = selection
+    d.controller = controller
 
     // Currently grabbed (being moved) node
     interface GrabbedNode {
@@ -220,8 +229,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     const [shouldUpdateGrabbed, updateGrabbed] = useUpdate()
     // Last clicked node (used to detect multi-clicks)
     const lastClicked = usePersistent<LastClicked>({type: null, id: "", times: 0, time: 0})
+    /* Tracks when the last fitView was done
+     When controller.fitView() is called, controller.fitViewValue is incremented.
+     When this happens, controller.fitViewValue != needFitView.current, the view will be fitted and needFitView.current will be set to controller.fitViewValue
+     If, internally, a fitView() is needed (e.g. a node size changes during a requested fit view), needFitView.current will be decremented instead (same effect).
+     */
+    const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
 
-    // Render the Nodes TODO Try useMemo as well
+    // Render the Nodes
     const nodeElements = useMemo(() => nodes.map(node => {
         if (shouldUpdateGrabbed || selection) {
             // for eslint warning
@@ -242,7 +257,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                           resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
     }), [config.nodeDefaults, grabbed, nodes, selection, shouldUpdateGrabbed])
 
-    // Same for Edges TODO Same
+    // Same for Edges
+    // TODO Remove invalid edges
     const [shouldUpdateEdges, updateEdges] = useUpdate()
     const edgeElements = useMemo(() => edges.map(edge => {
         if (shouldUpdateGrabbed || shouldUpdateEdges || selection) {
@@ -277,45 +293,52 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Calculate bounds
     const [bounds, setBounds] = useState(new DOMRect())
+    const fitViewBounds = useRef(new DOMRect())
     const [shouldRecalculateBounds, recalculateBounds] = useUpdate()
     useEffect(() => {
-        const rect = nodes.length > 0
+        // This function calculates 2 bounding rects - one that will be used for the DOM size of the container, and 1 that will be used for fitting view
+        const domRect = nodes.length > 0
             ? new DOMRect(nodes[0].position.x, nodes[0].position.y, 0, 0)
             : new DOMRect()
+
+        // Do edges first as they are the same for both rects
+        for (const edge of edges) {
+            if (edge.bounds == null) continue
+            enlargeRect(domRect, edge.bounds)
+        }
+        const realRect = new DOMRect(domRect.x, domRect.y, domRect.width, domRect.height)
+
         for (const node of nodes) {
-            /* Update bounding rect
+            /* Update DOM bounding rect
             'right' needs to be x + width and not x + width/2 because nodes use translateX(-50%) to center themselves. This means, although its true 'right'
             is indeed x + width/2, its layout 'right' does not take transforms into account. And, if the node's layout right is out of bounds, text inside the node
             will start wrapping, and we don't want that! Same thing for 'bottom' - it needs to be y + height, not y + height/2. */
-            enlargeRect(rect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width * 1.5, height: node.height * 1.5})
+            enlargeRect(domRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width * 1.5, height: node.height * 1.5})
+            // Update real rect
+            enlargeRect(realRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width, height: node.height})
         }
-        for (const edge of edges) {
-            if (edge.bounds == null) continue
-            enlargeRect(rect, edge.bounds)
+        // Update bounds for fitView if they changed
+        if (Math.abs(realRect.left - bounds.left) > 10 || Math.abs(realRect.top - bounds.top) > 10
+            || Math.abs(realRect.right - bounds.right) > 10 || Math.abs(realRect.bottom - bounds.bottom) > 10) {
+            fitViewBounds.current = realRect
+            // When bounds change during a fitView, the fitView should repeat after the re-rendering is complete
+            if (needFitView.current + 1 === d.controller.fitViewValue) d.controller.fitView()
         }
-        // Enlarge bounds by decent amount to be sure everything fits
-        rect.x -= 200
-        rect.y -= 200
-        rect.width += 400
-        rect.height += 400
+        // Enlarge bounds by decent amount to make sure everything fits
+        domRect.x -= 200
+        domRect.y -= 200
+        domRect.width += 400
+        domRect.height += 400
         // Update bounds state if bounds changed too much
-        if (Math.abs(rect.left - bounds.left) > 100 || Math.abs(rect.top - bounds.top) > 100
-            || Math.abs(rect.right - bounds.right) > 100 || Math.abs(rect.bottom - bounds.bottom) > 100) {
-            setBounds(rect)
+        if (Math.abs(domRect.left - bounds.left) > 100 || Math.abs(domRect.top - bounds.top) > 100
+            || Math.abs(domRect.right - bounds.right) > 100 || Math.abs(domRect.bottom - bounds.bottom) > 100) {
+            setBounds(domRect)
         }
     }, [shouldRecalculateBounds, bounds, nodes, edges])
 
     // Create object callbacks
     const onEvent = props.onEvent
     const onChange = props.onChange
-
-    // We want the callbacks to use the new state values but without re-creating the callbacks
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    const d = useRef() as any as {nodes: NodesImpl<N>, edges: EdgesImpl<E>, selection: SelectionImpl, controller: ControllerImpl}
-    d.nodes = nodes
-    d.edges = edges
-    d.selection = selection
-    d.controller = controller
 
     const objectCallbacks = useMemo<CallbacksContextValue>(() => ({
         onObjectPointerDown(event: PointerEvent) {
@@ -461,7 +484,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 grabbed.startX = event.clientX
                 grabbed.startY = event.clientY
                 grabbed.timeoutID = timeoutID
-                updateGrabbed()
             }
         }
 
@@ -533,8 +555,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (!prevented && event.code === "Escape") {
                 d.selection.deselectAll()
                 if (grabbed.type != null) {
+                    if (grabbed.type === "node" || grabbed.type === "edge") updateGrabbed()
                     grabbed.type = null
-                    updateGrabbed()
                 }
             }
         }
@@ -669,8 +691,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 prevented = grapherEvent.prevented
             }
             if (!prevented) {
+                if (grabbed.type !== "viewport") updateGrabbed()
                 grabbed.type = null
-                updateGrabbed()
             }
         }
 
@@ -705,22 +727,18 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         }
     }, [onEvent, onChange, config, d, grabbed, updateGrabbed, lastClicked, props.static])
 
-    // TODO Remove invalid edges
-
     // Fit view
     useEffect(() => {
-        if (props.fitView === "always") fitView(config.fitViewConfig, config, controller, bounds, ref.current!)
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [nodes, edges])
+        if (props.fitView === "always") d.controller.fitView()
+    }, [config.fitViewConfig, config.viewportControls, nodes, edges, props.fitView])
 
-    const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
     useEffect(() => {
-        if (controller.fitViewValue != needFitView.current) {
-            fitView(config.fitViewConfig, config, controller, bounds, ref.current!)
-            needFitView.current = controller.fitViewValue
+        if (d.controller.fitViewValue > needFitView.current) {
+            ++needFitView.current
+            fitView(config.fitViewConfig, config.viewportControls, d.controller, fitViewBounds.current, ref.current!)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [controller])
+    }, [controller.fitViewValue, needFitView.current])
 
     // Fit view on resize
     useEffect(() => {
@@ -728,12 +746,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             let firstObserve = true
             const observer = new ResizeObserver(() => {
                 if (firstObserve) firstObserve = false
-                else controller.fitView()
+                else fitView(config.fitViewConfig, config.viewportControls, d.controller, fitViewBounds.current, ref.current!)
             })
             observer.observe(ref.current)
             return () => observer.disconnect()
         }
-    }, [props.fitViewOnResize, controller])
+    }, [config.fitViewConfig, config.viewportControls, props.fitViewOnResize, controller])
 
     const contextValue: GrapherContextValue = useMemo(() => ({
         id,
@@ -826,14 +844,14 @@ function changeZoom(amount: number, controller: Controller, config: GrapherConfi
 }
 
 // Fit the viewport
-function fitView(fitConfig: GrapherFitViewConfigSet, config: GrapherConfigSet, controller: Controller, boundingRect: DOMRect, element: HTMLElement) {
+function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: GrapherViewportControlsSet, controller: Controller, boundingRect: DOMRect, element: HTMLElement) {
     if (element == null || boundingRect == null || (boundingRect.width === 0 && boundingRect.height === 0)) return
     const w = element.offsetWidth, h = element.offsetHeight
 
     // Calculate zoom value for paddings
     const rect = new DOMRect(boundingRect.x, boundingRect.y, boundingRect.width, boundingRect.height)
     let zoom = Math.min(w / rect.width, h / rect.height)
-    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
+    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
 
     // Apply padding
     element.style.padding = parseCssStringOrNumber(fitConfig.padding)
@@ -847,7 +865,7 @@ function fitView(fitConfig: GrapherFitViewConfigSet, config: GrapherConfigSet, c
     rect.height += pt + pb
     // Calculate final zoom value
     zoom = Math.min(w / rect.width, h / rect.height)
-    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
+    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
 
     // Update viewport
     controller.setViewport({

@@ -22,7 +22,7 @@ export interface Edge<T = SimpleEdgeData> {
     /**
      * Component function for rendering the edge, defaults to DefaultEdge
      */
-    Component: React.ExoticComponent<EdgeProps<T>>
+    Component: React.ComponentType<EdgeProps<T>>
     /**
      * CSS classes that will be passed to the SimpleEdge/custom component function.
      * By default, these classes are kept as-is, however a custom component function can change these on render.
@@ -112,7 +112,7 @@ export interface EdgeImpl<T> extends Edge<T> {
 /**
  * Edge with all properties made optional except ID, source and target. Upon rendering, all properties will be set to their default values.
  */
-export type EdgeData<T> = Partial<Edge<T>> & {id: string, source: string, target: string}
+export type EdgeData<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, source: string, target: string}
 
 /**
  * Default values for edges.

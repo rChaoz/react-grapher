@@ -28,14 +28,14 @@ const defaultViewportControls = {
     allowZooming: true,
 }
 
-const noViewportControls =  {
+const noViewportControls = {
     minZoom: .4,
     maxZoom: 4,
     allowPanning: false,
     allowZooming: false,
 }
 
-function withDefaultsViewportControls(controls: GrapherViewportControls | boolean | undefined): Required<GrapherViewportControls> {
+function withDefaultsViewportControls(controls: GrapherViewportControls | boolean | undefined): GrapherViewportControlsSet {
     if (controls === true || controls === undefined) return defaultViewportControls
     else if (controls === false) return noViewportControls
     else return {...defaultViewportControls, ...controls}
@@ -97,11 +97,11 @@ function withDefaultsUserControls(controls: GrapherUserControls | false | undefi
 export interface GrapherFitViewConfig {
     /**
      * Any CSS string applicable to the "padding" CSS property (including multiple, eg. for top/right/bottom/left).
-     * This padding will be resolved, then used when fitting view to space the nodes/edges away from the edges of the ReactGrapher. Defaults to "10%".
+     * This padding will be resolved, then used when fitting view to space the nodes/edges away from the edges of the ReactGrapher. Defaults to "5%".
      */
     padding?: Property.Padding<number>,
     /**
-     * Whether to take minZoom and maxZoom (from viewportControls) when fitting view. If false and user zooming is enabled, the zoom value might
+     * Whether to take minZoom and maxZoom (from `viewportControls`) when fitting view. If false and user zooming is enabled, the zoom value might
      * get a snap effect upon user zooming if the zoom value was outside limits. Defaults to true.
      */
     abideMinMaxZoom?: boolean
@@ -109,7 +109,7 @@ export interface GrapherFitViewConfig {
 }
 
 const defaultFitViewConfig: GrapherFitViewConfigSet = {
-    padding: "10%",
+    padding: "5%",
     abideMinMaxZoom: true,
 }
 
@@ -158,17 +158,14 @@ export interface GrapherConfig {
     edgeDefaults?: EdgeDefaults
 }
 
-export interface GrapherConfigSet {
-    viewportControls: Required<GrapherViewportControls>
+export interface GrapherConfigSet extends Required<Omit<GrapherConfig, "viewportControls" | "userControls" | "fitViewConfig">> {
+    viewportControls: GrapherViewportControlsSet
     userControls: Required<GrapherUserControls>
     fitViewConfig: GrapherFitViewConfigSet
-    nodesOverEdges: boolean
-    hideControls?: boolean
-    nodeDefaults: NodeDefaults
-    edgeDefaults: EdgeDefaults
 }
 
 export type GrapherFitViewConfigSet = Required<GrapherFitViewConfig>
+export type GrapherViewportControlsSet = Required<GrapherViewportControls>
 
 export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherConfigSet {
     return {
