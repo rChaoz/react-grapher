@@ -69,7 +69,7 @@ const BaseDiv = styled.div<{ baseZIndex: number, grabbed: boolean }>`
 `
 
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, children}: BaseNodeProps) {
-    const [grapherContext, ref] = useBaseNode(id)
+    const [grapherContext, ref] = useBaseNode(id, [id, classes, absolutePosition, grabbed, selected])
     const bounds = useContext(BoundsContext)
 
     return <BaseDiv ref={ref} id={`${grapherContext.id}n-${id}`} baseZIndex={grapherContext.nodeZIndex} grabbed={grabbed}

@@ -29,7 +29,7 @@ export interface BaseResizableNodeProps extends BaseNodeProps {
 }
 
 export function BaseResizableNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseResizableNodeProps) {
-    const [grapherContext, ref] = useBaseNode(id)
+    const [grapherContext, ref] = useBaseNode(id, [id, classes, absolutePosition, grabbed, selected])
     const bounds = useContext(BoundsContext)
 
     useEffect(() => {

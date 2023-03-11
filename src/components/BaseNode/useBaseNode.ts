@@ -5,7 +5,7 @@ import {errorUnknownNode} from "../../util/log";
 import {resolveValues} from "../../util/utils";
 
 // Common code of BaseNode and BaseNodeResizable
-export function useBaseNode(id: string): [GrapherContextValue, React.RefObject<HTMLDivElement>] {
+export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue, React.RefObject<HTMLDivElement>] {
     const grapherContext = useContext(GrapherContext)
     const listeners = useContext(CallbacksContext)
 
@@ -56,7 +56,6 @@ export function useBaseNode(id: string): [GrapherContextValue, React.RefObject<H
     useEffect(() => {
         const elem = ref.current
         if (elem == null || node == null || grapherContext.static) return
-        recalculateNode()
 
         elem.addEventListener("pointerdown", listeners.onObjectPointerDown)
         elem.addEventListener("pointerup", listeners.onObjectPointerUp)
@@ -68,6 +67,9 @@ export function useBaseNode(id: string): [GrapherContextValue, React.RefObject<H
             observer.disconnect()
         }
     }, [grapherContext, listeners, node, recalculateNode])
+
+    // Additionally, recalculateNode() should be called any time any prop changes
+    useEffect(recalculateNode, [recalculateNode, ...updateDeps])
 
     return [grapherContext, ref]
 }

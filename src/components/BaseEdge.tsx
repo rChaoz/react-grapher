@@ -87,7 +87,7 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
 }
 
 const BaseG = styled.g<{static?: boolean}>`
-  pointer-events: ${props => props.static ? "none" : "all"};
+  pointer-events: ${props => props.static ? "none" : "stroke"};
 `
 
 export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
