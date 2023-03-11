@@ -197,11 +197,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // We want callbacks to be able to use new state values but without re-creating the callbacks
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    const d = useRef() as any as { nodes: NodesImpl<N>, edges: EdgesImpl<E>, selection: SelectionImpl, controller: ControllerImpl }
+    const d = useRef() as any as { nodes: NodesImpl<N>, edges: EdgesImpl<E>, selection: SelectionImpl, controller: ControllerImpl, config: GrapherConfigSet }
     d.nodes = nodes
     d.edges = edges
     d.selection = selection
     d.controller = controller
+    d.config = config
 
     // Currently grabbed (being moved) node
     interface GrabbedNode {
@@ -241,7 +242,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         if (shouldUpdateGrabbed || selection) {
             // for eslint warning
         }
-        applyNodeDefaults(node, config.nodeDefaults)
+        applyNodeDefaults(node, d.config.nodeDefaults)
         let parent: Node<any> | null = null
         if (node.parent != null) {
             const p = nodes.get(node.parent)
@@ -255,7 +256,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={node.absolutePosition} edgeMargin={node.edgeMargin}
                           resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
-    }), [config.nodeDefaults, grabbed, nodes, selection, shouldUpdateGrabbed])
+    }), [grabbed, nodes, selection, shouldUpdateGrabbed])
 
     // Same for Edges
     // TODO Remove invalid edges
@@ -264,7 +265,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         if (shouldUpdateGrabbed || shouldUpdateEdges || selection) {
             // for eslint warning
         }
-        applyEdgeDefaults(edge, config.edgeDefaults)
+        applyEdgeDefaults(edge, d.config.edgeDefaults)
         const source = nodes.get(edge.source) as NodeImpl<any>, target = nodes.get(edge.target) as NodeImpl<any>
         if (source == null) {
             errorUnknownNode(edge.source)
@@ -286,7 +287,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
                           selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
-    }), [config.edgeDefaults, grabbed, nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
+    }), [grabbed, nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -360,12 +361,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
             // Check if grabbing is allowed
             if (r.obj.allowGrabbing === false || (r.obj.allowGrabbing === undefined && (
-                (r.type === "node" && config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && config.edgeDefaults.allowGrabbing === false)
+                (r.type === "node" && d.config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && d.config.edgeDefaults.allowGrabbing === false)
             ))) return
             // "Grab" the object
             if (!prevented && grabbed.type == null) {
                 // And initiate timer for long-click detection
-                const timeoutID = config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
+                const timeoutID = d.config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
                     const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
                         ...createEvent(grabbed, d.selection),
                         type: "pointer",
@@ -376,10 +377,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         targetID: r.objID,
                     }
                     onEvent(grapherEvent)
-                }, config.userControls.longClickDelay)
+                }, d.config.userControls.longClickDelay)
                 grabbed.type = r.type
                 grabbed.id = r.objID
-                grabbed.clickCount = (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + config.userControls.multiClickDelay > Date.now())
+                grabbed.clickCount = (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + d.config.userControls.multiClickDelay > Date.now())
                     ? lastClicked.times + 1
                     : 1
                 grabbed.hasMoved = false
@@ -428,7 +429,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 }
                 // Check if selection is allowed
                 if (r.obj.allowSelection === false || (r.obj.allowSelection === undefined && (
-                    (r.type === "node" && config.nodeDefaults.allowSelection === false) || (r.type === "edge" && config.edgeDefaults.allowSelection === false)
+                    (r.type === "node" && d.config.nodeDefaults.allowSelection === false) || (r.type === "edge" && d.config.edgeDefaults.allowSelection === false)
                 ))) return
                 // Select the object
                 if (!prevented) {
@@ -437,7 +438,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 }
             }
         },
-    }), [onEvent, config, id, grabbed, updateGrabbed, lastClicked, d])
+    }), [onEvent, id, grabbed, updateGrabbed, lastClicked, d])
 
     // Add listeners to viewport & document
     useEffect(() => {
@@ -464,7 +465,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // "Grab" the viewport
             if (!prevented && grabbed.type == null) {
                 // And initiate timer for long-click detection
-                const timeoutID = config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
+                const timeoutID = d.config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
                     const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
                         ...createEvent(grabbed, d.selection),
                         type: "pointer",
@@ -475,9 +476,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         targetID: "",
                     }
                     onEvent(grapherEvent)
-                }, config.userControls.longClickDelay)
+                }, d.config.userControls.longClickDelay)
                 grabbed.type = "viewport"
-                grabbed.clickCount = (lastClicked.type === "viewport" && lastClicked.time + config.userControls.multiClickDelay > Date.now())
+                grabbed.clickCount = (lastClicked.type === "viewport" && lastClicked.time + d.config.userControls.multiClickDelay > Date.now())
                     ? lastClicked.times + 1
                     : 1
                 grabbed.hasMoved = false
@@ -536,7 +537,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 onEvent(wheelEvent)
                 prevented = wheelEvent.prevented
             }
-            if (!prevented && config.viewportControls.allowZooming) changeZoom(-event.deltaY / 1000, d.controller, config)
+            if (!prevented && d.config.viewportControls.allowZooming) changeZoom(-event.deltaY / 1000, d.controller, d.config)
         }
 
         function onViewportKeyDown(event: KeyboardEvent) {
@@ -570,10 +571,10 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
             // Allow small movement (5px) without beginning the move
             if (grabbed.type != null && !grabbed.hasMoved && Math.abs(event.clientX - grabbed.startX) ** 2
-                + Math.abs(event.clientY - grabbed.startY) ** 2 < config.userControls.minimumPointerMovement ** 2) return
+                + Math.abs(event.clientY - grabbed.startY) ** 2 < d.config.userControls.minimumPointerMovement ** 2) return
             if (grabbed.type === "viewport") {
                 // User is moving the viewport (panning the graph)
-                if (!config.viewportControls.allowPanning) return
+                if (!d.config.viewportControls.allowPanning) return
                 // Send event
                 let prevented = false
                 if (onEvent != null) {
@@ -607,7 +608,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     errorUnknownNode(grabbed.id)
                     return
                 }
-                if (node.allowMoving === false || (node.allowMoving === undefined && config.nodeDefaults.allowMoving === false)) return
+                if (node.allowMoving === false || (node.allowMoving === undefined && d.config.nodeDefaults.allowMoving === false)) return
                 // Send event
                 let prevented = false
                 if (onEvent != null) {
@@ -725,17 +726,17 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             document.removeEventListener("pointermove", onPointerMove)
             document.removeEventListener("pointerup", onPointerUp)
         }
-    }, [onEvent, onChange, config, d, grabbed, updateGrabbed, lastClicked, props.static])
+    }, [onEvent, onChange, grabbed, updateGrabbed, lastClicked, props.static])
 
     // Fit view
     useEffect(() => {
         if (props.fitView === "always") d.controller.fitView()
-    }, [config.fitViewConfig, config.viewportControls, nodes, edges, props.fitView])
+    }, [nodes, edges, props.fitView])
 
     useEffect(() => {
         if (d.controller.fitViewValue > needFitView.current) {
             ++needFitView.current
-            fitView(config.fitViewConfig, config.viewportControls, d.controller, fitViewBounds.current, ref.current!)
+            fitView(d.config.fitViewConfig, d.config.viewportControls, d.controller, fitViewBounds.current, ref.current!)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [controller.fitViewValue, needFitView.current])
@@ -746,12 +747,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             let firstObserve = true
             const observer = new ResizeObserver(() => {
                 if (firstObserve) firstObserve = false
-                else fitView(config.fitViewConfig, config.viewportControls, d.controller, fitViewBounds.current, ref.current!)
+                else fitView(d.config.fitViewConfig, d.config.viewportControls, d.controller, fitViewBounds.current, ref.current!)
             })
             observer.observe(ref.current)
             return () => observer.disconnect()
         }
-    }, [config.fitViewConfig, config.viewportControls, props.fitViewOnResize, controller])
+    }, [props.fitViewOnResize])
 
     const contextValue: GrapherContextValue = useMemo(() => ({
         id,
