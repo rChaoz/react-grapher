@@ -5,6 +5,9 @@ import {SimpleNode, SimpleNodeData} from "../components/SimpleNode";
 import {checkInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 import {Property} from "csstype";
+// Used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {Edge} from "./Edge";
 
 export interface Node<T = SimpleNodeData> {
     id: string
@@ -79,6 +82,10 @@ export interface Node<T = SimpleNodeData> {
 
 export interface NodeImpl<T> extends Node<T> {
     /**
+     * Used internally to check if a node was initialized with default values.
+     */
+    isInitialized?: boolean
+    /**
      * Automatically set during rendering. DOM width of this node
      */
     width: number
@@ -95,9 +102,25 @@ export interface NodeImpl<T> extends Node<T> {
      */
     absolutePositionMemoObject: MemoObject<DOMPoint>
     /**
-     * Used internally to check if a node was initialized (all fields set).
+     * Automatically set during rendering. Read-only information on handles of this node.
      */
-    isInitialized?: boolean
+    handles: NodeHandle[]
+}
+
+export interface NodeHandle {
+    /**
+     * Name of this handle, used for {@link Edge.sourceHandle} and {@link Edge.targetHandle}
+     */
+    name: string
+    roles: string[] | undefined
+    /**
+     * X coordinate relative to node center
+     */
+    x: number
+    /**
+     * Y coordinate relative to node center
+     */
+    y: number
 }
 
 /**

@@ -20,7 +20,7 @@ import {
 } from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
-import {checkInvalidID, criticalNoViewport, errorUnknownDomID, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
+import {checkInvalidID, criticalNoViewport, errorUnknownDomID, errorUnknownNode, warnNoReactGrapherID, warnUnknownHandle} from "../util/log";
 import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
@@ -238,56 +238,75 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
 
     // Render the Nodes
-    const nodeElements = useMemo(() => nodes.map(node => {
-        if (shouldUpdateGrabbed || selection) {
-            // for eslint warning
-        }
-        applyNodeDefaults(node, d.config.nodeDefaults)
-        let parent: Node<any> | null = null
-        if (node.parent != null) {
-            const p = nodes.get(node.parent)
-            if (p == null) errorUnknownNode(node.parent)
-            else parent = p
-        }
+    const nodeElements = useMemo(() => {
+        console.count("Nodes")
+        return nodes.map(node => {
+            if (shouldUpdateGrabbed || selection) {
+                // for eslint warning
+            }
+            applyNodeDefaults(node, d.config.nodeDefaults)
+            let parent: Node<any> | null = null
+            if (node.parent != null) {
+                const p = nodes.get(node.parent)
+                if (p == null) errorUnknownNode(node.parent)
+                else parent = p
+            }
 
-        // Calculate absolute position
-        node.absolutePosition = localMemo(() => nodes.absolute(node), [node.position, node.parent], node.absolutePositionMemoObject)
+            // Calculate absolute position
+            node.absolutePosition = localMemo(() => nodes.absolute(node), [node.position, node.parent], node.absolutePositionMemoObject)
 
-        const Component = node.Component
-        return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={node.absolutePosition} edgeMargin={node.edgeMargin}
-                          resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
-    }), [grabbed, nodes, selection, shouldUpdateGrabbed])
+            const Component = node.Component
+            return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={node.absolutePosition} edgeMargin={node.edgeMargin}
+                              resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
+        })
+    }, [grabbed, nodes, selection, shouldUpdateGrabbed])
 
     // Same for Edges
     // TODO Remove invalid edges
     const [shouldUpdateEdges, updateEdges] = useUpdate()
-    const edgeElements = useMemo(() => edges.map(edge => {
-        if (shouldUpdateGrabbed || shouldUpdateEdges || selection) {
-            // for eslint warning
-        }
-        applyEdgeDefaults(edge, d.config.edgeDefaults)
-        const source = nodes.get(edge.source) as NodeImpl<any>, target = nodes.get(edge.target) as NodeImpl<any>
-        if (source == null) {
-            errorUnknownNode(edge.source)
-            return
-        }
-        if (target == null) {
-            errorUnknownNode(edge.target)
-            return
-        }
-        const Component = edge.Component ?? SimpleEdge
-        // TODO Implement handles
-        edge.sourcePos = localMemo(() =>
-                edge.sourceHandle == null ? getNodeIntersection(source, target) : source.absolutePosition,
-            [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius], edge.sourcePosMemoObject)
-        edge.targetPos = localMemo(() =>
-                edge.targetHandle == null ? getNodeIntersection(target, source) : target.absolutePosition,
-            [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius], edge.targetPosMemoObject)
-        return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} label={edge.label} labelPosition={edge.labelPosition}
-                          source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
-                          target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
-                          selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
-    }), [grabbed, nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
+    const edgeElements = useMemo(() => {
+        console.count("Edges")
+        return edges.map(edge => {
+            if (shouldUpdateGrabbed || shouldUpdateEdges || selection) {
+                // for eslint warning
+            }
+            applyEdgeDefaults(edge, d.config.edgeDefaults)
+            const source = nodes.get(edge.source) as NodeImpl<any>, target = nodes.get(edge.target) as NodeImpl<any>
+            if (source == null) {
+                errorUnknownNode(edge.source)
+                return
+            }
+            if (target == null) {
+                errorUnknownNode(edge.target)
+                return
+            }
+            const Component = edge.Component ?? SimpleEdge
+            edge.sourcePos = localMemo(() => {
+                if (edge.sourceHandle == null || source.handles == null) return getNodeIntersection(source, target)
+                else {
+                    const handle = source.handles.find(handle => handle.name === edge.sourceHandle)
+                    if (handle == null) {
+                        warnUnknownHandle(edge.id, source.id, edge.sourceHandle, source.handles.map(handle => handle.name))
+                        return source.absolutePosition
+                    } else return new DOMPoint(source.absolutePosition.x + handle.x, source.absolutePosition.y + handle.y)
+                }
+            }, [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius, source.handles], edge.sourcePosMemoObject)
+            edge.targetPos = localMemo(() => {
+                if (edge.targetHandle == null || target.handles == null) return getNodeIntersection(target, source)
+                else {
+                    const handle = target.handles.find(handle => handle.name === edge.targetHandle)
+                    if (handle == null) {
+                        warnUnknownHandle(edge.id, target.id, edge.targetHandle, target.handles.map(handle => handle.name))
+                        return target.absolutePosition
+                    } else return new DOMPoint(target.absolutePosition.x + handle.x, target.absolutePosition.y + handle.y)
+                }
+            }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles], edge.targetPosMemoObject)
+            return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} label={edge.label} labelPosition={edge.labelPosition}
+                              source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
+                              target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
+                              selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
+        });
+    }, [grabbed, nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)

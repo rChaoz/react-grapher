@@ -144,6 +144,10 @@ export interface GrapherConfig {
      */
     nodesOverEdges?: boolean
     /**
+     * If true, it will allow programmatically added illegal edges (disregarding roles). Defaults to false
+     */
+    allowIllegalEdges?: boolean
+    /**
      * If true, all control buttons will be hidden, regardless of individual options for viewportControls/userControls.
      * Defaults to false.
      */
@@ -173,6 +177,7 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         userControls: withDefaultsUserControls(config?.userControls),
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
         nodesOverEdges: config?.nodesOverEdges ?? false,
+        allowIllegalEdges: false,
         hideControls: config?.hideControls ?? false,
         nodeDefaults: config?.nodeDefaults ?? {},
         edgeDefaults: config?.edgeDefaults ?? {},

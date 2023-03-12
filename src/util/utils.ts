@@ -65,7 +65,8 @@ export type MemoObject<T> = {
  * Memoize a value where a hook can't be used
  * @param factory Like {@link React.useMemo} factory param
  * @param deps Dependencies array, as value pairs: each pair consists of an old and new value that will be compared by reference
- * @param memoObject A memo object that will be used and modified by this function for memoization. Should be initialized to `{}`
+ * @param memoObject A memo object that will be used and modified by this function for memoization. Should be initialized to `{}`.
+ * Note: the object must always be the same every time this function is called, for this function to work correctly.
  */
 export function localMemo<T>(factory: () => T, deps: any[], memoObject: MemoObject<T>): T {
     if (memoObject.deps == null || memoObject.deps.length != deps.length) {
@@ -73,10 +74,17 @@ export function localMemo<T>(factory: () => T, deps: any[], memoObject: MemoObje
         return memoObject.oldValue = factory()
     }
     // Compare old & new dependencies
-    for (let i = 0; i < deps.length; ++i) if (deps[i] !== memoObject.deps[i]) {
+    for (let i = 0; i < deps.length; ++i) if (Object.is(deps[i], memoObject.deps[i])) {
         memoObject.deps = deps
         return memoObject.oldValue = factory()
     }
 
     return memoObject.oldValue!
+}
+
+/**
+ * Test whether an object has a property
+ */
+export function hasProperty<O extends object, P extends string>(object: O, prop: P): object is O & Record<P, unknown> {
+    return prop in object
 }
