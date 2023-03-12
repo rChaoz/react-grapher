@@ -8,6 +8,9 @@
     --react-grapher-node-border-selected: #FFFDD0;
     --react-grapher-node-text-color: white;
 
+    --react-grapher-handle-border: #eee;
+    --react-grapher-handle-background: #777;
+
     --react-grapher-edge-stroke-width: 3px;
     --react-grapher-edge-stroke-width-selected: 4px;
     --react-grapher-edge-color: #777777;
@@ -55,10 +58,10 @@
     border-width: 3px;
 }
 
-/* Node Handle TODO Replace colors with variables */
+/* Node Handle */
 .react-grapher-node-handle {
-    background-color: black;
-    border: 1px solid white;
+    background-color: var(--react-grapher-handle-background);
+    border: 1px solid var(--react-grapher-handle-border);
 }
 
 
