@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React from "react";
 import {useCallback, useRef} from "react";
 
 // DEBUGGING USE ONLY, make sure to remove all calls to this when done using
@@ -30,9 +30,7 @@ export function usePropChecker(WrappedComponent: React.ComponentType<any>, label
 export function useDependencyChangeChecker<T extends unknown[]>(arr: T, label?: string): T {
     const ref = useRef<T>(arr)
     const changedIndices: number[] = []
-    for (let i = 0; i < arr.length; ++i) {
-        if (arr[i] !== ref.current[i]) changedIndices.push(i)
-    }
+    for (let i = 0; i < arr.length; ++i) if (!Object.is(arr[i], ref.current[i])) changedIndices.push(i)
     if (changedIndices.length > 0) console.log(`DependencyChecker${label != null ? " " + label : ""}: change at indices ` + changedIndices.join())
     ref.current = arr
     return arr
