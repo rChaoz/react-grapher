@@ -5,6 +5,7 @@ import typescript from "rollup-plugin-typescript2";
 import postcss from "rollup-plugin-postcss";
 
 import packageJson from "./package.json";
+import babel from "@rollup/plugin-babel"
 
 export default {
     input: "src/index.ts",
@@ -12,19 +13,24 @@ export default {
         {
             file: packageJson.main,
             format: "cjs",
-            sourcemap: false
+            sourcemap: false,
         },
         {
             file: packageJson.module,
             format: "esm",
-            sourcemap: false
-        }
+            sourcemap: false,
+        },
     ],
     plugins: [
         peerDepsExternal(),
         resolve(),
         commonjs(),
-        typescript(),
+        typescript({
+            tsconfigOverride: {
+                exclude: ["**/*.test.ts"],
+            },
+        }),
         postcss(),
-    ]
+        babel({babelHelpers: 'bundled'}),
+    ],
 };

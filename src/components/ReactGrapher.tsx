@@ -366,7 +366,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // "Grab" the object
             if (!prevented && grabbed.type == null) {
                 // And initiate timer for long-click detection
-                const timeoutID = d.config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
+                const timeoutID = d.config.userControls.longClickDelay < 0 || onEvent == null ? -1 : window.setTimeout(() => {
                     const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
                         ...createEvent(grabbed, d.selection),
                         type: "pointer",
@@ -465,7 +465,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // "Grab" the viewport
             if (!prevented && grabbed.type == null) {
                 // And initiate timer for long-click detection
-                const timeoutID = d.config.userControls.longClickDelay < 0 || onEvent == null ? -1 : setTimeout(() => {
+                const timeoutID = d.config.userControls.longClickDelay < 0 || onEvent == null ? -1 : window.setTimeout(() => {
                     const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
                         ...createEvent(grabbed, d.selection),
                         type: "pointer",
