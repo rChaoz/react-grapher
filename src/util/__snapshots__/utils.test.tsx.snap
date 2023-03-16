@@ -1,0 +1,9 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`enlargeRect 1`] = `"{ "x": -10, "y": -10, "width": 20, "height": 20 }"`;
+
+exports[`enlargeRect 2`] = `"{ "x": -10, "y": -10, "width": 60, "height": 80 }"`;
+
+exports[`enlargeRect 3`] = `"{ "x": -20, "y": -10, "width": 70, "height": 110 }"`;
+
+exports[`enlargeRect 4`] = `"{ "x": -80, "y": -10, "width": 130, "height": 165 }"`;
