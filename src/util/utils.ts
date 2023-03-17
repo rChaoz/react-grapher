@@ -1,25 +1,39 @@
 import {warnCalcUnknownToken, warnUnknownCSSComputedValue} from "./log"
 
 /**
- * Resolve the argument of a CSS `calc()` function
- * @param expr function argument expression, i.e. what's between the parenthesis of `calc(...)`
- * @param length length on which percentage values are based on
+ * Function that takes a computed CSS calc expression (i.e. composed of only percentage and pixel values, added or subtracted)
+ * @param expr CSS calc expression: `<percentage>% +/- <pixel-value>px`
+ * @return A pair of 2 numbers, as an array, first number being the percentage and second number the pixel value.
+ * Note that the percentage is returned as-is: "50.3% + 5" will return [50, 5], not [.503, 5]
+ * @see getComputedStyle
  */
-function resolveCalc(expr: string, length: number) {
+export function splitCSSCalc(expr: string): [number, number] {
     // Splitting by whitespace is fine: in CSS, whitespace is mandatory before & after arithmetic '+'/'-'. Unary minus (or even plus)
     // can be handled by `Number()`, if present. Computed values may not contain multiplications or divisions, as they are considered basic
     // computations: only multiplying/dividing by 'number' (no unit) is allowed.
     const tokens = expr.trim().split(/\s/)
-    let value = 0, sign = 1
+    let percentage = 0, absolute = 0, sign = 1
     for (const t of tokens) {
         if (t.length === 0) continue; // ignore consecutive spaces
-        if (t.endsWith("px")) value += Number(t.substring(0, t.length - 2)) * sign
-        else if (t.endsWith("%")) value += Number(t.substring(0, t.length - 1)) * length / 100 * sign
+        if (t.endsWith("px")) absolute += Number(t.substring(0, t.length - 2)) * sign
+        else if (t.endsWith("%")) percentage += Number(t.substring(0, t.length - 1)) * sign
         else if (t === "+") sign = 1
         else if (t === "-") sign = -1
         else warnCalcUnknownToken(expr, t)
     }
-    return value
+    return [percentage, absolute]
+}
+
+/**
+ * Resolve the argument of a computed CSS `calc()` function (i.e. composed of only percentage and pixel values, added or subtracted)
+ * @param expr CSS calc expression: `<percentage>% +/- <pixel-value>px`
+ * @param length length, in pixels, on which percentage values are based on
+ * @see getComputedStyle
+ * TODO Rename to resolveCSSCalc
+ */
+export function resolveCalc(expr: string, length: number) {
+    const [percentage, absolute] = splitCSSCalc(expr)
+    return percentage * length / 100 + absolute
 }
 
 /**

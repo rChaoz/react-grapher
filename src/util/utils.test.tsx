@@ -2,8 +2,7 @@ import React from "react"
 import {describe, expect, it, jest, test} from "@jest/globals"
 import styled from "@emotion/styled"
 
-// @ts-ignore
-import {__RewireAPI__, enlargeRect, hasProperty, localMemo, parseCSSStringOrNumber, resolveValue, resolveValues} from "./utils"
+import {splitCSSCalc, enlargeRect, hasProperty, localMemo, parseCSSStringOrNumber, resolveCalc, resolveValue, resolveValues} from "./utils"
 import {render} from "@testing-library/react"
 
 const Container = styled.div`
@@ -41,12 +40,24 @@ const TestComponent = styled.div`
   border-bottom-left-radius: calc(20px + 1%) 10%;
 `
 
-const consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => {/* empty */
+const consoleWarn = jest.spyOn(console, "warn").mockImplementation(() => {
+    // empty
+})
+
+describe("splitCSSCalc", () => {
+    test.each<[string, number, number]>([
+        ["50% + 25px", 50, 25],
+        ["30px", 0, 30],
+        ["100px - 20%", -20, 100],
+        ["25% - 5px", 25, -5],
+    ])("works for '%s'", (expression, expectedPercentage, expectedPxValue) => {
+        const [percentage, absolute] = splitCSSCalc(expression)
+        expect(percentage).toBeCloseTo(expectedPercentage)
+        expect(absolute).toBeCloseTo(expectedPxValue)
+    })
 })
 
 describe("resolveCalc", () => {
-    const resolveCalc: (expr: string, length: number) => number = __RewireAPI__.__get__("resolveCalc")
-
     test.each<[number, string, number]>([
         [100, "50%", 50],
         [100, "20px", 20],
@@ -251,7 +262,7 @@ describe('localMemo', () => {
 test("hasProperty", () => {
     consoleWarn.mockClear()
 
-    const object: {a: string} = {a: "hello", b: 123} as any
+    const object: { a: string } = {a: "hello", b: 123} as any
     expect(hasProperty(object, "b"))
     // Expect no compile error
     if (hasProperty(object, "b")) console.warn(object.b)
