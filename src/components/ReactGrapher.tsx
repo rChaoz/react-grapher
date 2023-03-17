@@ -20,12 +20,12 @@ import {
 } from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
-import {checkInvalidID, criticalNoViewport, errorUnknownDomID, errorUnknownNode, warnNoReactGrapherID} from "../util/log";
+import {checkInvalidID, criticalNoViewport, errorUnknownDomID, errorUnknownNode, warnNoReactGrapherID, warnUnknownHandle} from "../util/log";
 import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
 import {getNodeIntersection} from "../util/EdgePath";
-import {enlargeRect, localMemo, parseCssStringOrNumber, resolveValue} from "../util/utils";
+import {enlargeRect, localMemo, parseCSSStringOrNumber, resolveValue} from "../util/utils";
 import {createEvent, GrapherEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../data/GrapherEvent";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -276,13 +276,26 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             return
         }
         const Component = edge.Component ?? SimpleEdge
-        // TODO Implement handles
-        edge.sourcePos = localMemo(() =>
-                edge.sourceHandle == null ? getNodeIntersection(source, target) : source.absolutePosition,
-            [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius], edge.sourcePosMemoObject)
-        edge.targetPos = localMemo(() =>
-                edge.targetHandle == null ? getNodeIntersection(target, source) : target.absolutePosition,
-            [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius], edge.targetPosMemoObject)
+        edge.sourcePos = localMemo(() => {
+            if (edge.sourceHandle == null || source.handles == null) return getNodeIntersection(source, target)
+            else {
+                const handle = source.handles.find(handle => handle.name === edge.sourceHandle)
+                if (handle == null) {
+                    warnUnknownHandle(edge.id, source.id, edge.sourceHandle, source.handles.map(handle => handle.name))
+                    return source.absolutePosition
+                } else return new DOMPoint(source.absolutePosition.x + handle.x, source.absolutePosition.y + handle.y)
+            }
+        }, [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius, source.handles], edge.sourcePosMemoObject)
+        edge.targetPos = localMemo(() => {
+            if (edge.targetHandle == null || target.handles == null) return getNodeIntersection(target, source)
+            else {
+                const handle = target.handles.find(handle => handle.name === edge.targetHandle)
+                if (handle == null) {
+                    warnUnknownHandle(edge.id, target.id, edge.targetHandle, target.handles.map(handle => handle.name))
+                    return target.absolutePosition
+                } else return new DOMPoint(target.absolutePosition.x + handle.x, target.absolutePosition.y + handle.y)
+            }
+        }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles], edge.targetPosMemoObject)
         return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} label={edge.label} labelPosition={edge.labelPosition}
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
@@ -855,7 +868,7 @@ function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: GrapherVi
     if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
 
     // Apply padding
-    element.style.padding = parseCssStringOrNumber(fitConfig.padding)
+    element.style.padding = parseCSSStringOrNumber(fitConfig.padding)
     const comp = getComputedStyle(element)
     const pl = resolveValue(comp.paddingLeft, w) / zoom, pt = resolveValue(comp.paddingTop, h) / zoom,
         pr = resolveValue(comp.paddingRight, w) / zoom, pb = resolveValue(comp.paddingBottom, h) / zoom

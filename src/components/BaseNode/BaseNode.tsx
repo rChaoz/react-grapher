@@ -21,7 +21,6 @@ export interface BaseNodeProps {
     classes: string[]
     /**
      * Absolute position of this node
-     * TODO This shouldn't be recalculated every render
      */
     absolutePosition: DOMPoint
     /**

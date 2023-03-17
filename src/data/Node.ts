@@ -5,6 +5,9 @@ import {SimpleNode, SimpleNodeData} from "../components/SimpleNode";
 import {checkInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 import {Property} from "csstype";
+// Used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {Edge} from "./Edge";
 
 export interface Node<T = SimpleNodeData> {
     id: string
@@ -79,6 +82,10 @@ export interface Node<T = SimpleNodeData> {
 
 export interface NodeImpl<T> extends Node<T> {
     /**
+     * Used internally to check if a node was initialized with default values.
+     */
+    isInitialized?: boolean
+    /**
      * Automatically set during rendering. DOM width of this node
      */
     width: number
@@ -87,7 +94,11 @@ export interface NodeImpl<T> extends Node<T> {
      */
     height: number
     /**
-     * Automatically set during rendering. Border radii of this node: top/right/bottom/left, each having x-radius and y-radius.
+     * Automatically set during rendering. Border widths of this node in CSS order (top/right/bottom/left).
+     */
+    border: [number, number, number, number]
+    /**
+     * Automatically set during rendering. Border radii of this node in CSS order (top-left/top-right/bottom-right/bottom-left), each having x-radius and y-radius.
      */
     borderRadius: [[number, number], [number, number], [number, number], [number, number]]
     /**
@@ -95,9 +106,25 @@ export interface NodeImpl<T> extends Node<T> {
      */
     absolutePositionMemoObject: MemoObject<DOMPoint>
     /**
-     * Used internally to check if a node was initialized (all fields set).
+     * Automatically set during rendering. Read-only information on handles of this node.
      */
-    isInitialized?: boolean
+    handles: NodeHandle[]
+}
+
+export interface NodeHandle {
+    /**
+     * Name of this handle, used for {@link Edge.sourceHandle} and {@link Edge.targetHandle}
+     */
+    name: string
+    roles: string[] | undefined
+    /**
+     * X coordinate relative to node center
+     */
+    x: number
+    /**
+     * Y coordinate relative to node center
+     */
+    y: number
 }
 
 /**
@@ -123,9 +150,11 @@ export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults)
     const i = target as NodeImpl<any>
     if (i.isInitialized) return
     i.isInitialized = true
+    // TODO TypeChecking to ensure all required properties are set
     checkInvalidID("node", i.id)
     i.selected = false
     i.width = i.height = 0
+    i.border = [0, 0, 0, 0]
     i.borderRadius = [[0, 0], [0, 0], [0, 0], [0, 0]]
     i.absolutePositionMemoObject = {}
 
