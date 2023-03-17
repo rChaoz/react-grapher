@@ -2,7 +2,7 @@ import React from "react";
 import {cx} from "@emotion/css";
 import {NODE_HANDLE_CLASS} from "../util/constants";
 import styled from "@emotion/styled";
-import {parseCSSStringOrNumber} from "../util/utils";
+import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
 
 export type NodeHandleProps = NodeHandlePropsPositioned | NodeHandlePropsTopLeft
@@ -127,9 +127,9 @@ interface HandleDivProps {
 
 const HandleDiv = styled.div<HandleDivProps>`
   position: absolute;
-  width: ${props => parseCSSStringOrNumber(props.width)};
-  height: ${props => parseCSSStringOrNumber(props.height)};
-  border-radius: ${props => parseCSSStringOrNumber(props.borderRadius)};
+  width: ${props => convertToCSSLength(props.width)};
+  height: ${props => convertToCSSLength(props.height)};
+  border-radius: ${props => convertToCSSLength(props.borderRadius)};
   transform: translate(-50%, -50%);
 `
 
@@ -137,8 +137,8 @@ export function NodeHandle(props: NodeHandleProps) {
     let customPosition: { top: string, left: string } | undefined
     let position: string | undefined = undefined, name = props.name
     if ("top" in props) customPosition = {
-        top: parseCSSStringOrNumber(props.top),
-        left: parseCSSStringOrNumber(props.left),
+        top: convertToCSSLength(props.top),
+        left: convertToCSSLength(props.left),
     }; else {
         position = props.position
         if (name == null) name = position

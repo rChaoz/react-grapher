@@ -29,9 +29,8 @@ export function splitCSSCalc(expr: string): [number, number] {
  * @param expr CSS calc expression: `<percentage>% +/- <pixel-value>px`
  * @param length length, in pixels, on which percentage values are based on
  * @see getComputedStyle
- * TODO Rename to resolveCSSCalc
  */
-export function resolveCalc(expr: string, length: number) {
+export function resolveCSSCalc(expr: string, length: number) {
     const [percentage, absolute] = splitCSSCalc(expr)
     return percentage * length / 100 + absolute
 }
@@ -45,7 +44,7 @@ export function resolveCalc(expr: string, length: number) {
 export function resolveValue(value: string, length: number): number {
     value = value.trim()
     // Resolve a percentage or pixel value to pixel value
-    if (value.startsWith("calc(")) return resolveCalc(value.substring(5, value.length - 1), length)
+    if (value.startsWith("calc(")) return resolveCSSCalc(value.substring(5, value.length - 1), length)
     else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
     else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
     else {
@@ -75,9 +74,8 @@ export function resolveValues(strValue: string, width: number, height: number): 
 
 /**
  * Enlarge given rect (container) so that it contains another rect (child)
- * TODO Rename to expandRect()
  */
-export function enlargeRect(container: DOMRect, child: Pick<DOMRect, "x" | "y" | "width" | "height">) {
+export function expandRect(container: DOMRect, child: Pick<DOMRect, "x" | "y" | "width" | "height">) {
     // We don't use top/left/... properties on 'child' because either rect could be an SVGRect. Due to an issue in Typescript,
     // DOMRect type = SVGRect type, although SVGRect does *not* actually have top/left/... properties.
     // (https://github.com/microsoft/TypeScript-DOM-lib-generator/issues/974)
@@ -98,9 +96,8 @@ export function enlargeRect(container: DOMRect, child: Pick<DOMRect, "x" | "y" |
 /**
  * Parse CSS value express as number|string. If number, "px" is appended to the value; otherwise the value itself is returned.
  * If value is null or the number 0, returns "0".
- * TODO Rename to convertToCSSLength
  */
-export function parseCSSStringOrNumber(value: string | number | null | undefined) {
+export function convertToCSSLength(value: string | number | null | undefined) {
     if (value == null || value === 0) return "0"
     else if (typeof value === "number") return `${value}px`
     else return value

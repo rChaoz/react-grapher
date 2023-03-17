@@ -25,7 +25,7 @@ import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
 import {getNodeIntersection} from "../util/EdgePath";
-import {enlargeRect, localMemo, parseCSSStringOrNumber, resolveValue} from "../util/utils";
+import {expandRect, localMemo, convertToCSSLength, resolveValue} from "../util/utils";
 import {createEvent, GrapherEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../data/GrapherEvent";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -318,7 +318,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // Do edges first as they are the same for both rects
         for (const edge of edges) {
             if (edge.bounds == null) continue
-            enlargeRect(domRect, edge.bounds)
+            expandRect(domRect, edge.bounds)
         }
         const realRect = new DOMRect(domRect.x, domRect.y, domRect.width, domRect.height)
 
@@ -327,9 +327,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             'right' needs to be x + width and not x + width/2 because nodes use translateX(-50%) to center themselves. This means, although its true 'right'
             is indeed x + width/2, its layout 'right' does not take transforms into account. And, if the node's layout right is out of bounds, text inside the node
             will start wrapping, and we don't want that! Same thing for 'bottom' - it needs to be y + height, not y + height/2. */
-            enlargeRect(domRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width * 1.5, height: node.height * 1.5})
+            expandRect(domRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width * 1.5, height: node.height * 1.5})
             // Update real rect
-            enlargeRect(realRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width, height: node.height})
+            expandRect(realRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width, height: node.height})
         }
         // Update bounds for fitView if they changed
         if (Math.abs(realRect.left - bounds.left) > 10 || Math.abs(realRect.top - bounds.top) > 10
@@ -868,7 +868,7 @@ function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: GrapherVi
     if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
 
     // Apply padding
-    element.style.padding = parseCSSStringOrNumber(fitConfig.padding)
+    element.style.padding = convertToCSSLength(fitConfig.padding)
     const comp = getComputedStyle(element)
     const pl = resolveValue(comp.paddingLeft, w) / zoom, pt = resolveValue(comp.paddingTop, h) / zoom,
         pr = resolveValue(comp.paddingRight, w) / zoom, pb = resolveValue(comp.paddingBottom, h) / zoom

@@ -2,7 +2,7 @@ import React from "react"
 import {describe, expect, it, jest, test} from "@jest/globals"
 import styled from "@emotion/styled"
 
-import {splitCSSCalc, enlargeRect, hasProperty, localMemo, parseCSSStringOrNumber, resolveCalc, resolveValue, resolveValues} from "./utils"
+import {splitCSSCalc, expandRect, hasProperty, localMemo, convertToCSSLength, resolveCSSCalc, resolveValue, resolveValues} from "./utils"
 import {render} from "@testing-library/react"
 
 const Container = styled.div`
@@ -66,14 +66,14 @@ describe("resolveCalc", () => {
         [1000, "55px - 3%", 25],
         [350, "12px + 7%", 36.5],
     ])("using length=%d, calc(%s) = %s", (length, expression, expectedValue) => {
-        expect(resolveCalc(expression, length)).toBeCloseTo(expectedValue)
+        expect(resolveCSSCalc(expression, length)).toBeCloseTo(expectedValue)
     })
 
     test("invalid calc expression", () => {
         // [500, "50px + invalid - 50vw - 1%", 45]
         // 'invalid' and '50vw' are invalid tokens
         consoleWarn.mockClear()
-        expect(resolveCalc("50px + invalid - 50vw - 1%", 500)).toBeCloseTo(45)
+        expect(resolveCSSCalc("50px + invalid - 50vw - 1%", 500)).toBeCloseTo(45)
         expect(consoleWarn).toHaveBeenCalledTimes(2)
     })
 })
@@ -180,33 +180,33 @@ class DOMRect {
 test("enlargeRect", () => {
     const rect = new DOMRect()
 
-    enlargeRect(rect, new DOMRect(-10, -10, 20, 20))
+    expandRect(rect, new DOMRect(-10, -10, 20, 20))
     expect(rect).toMatchSnapshot()
 
-    enlargeRect(rect, new DOMRect(50, 70))
+    expandRect(rect, new DOMRect(50, 70))
     expect(rect).toMatchSnapshot()
 
-    enlargeRect(rect, new DOMRect(-20, 0, 20, 100))
+    expandRect(rect, new DOMRect(-20, 0, 20, 100))
     expect(rect).toMatchSnapshot()
 
-    enlargeRect(rect, new DOMRect(-80, 100, 50, 55))
+    expandRect(rect, new DOMRect(-80, 100, 50, 55))
     expect(rect).toMatchSnapshot()
 })
 
 describe("parseCSSStringOrNumber", () => {
     it("parses a number as a px string", () => {
-        expect(parseCSSStringOrNumber(10)).toBe("10px");
+        expect(convertToCSSLength(10)).toBe("10px");
     });
 
     it("returns a string unaltered", () => {
-        expect(parseCSSStringOrNumber("5rem")).toBe("5rem");
-        expect(parseCSSStringOrNumber("auto")).toBe("auto");
+        expect(convertToCSSLength("5rem")).toBe("5rem");
+        expect(convertToCSSLength("auto")).toBe("auto");
     });
 
     it("returns '0' for null, undefined or the number 0", () => {
-        expect(parseCSSStringOrNumber(null)).toBe("0");
-        expect(parseCSSStringOrNumber(undefined)).toBe("0");
-        expect(parseCSSStringOrNumber(0)).toBe("0");
+        expect(convertToCSSLength(null)).toBe("0");
+        expect(convertToCSSLength(undefined)).toBe("0");
+        expect(convertToCSSLength(0)).toBe("0");
     });
 })
 
