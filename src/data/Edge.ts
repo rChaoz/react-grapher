@@ -6,7 +6,11 @@ import {checkInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 
 /**
- * An edge from a node with ID 'source' to another with ID 'target'
+ * An edge in a ReactGrapher. All properties should be set to their defaults (according to the provided {@link GrapherConfig}) if the graph has rendered.
+ *
+ * Note that properties in this object are _always_ respected by the default implementation (i.e. {@link SimpleEdge}), however if you implement/use a custom
+ * component function, it is up to that function to decide everything about the edge it is rendering: CSS classes, actual source, target points and path, label
+ * text, position, markers etc.
  */
 export interface Edge<T = SimpleEdgeData> {
     id: string
@@ -25,7 +29,6 @@ export interface Edge<T = SimpleEdgeData> {
     Component: React.ComponentType<EdgeProps<T>>
     /**
      * CSS classes that will be passed to the SimpleEdge/custom component function.
-     * By default, these classes are kept as-is, however a custom component function can change these on render.
      *
      * In order to trigger a re-rendering of the Edge component, you should set this to a new array when changing it using {@link Edges.replace}:
      * @example
@@ -58,8 +61,6 @@ export interface Edge<T = SimpleEdgeData> {
     /**
      * Where to display the label, along the Edge's path, as a value between 0 and 1 (inclusive). Defaults to 0.5
      * It will be multiplied by the path's {@link SVGGeometryElement.getTotalLength length} before being passed as an argument to {@link SVGGeometryElement.getPointAtLength}.
-     *
-     * Note that, while this is the default behaviour of {@link SimpleEdge}, a custom Edge component function can decide to override this behaviour and place the label wherever.
      */
     labelPosition: number
     /**

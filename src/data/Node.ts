@@ -8,7 +8,16 @@ import {Property} from "csstype";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {Edge} from "./Edge";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {GrapherConfig} from "./GrapherConfig";
 
+/**
+ * Node of a ReactGrapher. All properties should be set to their defaults (according to the provided {@link GrapherConfig}) if the graph has rendered.
+ *
+ * Note that properties in this object are _always_ respected by the default implementation (i.e. {@link SimpleNode}), however if you implement/use a custom
+ * component function, it is up to that function to decide everything about the node it is rendering: CSS classes, resizability, data displayed, even the position
+ * can be adjusted.
+ */
 export interface Node<T = SimpleNodeData> {
     id: string
     /**
@@ -30,7 +39,6 @@ export interface Node<T = SimpleNodeData> {
     Component: React.ComponentType<NodeProps<T>>
     /**
      * CSS classes that will be passed to the SimpleNode/custom component function.
-     * By default, these classes are kept as-is, however a custom component function can change these on render.
      *
      * In order to trigger a re-rendering of the Node component, you should set this to a new array when changing it using {@link Nodes.replace}:
      * @example
@@ -47,8 +55,8 @@ export interface Node<T = SimpleNodeData> {
      */
     position: DOMPoint
     /**
-     * Whether this node should be user-resizable. The default implementation always respects this, a custom Component function is responsible for making the node resizable.
-     * If you want to set min/max width or height, you should use a custom CSS class for that, and add it to {@link classes}.
+     * Whether this node should be user-resizable.
+     * If you want to set min/max width or height, you should create a CSS class and add it to {@link classes}.
      */
     resize: Property.Resize
     /**
@@ -125,6 +133,8 @@ export interface NodeHandle {
 
 /**
  * Node with all properties made optional except ID. Upon rendering, all properties will be set to their default values.
+ *
+ * See {@link Node} for more information.
  */
 export type NodeData<T = SimpleNodeData> = Partial<Node<T>> & {id: string}
 

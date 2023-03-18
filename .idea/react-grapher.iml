@@ -8,6 +8,8 @@
       <excludeFolder url="file://$MODULE_DIR$/dist" />
       <excludeFolder url="file://$MODULE_DIR$/examples/build" />
       <excludeFolder url="file://$MODULE_DIR$/coverage" />
+      <excludePattern pattern="yarn.lock" />
+      <excludePattern pattern="yarn-error.log" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
