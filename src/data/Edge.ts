@@ -130,6 +130,7 @@ const edgeDefaults: Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelecti
     targetHandle: null,
     label: null,
     labelPosition: .5,
+    labelPadding: 2,
     markerStart: null,
     markerEnd: null,
 }

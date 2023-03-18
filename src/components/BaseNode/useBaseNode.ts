@@ -51,20 +51,31 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
             resolveValue(style.borderBottomWidth, 0),
             resolveValue(style.borderLeftWidth, 0),
         ]
-        for (let i = 0; i < 4; ++i) if (Math.abs(border[i] - node.border[i]) > .5) {
-            borderChanged = true
-            break
-        }
         for (let i = 0; i < 4; ++i) if (Math.abs(bRadius[i][0] - node.borderRadius[i][0]) > .5 || Math.abs(bRadius[i][1] - node.borderRadius[i][1]) > .5) {
             borderChanged = true
             break
         }
         if (borderChanged) {
             node.borderRadius = bRadius
-            node.border = border
             grapherContext.rerenderEdges()
         }
 
+        // Get handles
+        const handleElems = elem.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CLASS)
+        // Check if handles have changed
+        let handlesChanged = false
+        if (node.handles == null) handlesChanged = true
+        else for (let i = 0; i < handleElems.length; ++i) {
+            const style = getComputedStyle(handleElems[i])
+            const [x, y] = [resolveValue(style.left, 0) + border[3] - node.width / 2, resolveValue(style.top, 0) + border[0] - node.height / 2]
+            if (Math.abs(x - node.handles[i].x) > 2 || Math.abs(y - node.handles[i].y) > 2) {
+                handlesChanged = true
+                break
+            }
+        }
+        if (!handlesChanged) return
+
+        grapherContext.rerenderEdges()
         // Set handles on Node object
         const handles: NodeHandle[] = []
         let handleNum = 1; // to name nameless handles
@@ -182,7 +193,6 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
 
             // If requested, update the handle's DOM position
             if (useNodeBorder != null) {
-                console.log("Handle pos updated")
                 h.style.left = x - border[3] + "px"
                 h.style.top = y - border[0] + "px"
             }
@@ -196,7 +206,7 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
 
             // Save data
             handles.push({name, roles, x, y})
-        })
+        }
         node.handles = handles
     }, [grapherContext, node])
 

@@ -94,10 +94,6 @@ export interface NodeImpl<T> extends Node<T> {
      */
     height: number
     /**
-     * Automatically set during rendering. Border widths of this node in CSS order (top/right/bottom/left).
-     */
-    border: [number, number, number, number]
-    /**
      * Automatically set during rendering. Border radii of this node in CSS order (top-left/top-right/bottom-right/bottom-left), each having x-radius and y-radius.
      */
     borderRadius: [[number, number], [number, number], [number, number], [number, number]]
@@ -154,7 +150,6 @@ export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults)
     checkInvalidID("node", i.id)
     i.selected = false
     i.width = i.height = 0
-    i.border = [0, 0, 0, 0]
     i.borderRadius = [[0, 0], [0, 0], [0, 0], [0, 0]]
     i.absolutePositionMemoObject = {}
 
