@@ -64,7 +64,6 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
     source: Node<any>
     /**
      * Absolute position
-     * TODO Shouldn't be recalculated every render
      */
     sourcePos: DOMPoint
     /**
@@ -77,7 +76,6 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
     target: Node<any>
     /**
      * Absolute position
-     * TODO Shouldn't be recalculated every render
      */
     targetPos: DOMPoint
     /**

@@ -232,8 +232,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     const lastClicked = usePersistent<LastClicked>({type: null, id: "", times: 0, time: 0})
     /* Tracks when the last fitView was done
      When controller.fitView() is called, controller.fitViewValue is incremented.
-     When this happens, controller.fitViewValue != needFitView.current, the view will be fitted and needFitView.current will be set to controller.fitViewValue
-     If, internally, a fitView() is needed (e.g. a node size changes during a requested fit view), needFitView.current will be decremented instead (same effect).
+     When this happens, controller.fitViewValue != needFitView.current, the view will be fitted and needFitView.current will be incremented.
      */
     const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
 
@@ -332,8 +331,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             expandRect(realRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width, height: node.height})
         }
         // Update bounds for fitView if they changed
-        if (Math.abs(realRect.left - bounds.left) > 10 || Math.abs(realRect.top - bounds.top) > 10
-            || Math.abs(realRect.right - bounds.right) > 10 || Math.abs(realRect.bottom - bounds.bottom) > 10) {
+        if (Math.abs(realRect.left - bounds.left) > 5 || Math.abs(realRect.top - bounds.top) > 5
+            || Math.abs(realRect.right - bounds.right) > 5 || Math.abs(realRect.bottom - bounds.bottom) > 5) {
             fitViewBounds.current = realRect
             // When bounds change during a fitView, the fitView should repeat after the re-rendering is complete
             if (needFitView.current + 1 === d.controller.fitViewValue) d.controller.fitView()
