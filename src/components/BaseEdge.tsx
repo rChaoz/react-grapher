@@ -155,7 +155,7 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
               markerStart={markerStart != null ? `url(#${baseID}-${markerStart})` : undefined}
               markerEnd={markerEnd != null ? `url(#${baseID}-${markerEnd})` : undefined}/>
         {label != null && <>
-            <rect className={EDGE_LABEL_BACKGROUND_CLASS}/>
+            <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={edge?.labelRadius}/>
             {typeof labelPosition === "number" || labelPosition == null
                 ? <text className={EDGE_LABEL_CLASS} textAnchor={"middle"}
                         dominantBaseline={"middle"} data-label-pos={String(labelPosition)}>{label}</text>

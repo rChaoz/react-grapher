@@ -1,5 +1,5 @@
 import {GrapherChange} from "./GrapherChange";
-import React from "react";
+import React, {SVGProps} from "react";
 import {EdgeProps} from "../components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
 import {checkInvalidID} from "../util/log";
@@ -67,6 +67,10 @@ export interface Edge<T = SimpleEdgeData> {
      */
     labelPadding: number
     /**
+     * Label background border radius, which will be passed to the `rx` prop of `<rect>`. Defaults to 6
+     */
+    labelRadius: SVGProps<SVGRectElement>["rx"]
+    /**
      * ID of the predefined/custom SVG marker.
      */
     markerStart: string | null
@@ -131,6 +135,7 @@ const edgeDefaults: Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelecti
     label: null,
     labelPosition: .5,
     labelPadding: 2,
+    labelRadius: 6,
     markerStart: null,
     markerEnd: null,
 }
