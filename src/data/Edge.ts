@@ -63,6 +63,10 @@ export interface Edge<T = SimpleEdgeData> {
      */
     labelPosition: number
     /**
+     * Padding used by the label's background. Defaults to 2
+     */
+    labelPadding: number
+    /**
      * ID of the predefined/custom SVG marker.
      */
     markerStart: string | null

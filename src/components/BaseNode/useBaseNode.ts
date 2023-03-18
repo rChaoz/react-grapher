@@ -68,7 +68,7 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
         // Set handles on Node object
         const handles: NodeHandle[] = []
         let handleNum = 1; // to name nameless handles
-        elem.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CLASS).forEach(h => {
+        for (const h of handleElems) {
             // Get name and set if unnamed
             const name = h.dataset.name ?? (h.dataset.name = "handle-" + handleNum++)
             // Calculate position if needed

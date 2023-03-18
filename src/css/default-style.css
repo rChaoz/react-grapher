@@ -109,6 +109,7 @@
 /* Edge Label Background */
 .react-grapher-edge-label-background {
     fill: var(--react-grapher-background);
+    rx: 6px;
 }
 
 

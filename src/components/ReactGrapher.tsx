@@ -140,6 +140,7 @@ const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
   inset: 0;
 `
 
+// TODO Implement roles
 export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
     // Get default config and prevent config object from being created every re-render
     // Also apply settings for static graph if static prop is set

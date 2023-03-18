@@ -135,11 +135,11 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
 
             // Set size of label background
             const labelBounds = labelElem.getBBox()
-            // TODO Customisable padding (global and per edge)
-            labelBg.setAttribute("x", String(labelBounds.x - 2))
-            labelBg.setAttribute("y", String(labelBounds.y - 2))
-            labelBg.setAttribute("width", String(labelBounds.width + 4))
-            labelBg.setAttribute("height", String(labelBounds.height + 4))
+            const p = edge.labelPadding
+            labelBg.setAttribute("x", String(labelBounds.x - p))
+            labelBg.setAttribute("y", String(labelBounds.y - p))
+            labelBg.setAttribute("width", String(labelBounds.width + p * 2))
+            labelBg.setAttribute("height", String(labelBounds.height + p * 2))
         }
 
         if (!grapherContext.static) return () => {
@@ -155,7 +155,7 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
               markerStart={markerStart != null ? `url(#${baseID}-${markerStart})` : undefined}
               markerEnd={markerEnd != null ? `url(#${baseID}-${markerEnd})` : undefined}/>
         {label != null && <>
-            <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={6}/>
+            <rect className={EDGE_LABEL_BACKGROUND_CLASS}/>
             {typeof labelPosition === "number" || labelPosition == null
                 ? <text className={EDGE_LABEL_CLASS} textAnchor={"middle"}
                         dominantBaseline={"middle"} data-label-pos={String(labelPosition)}>{label}</text>
