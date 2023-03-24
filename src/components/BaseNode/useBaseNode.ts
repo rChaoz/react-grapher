@@ -4,7 +4,7 @@ import {CallbacksContext} from "../../context/CallbacksContext";
 import {errorUnknownNode} from "../../util/log";
 import {splitCSSCalc, hasProperty, resolveValue, resolveValues} from "../../util/utils";
 import {NODE_HANDLE_CLASS} from "../../util/constants";
-import {NodeHandle} from "../../data/Node";
+import {NodeHandleInfo} from "../../data/Node";
 import {HandlePresetToVariablePosition, NodeHandleProps, NodeHandlePropsPositioned} from "../NodeHandle";
 
 // Common code of BaseNode and BaseNodeResizable
@@ -65,19 +65,22 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
         // Check if handles have changed
         let handlesChanged = false
         if (node.handles == null) handlesChanged = true
-        else for (let i = 0; i < handleElems.length; ++i) {
-            const style = getComputedStyle(handleElems[i])
-            const [x, y] = [resolveValue(style.left, 0) + border[3] - node.width / 2, resolveValue(style.top, 0) + border[0] - node.height / 2]
-            if (Math.abs(x - node.handles[i].x) > 2 || Math.abs(y - node.handles[i].y) > 2) {
-                handlesChanged = true
-                break
+        else {
+            if (node.handles.length !== handleElems.length) handlesChanged = true
+            else for (let i = 0; i < handleElems.length; ++i) {
+                const style = getComputedStyle(handleElems[i])
+                const [x, y] = [resolveValue(style.left, 0) + border[3] - node.width / 2, resolveValue(style.top, 0) + border[0] - node.height / 2]
+                if (Math.abs(x - node.handles[i].x) > 2 || Math.abs(y - node.handles[i].y) > 2) {
+                    handlesChanged = true
+                    break
+                }
             }
         }
         if (!handlesChanged) return
 
         grapherContext.rerenderEdges()
         // Set handles on Node object
-        const handles: NodeHandle[] = []
+        const handles: NodeHandleInfo[] = []
         let handleNum = 1; // to name nameless handles
         for (const h of handleElems) {
             // Get name and set if unnamed

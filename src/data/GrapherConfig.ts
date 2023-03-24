@@ -148,6 +148,33 @@ export interface GrapherConfig {
      */
     allowIllegalEdges?: boolean
     /**
+     * Allowed edge connections, as a set of rules separated byn whitespace. Rule format:
+     * ```
+     * <source_role> <-> <target_role> | <source-role> -> <target-role> | <target-role> <- <source-role>
+     * ```
+     * Note: whitespace is not required between '<->', '->'or '<-' and the roles. Additionally, any whitespace is allowed between them, such as newlines.
+     *
+     * Example of a complex setup:
+     * ```
+     * const allowedConnections = `
+     *     a->b  b->c  c->a
+     *     source->target
+     *     x<->y
+     * `
+     * ```
+     *
+     * Defaults to "source->target".
+     */
+    allowedConnections?: string
+    /**
+     * If true, it will allow the user to create reverse connections, that will be automatically flipped. For example, if the default value for
+     * {@link allowedConnections} is used: "source->target", and the user attempts to create an edge from a 'target' handle to a 'source' handle, an edge
+     * will be created, but flipped (so its source is still the 'source' handle, and its target the 'target' handle).
+     *
+     * Defaults to true
+     */
+    allowReverseConnections?: boolean
+    /**
      * If true, all control buttons will be hidden, regardless of individual options for viewportControls/userControls.
      * Defaults to false.
      */
@@ -178,6 +205,8 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         fitViewConfig: withDefaultsFitViewConfig(config?.fitViewConfig),
         nodesOverEdges: config?.nodesOverEdges ?? false,
         allowIllegalEdges: false,
+        allowedConnections: "source->target",
+        allowReverseConnections: true,
         hideControls: config?.hideControls ?? false,
         nodeDefaults: config?.nodeDefaults ?? {},
         edgeDefaults: config?.edgeDefaults ?? {},

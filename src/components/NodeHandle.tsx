@@ -4,11 +4,20 @@ import {NODE_HANDLE_CLASS} from "../util/constants";
 import styled from "@emotion/styled";
 import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
+// Used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {GrapherConfig} from "../data/GrapherConfig";
 
 export type NodeHandleProps = NodeHandlePropsPositioned | NodeHandlePropsTopLeft
 
+/**
+ * Standard handle role to allow connections _from this handle_ to another.
+ */
 export const SOURCE = "source"
-export const TARGET = "source"
+/**
+ * Standard handle role to allow connections _to this handle_ from another.
+ */
+export const TARGET = "target"
 
 export interface NodeHandlePropsBase {
     /**
@@ -22,12 +31,12 @@ export interface NodeHandlePropsBase {
     className?: string
     /**
      * Role(s) of this handle to restrict how edges may connect. You can use the standard roles {@link SOURCE} and {@link TARGET} for the usual directional edges.
-     * Null or undefined means no role is assigned and all edges may connect to this handle. Using an empty array will not allow any edge to connect to this (except if
-     * added programmatically and config option `allowIllegalEdges` is set to true).
+     * Null or undefined/unspecified means no role is assigned and all edges may connect to this handle. Using an empty array will not allow any edge to connect
+     * to this (except if added programmatically and config option {@link GrapherConfig.allowIllegalEdges} is set to true).
      *
-     * Note: roles may not contain commas!
+     * Note: roles must only consist of alphanumerical characters, underscores or dashes.
      */
-    role?: string | string[]
+    role?: null | string | string[]
     /**
      * CSS value for width. Defaults to 6px
      */

@@ -67,9 +67,9 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
      */
     sourcePos: DOMPoint
     /**
-     * Handle of source Node this edge originates from (null for floating edge)
+     * Handle of source Node this edge originates from (null/undefined for floating edge)
      */
-    sourceHandle: string | null
+    sourceHandle: string | null | undefined
     /**
      * Target Node object
      */
@@ -79,9 +79,9 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
      */
     targetPos: DOMPoint
     /**
-     * Handle of target Node this edge connects to (null for floating edge)
+     * Handle of target Node this edge connects to (null/undefined for floating edge)
      */
-    targetHandle: string | null
+    targetHandle: string | null | undefined
 }
 
 const BaseG = styled.g<{static?: boolean}>`

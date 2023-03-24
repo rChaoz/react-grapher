@@ -26,8 +26,18 @@ export function warnUnknownHandle(edge: string, node: string, handle: string, ha
     warn(`Edge "${edge}" wants to connect to handle "${handle}" of node "${node}", but this node has no such handle. Possible candidates: [${handles.join()}]`)
 }
 
+export function warnIllegalConnection(edge: string, sourceHandle: string, sourceRoles: string | string[], targetHandle: string, targetRoles: string | string[]) {
+    warn(`Invalid edge with ID "${edge}" between source handle ${sourceHandle} (with roles ${sourceRoles}) and`
+        + `target handle ${targetHandle} (with roles ${targetRoles}) has been removed.`)
+}
+
 export function warnInvalidEdgeLabelPos(edge: string, pos: string | undefined) {
     warn(`Invalid label position for edge "${edge}": ${pos}`)
+}
+
+export function errorParsingAllowedConnections(token: string) {
+    error("Error while parsing config option allowedEdges:")
+    console.error(token)
 }
 
 export function checkInvalidID(target: string, id: string) {
@@ -39,7 +49,7 @@ export function checkInvalidID(target: string, id: string) {
 export function errorUnknownDomID(node: EventTarget | null, id?: string | null) {
     if (id == null) error("DOM Node/Edge has no ID")
     else error("DOM Element has unknown ID: " + id)
-    console.error("Element: ",  node)
+    console.error("Element: ", node)
 }
 
 export function errorUnknownNode(id: string) {

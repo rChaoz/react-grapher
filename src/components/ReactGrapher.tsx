@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {applyNodeDefaults, Node, NodeData, NodeImpl, Nodes, NodesImpl} from "../data/Node"
+import {applyNodeDefaults, Node, NodeData, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../data/Node"
 import {applyEdgeDefaults, Edge, EdgeData, Edges, EdgesImpl} from "../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../hooks/useController";
@@ -20,12 +20,21 @@ import {
 } from "../util/constants";
 import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet, withDefaultsConfig} from "../data/GrapherConfig";
 import {GrapherChange} from "../data/GrapherChange";
-import {checkInvalidID, criticalNoViewport, errorUnknownDomID, errorUnknownNode, warnNoReactGrapherID, warnUnknownHandle} from "../util/log";
+import {
+    checkInvalidID,
+    criticalNoViewport,
+    errorParsingAllowedConnections,
+    errorUnknownDomID,
+    errorUnknownNode,
+    warnIllegalConnection,
+    warnNoReactGrapherID,
+    warnUnknownHandle
+} from "../util/log";
 import {BoundsContext} from "../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
 import {SimpleEdge} from "./SimpleEdge";
 import {getNodeIntersection} from "../util/EdgePath";
-import {expandRect, localMemo, convertToCSSLength, resolveValue} from "../util/utils";
+import {convertToCSSLength, expandRect, localMemo, resolveValue} from "../util/utils";
 import {createEvent, GrapherEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../data/GrapherEvent";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -140,7 +149,6 @@ const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
   inset: 0;
 `
 
-// TODO Implement roles
 export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
     // Get default config and prevent config object from being created every re-render
     // Also apply settings for static graph if static prop is set
@@ -152,6 +160,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         }
         return c
     }, [props.config, props.static])
+    // Set undefined props according to static prop
     if (props.static) {
         if (props.fitView === undefined) props.fitView = "always"
         if (props.fitViewOnResize === undefined) props.fitViewOnResize = true
@@ -204,6 +213,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     d.selection = selection
     d.controller = controller
     d.config = config
+
+    // Parse allowed edges from config
+    const allowedConnections = useMemo(() => {
+        // Also de-verify all edges when this changes
+        for (const edge of edges) edge.verified = false
+        return parseAllowedConnections(config.allowedConnections)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [config.allowedConnections])
 
     // Currently grabbed (being moved) node
     interface GrabbedNode {
@@ -259,7 +276,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }), [grabbed, nodes, selection, shouldUpdateGrabbed])
 
     // Same for Edges
-    // TODO Remove invalid edges
     const [shouldUpdateEdges, updateEdges] = useUpdate()
     const edgeElements = useMemo(() => edges.map(edge => {
         if (shouldUpdateGrabbed || shouldUpdateEdges || selection) {
@@ -280,10 +296,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (edge.sourceHandle == null || source.handles == null) return getNodeIntersection(source, target)
             else {
                 const handle = source.handles.find(handle => handle.name === edge.sourceHandle)
-                if (handle == null) {
-                    warnUnknownHandle(edge.id, source.id, edge.sourceHandle, source.handles.map(handle => handle.name))
-                    return source.absolutePosition
-                } else return new DOMPoint(source.absolutePosition.x + handle.x, source.absolutePosition.y + handle.y)
+                if (handle == null) return source.absolutePosition
+                else return new DOMPoint(source.absolutePosition.x + handle.x, source.absolutePosition.y + handle.y)
             }
         }, [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius, source.handles], edge.sourcePosMemoObject)
         edge.targetPos = localMemo(() => {
@@ -301,6 +315,102 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
                           selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
     }), [grabbed, nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
+
+    // Verify edges and compute handles for those that have them set to "auto" (undefined)
+    useEffect(() => {
+        // Function to check if connection is valid
+        function checkConnection(sourceNode: Node<any>, targetNode: Node<any>, sourceHandle: NodeHandleInfo | null, targetHandle: NodeHandleInfo | null) {
+            const sourceRoles = (sourceHandle ?? sourceNode).roles
+            const targetRoles = (targetHandle ?? targetNode).roles
+            if (sourceRoles == null) {
+                if (targetRoles == null) return true
+                for (const role of targetRoles) if (allowedConnections.targets.has(role)) return true
+                return false
+            }
+            if (targetRoles == null) {
+                for (const role of sourceRoles) if (allowedConnections.sources.has(role)) return true
+                return false
+            }
+            for (const sourceRole of sourceRoles) {
+                const allowedTargetRoles = allowedConnections.get(sourceRole)
+                if (allowedTargetRoles == null) continue
+                for (const possibleTargetRole of allowedTargetRoles) if (targetRoles.includes(possibleTargetRole)) return true
+            }
+            return false
+        }
+
+        const newEdges: Edge<E>[] = []
+        for (const edge of edges) {
+            // Skip already checked edges
+            if (edge.verified) {
+                newEdges.push(edge)
+                continue
+            }
+            const source = d.nodes.get(edge.source) as NodeImpl<E> | undefined
+            const target = d.nodes.get(edge.target) as NodeImpl<E> | undefined
+            if (source == null || target == null) continue
+            // Check if handles even exist (null means floating edge, undefined means choose handle automatically)
+            const sourceHandle = edge.sourceHandle == null ? edge.sourceHandle : source.handles.find(handle => handle.name === edge.sourceHandle)
+            const targetHandle = edge.targetHandle == null ? edge.targetHandle : target.handles.find(handle => handle.name === edge.targetHandle)
+            if (edge.sourceHandle != null && sourceHandle === undefined) {
+                warnUnknownHandle(edge.id, source.id, edge.sourceHandle, source.handles.map(handle => handle.name))
+                continue
+            }
+            if (edge.targetHandle != null && targetHandle === undefined) {
+                warnUnknownHandle(edge.id, target.id, edge.targetHandle, target.handles.map(handle => handle.name))
+                continue
+            }
+            // If both are set, just check if connection is allowed
+            if (sourceHandle !== undefined && targetHandle !== undefined) {
+                if (!checkConnection(source, target, sourceHandle, targetHandle) && !config.allowIllegalEdges) {
+                    warnIllegalConnection(edge.id,
+                        edge.sourceHandle ?? "<node>", (sourceHandle ?? source).roles ?? "<all edges allowed>",
+                    edge.targetHandle ?? "<node>", (targetHandle ?? target).roles ?? "<all edges allowed>")
+                    continue
+                }
+            } else {
+                // Try to set handles for the edge
+                let ok = false
+                if (sourceHandle === undefined && targetHandle !== undefined) { // only source handle unset
+                    for (const possibleSourceHandle of source.handles) {
+                        if (checkConnection(source, target, possibleSourceHandle, targetHandle)) {
+                            edge.sourceHandle = possibleSourceHandle.name
+                            updateEdges()
+                            ok = true
+                            break
+                        }
+                    }
+                } else if (sourceHandle != null && targetHandle == null) { // only target handle unset
+                    for (const possibleTargetHandle of target.handles) {
+                        if (checkConnection(source, target, sourceHandle, possibleTargetHandle)) {
+                            edge.targetHandle = possibleTargetHandle.name
+                            updateEdges()
+                            ok = true
+                            break
+                        }
+                    }
+                } else { // both handles unset
+                    for (const possibleSourceHandle of source.handles) {
+                        for (const possibleTargetHandle of target.handles) {
+                            if (checkConnection(source, target, possibleSourceHandle, possibleTargetHandle)) {
+                                edge.sourceHandle = possibleSourceHandle.name
+                                edge.targetHandle = possibleTargetHandle.name
+                                updateEdges()
+                                ok = true
+                                break
+                            }
+                        }
+                    }
+                }
+                if (!ok && !config.allowIllegalEdges) continue
+            }
+
+            // Edge is OK, mark as verified
+            edge.verified = true
+            newEdges.push(edge)
+        }
+        if (newEdges.length < edges.length) edges.set(newEdges)
+    }, [updateEdges, edges, config.allowIllegalEdges, allowedConnections])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -810,6 +920,35 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 }
 
 // Utility functions
+// TODO Unit test these, split into separate files
+
+const whitespaceRegex = /^\s+$/
+const allowedConnectionsRegex = /^([a-zA-Z0-9_-]+)\s*(?:<->|->|<-)\s*([a-zA-Z0-9_-]+)/
+
+type AllowedConnections = Map<string, string[]> & {sources: Set<string>, targets: Set<string>}
+// Parse allowed connections config option
+function parseAllowedConnections(s: string): AllowedConnections {
+    const map: AllowedConnections = Object.assign(new Map<string, string[]>(), {sources: new Set<string>(), targets: new Set<string>()})
+    // Parse config option
+    let index = 0
+    while (index < s.length) {
+        if (!whitespaceRegex.test(s[index])) {
+            const match = s.substring(index).match(allowedConnectionsRegex)
+            if (match == null) {
+                errorParsingAllowedConnections(s.substring(index))
+                return Object.assign(new Map<string, string[]>(), {sources: new Set<string>(), targets: new Set<string>()})
+            }
+            if (!map.has(match[1])) map.set(match[1], [])
+            map.get(match[1])!.push(match[2])
+
+            map.sources.add(match[1])
+            map.targets.add(match[2])
+
+            index += match[0].length
+        } else ++index
+    }
+    return map
+}
 
 // Extract DOM ID, type (node/edge) and internal ID from event target
 function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>, id: string)

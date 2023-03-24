@@ -43,17 +43,19 @@ export interface Edge<T = SimpleEdgeData> {
      */
     source: string
     /**
-     * Name of the handle of the source node (null for floating edge)
+     * Name of the handle of the source node (null for floating edge). Leaving this undefined (not null) will attempt to automatically connect this edge
+     * to the first (in DOM order) available handle in both nodes. The node itself will be considered as well (to create floating edges).
      */
-    sourceHandle: string | null
+    sourceHandle?: string | null
     /**
      * ID of target node
      */
     target: string
     /**
-     * Name of the handle of the target node (null for floating edge)
+     * Name of the handle of the target node (null for floating edge). Leaving this undefined (not null) will attempt to automatically connect this edge
+     * to the first (in DOM order) available handle in both nodes. The node itself will be considered as well (to create floating edges).
      */
-    targetHandle: string | null
+    targetHandle?: string | null
     /**
      * Label for this edge (can be null, in which case the text element won't be rendered at all)
      */
@@ -96,6 +98,10 @@ interface EdgeInternals {
      * Used internally to check if a node was initialized (all fields set).
      */
     isInitialized: boolean
+    /**
+     * Used to check that the handles are set correctly
+     */
+    verified: boolean
     /**
      * Automatically set during rendering. Bounding rect of this edge.
      */
@@ -144,6 +150,7 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowGrabbing" | "allo
         markerEnd: null,
         // Internals
         isInitialized: true,
+        verified: false,
         bounds: new DOMRect(),
         sourcePosMemoObject: {},
         targetPosMemoObject: {},

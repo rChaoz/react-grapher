@@ -10,6 +10,8 @@ import {Property} from "csstype";
 import {Edge} from "./Edge";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherConfig} from "./GrapherConfig";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {NodeHandlePropsBase, SOURCE, TARGET} from "../components/NodeHandle";
 
 /**
  * Node of a ReactGrapher. All properties should be set to their defaults (according to the provided {@link GrapherConfig}) if the graph has rendered.
@@ -48,6 +50,13 @@ export interface Node<T = SimpleNodeData> {
      * })
      */
     classes: string[]
+    /**
+     * See {@link NodeHandlePropsBase.role}. These per-node roles are used for floating edges (i.e. edges that connect directly to the node, not to a node's handle).
+     *
+     * This defaults to null (all connections are allowed), however, there is no default way for the user to create floating edges. Should you enable floating edges,
+     * you should probably give your nodes roles, such as {@link SOURCE} or {@link TARGET}.
+     */
+    roles: null | string[]
     /**
      * Position relative to the parent (or absolute if parent is null). Defaults to 0,0.
      * Note: never change a node's position by modifying the x & y values directly. Always use `node.position = ...` to update to a new object, as reference
@@ -112,17 +121,20 @@ interface NodeInternals {
     /**
      * Automatically set during rendering. Read-only information on handles of this node.
      */
-    handles: NodeHandle[]
+    handles: NodeHandleInfo[]
 }
 
 export type NodeImpl<T> = Node<T> & NodeInternals
 
-export interface NodeHandle {
+export interface NodeHandleInfo {
     /**
      * Name of this handle, used for {@link Edge.sourceHandle} and {@link Edge.targetHandle}
      */
     name: string
-    roles: string[] | undefined
+    /**
+     * See {@link NodeHandlePropsBase.role}. Split into array of individual roles. null/undefined means that any edge may connect to this handle
+     */
+    roles: string[] | null | undefined
     /**
      * X coordinate relative to node center
      */
@@ -149,7 +161,7 @@ function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "all
     return {
         Component: SimpleNode,
         classes: [],
-        role: null,
+        roles: null,
         resize: "none",
         position: new DOMPoint(),
         edgeMargin: 3,
