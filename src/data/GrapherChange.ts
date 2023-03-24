@@ -13,8 +13,8 @@ export function isNodeChange(change: GrapherChange): change is NodeMoveChange {
     return change.type.startsWith("node")
 }
 
-export function isEdgeChange(change: GrapherChange): boolean {
-    return false // TODO
+export function isEdgeChange(change: GrapherChange): boolean { // TODO is NoveChange
+    return change.type.startsWith("edge")
 }
 
 /**

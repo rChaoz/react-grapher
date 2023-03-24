@@ -91,15 +91,15 @@ export interface Edge<T = SimpleEdgeData> {
     allowGrabbing?: boolean
 }
 
-export interface EdgeImpl<T> extends Edge<T> {
+interface EdgeInternals {
+    /**
+     * Used internally to check if a node was initialized (all fields set).
+     */
+    isInitialized: boolean
     /**
      * Automatically set during rendering. Bounding rect of this edge.
      */
     bounds: DOMRect
-    /**
-     * Used internally to check if a node was initialized (all fields set).
-     */
-    isInitialized?: boolean
     /**
      * Source position, used for memoization
      */
@@ -118,6 +118,8 @@ export interface EdgeImpl<T> extends Edge<T> {
     targetPosMemoObject: MemoObject<DOMPoint>
 }
 
+export type EdgeImpl<T> = Edge<T> & EdgeInternals
+
 /**
  * Edge with all properties made optional except ID, source and target. Upon rendering, all properties will be set to their default values.
  */
@@ -128,31 +130,35 @@ export type EdgeData<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, sourc
  */
 export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
 
-const edgeDefaults: Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelection"> = {
-    Component: SimpleEdge,
-    classes: [],
-    sourceHandle: null,
-    targetHandle: null,
-    label: null,
-    labelPosition: .5,
-    labelPadding: 2,
-    labelRadius: 6,
-    markerStart: null,
-    markerEnd: null,
+function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelection"> & EdgeInternals {
+    return {
+        Component: SimpleEdge,
+        classes: [],
+        sourceHandle: null,
+        targetHandle: null,
+        label: null,
+        labelPosition: .5,
+        labelPadding: 2,
+        labelRadius: 6,
+        markerStart: null,
+        markerEnd: null,
+        // Internals
+        isInitialized: true,
+        bounds: new DOMRect(),
+        sourcePosMemoObject: {},
+        targetPosMemoObject: {},
+    }
 }
 
 export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
     const i = target as EdgeImpl<any>
     if (i.isInitialized) return
-    i.isInitialized = true
     checkInvalidID("edge", i.id)
-    i.selected = false
-    i.bounds = new DOMRect()
-    i.sourcePosMemoObject = {}
-    i.targetPosMemoObject = {}
-
+    // Set undefined values to their defaults
+    const edgeDefaults = getEdgeDefaults()
     // @ts-ignore
     for (const prop in edgeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? edgeDefaults[prop]
+    i.selected = false
 }
 
 export interface EdgesFunctions<T> {

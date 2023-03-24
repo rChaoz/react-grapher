@@ -88,11 +88,11 @@ export interface Node<T = SimpleNodeData> {
     absolutePosition: DOMPoint
 }
 
-export interface NodeImpl<T> extends Node<T> {
+interface NodeInternals {
     /**
      * Used internally to check if a node was initialized with default values.
      */
-    isInitialized?: boolean
+    isInitialized: boolean
     /**
      * Automatically set during rendering. DOM width of this node
      */
@@ -114,6 +114,8 @@ export interface NodeImpl<T> extends Node<T> {
      */
     handles: NodeHandle[]
 }
+
+export type NodeImpl<T> = Node<T> & NodeInternals
 
 export interface NodeHandle {
     /**
@@ -143,28 +145,34 @@ export type NodeData<T = SimpleNodeData> = Partial<Node<T>> & {id: string}
  */
 export type NodeDefaults = Omit<NodeData<any>, "id" | "data" | "parent" | "selected">
 
-const nodeDefaults: Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion"> = {
-    Component: SimpleNode,
-    classes: [],
-    resize: "none",
-    position: new DOMPoint(),
-    edgeMargin: 3,
-    absolutePosition: new DOMPoint(),
+function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion"> & NodeInternals {
+    return {
+        Component: SimpleNode,
+        classes: [],
+        role: null,
+        resize: "none",
+        position: new DOMPoint(),
+        edgeMargin: 3,
+        absolutePosition: new DOMPoint(),
+        // Internals
+        isInitialized: true,
+        width: 0,
+        height: 0,
+        borderRadius: [[0, 0], [0, 0], [0, 0], [0, 0]],
+        absolutePositionMemoObject: {},
+        handles: [],
+    }
 }
 
 export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
     const i = target as NodeImpl<any>
     if (i.isInitialized) return
-    i.isInitialized = true
-    // TODO TypeChecking to ensure all required properties are set
     checkInvalidID("node", i.id)
-    i.selected = false
-    i.width = i.height = 0
-    i.borderRadius = [[0, 0], [0, 0], [0, 0], [0, 0]]
-    i.absolutePositionMemoObject = {}
-
+    // Set undefined values to their defaults
+    const nodeDefaults = getNodeDefaults()
     // @ts-ignore
     for (const prop in nodeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? nodeDefaults[prop]
+    i.selected = false
 }
 
 export interface NodesFunctions<T> {
