@@ -12,7 +12,7 @@ import {useControlledGraph} from "./hooks/useControlledGraph";
 import {useController} from "./hooks/useController";
 import {useGraphState} from "./hooks/useGraphState";
 // React Grapher
-import {ReactGrapher} from "./components/ReactGrapher";
+import {ReactGrapher, ControlledGraphProps, UncontrolledGraphProps} from "./components/ReactGrapher";
 import {GrapherViewport} from "./components/GrapherViewport";
 import {Marker} from "./components/Marker";
 // Sub-components
@@ -22,7 +22,7 @@ import {SimpleNode, SimpleNodeData, SimpleNodeHandle} from "./components/SimpleN
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
 // Other
-import {getNodeIntersection, getStraightEdgePath, getRoundEdgePath} from "./util/EdgePath";
+import {getNodeIntersection, getStraightEdgePath, getRoundEdgePath} from "./util/edgePath";
 
 export {
     // Data
@@ -36,7 +36,7 @@ export {
     // Hooks
     useControlledGraph, useController, useGraphState,
     // React Grapher
-    ReactGrapher, GrapherViewport, Marker,
+    ReactGrapher, ControlledGraphProps, UncontrolledGraphProps, GrapherViewport, Marker,
     // Sub-components
     BaseNode, BaseNodeProps, NodeProps, BaseResizableNode, BaseResizableNodeProps,
     NodeHandle, NodeHandleProps, SOURCE, TARGET,

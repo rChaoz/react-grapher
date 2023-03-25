@@ -1,6 +1,6 @@
 import {BaseEdge, EdgeProps} from "./BaseEdge";
 import React from "react";
-import {getStraightEdgePath, getRoundEdgePath} from "../util/EdgePath";
+import {getStraightEdgePath, getRoundEdgePath} from "../util/edgePath";
 import {warnUnknownEdgeType} from "../util/log";
 
 export type SimpleEdgeData = {

@@ -1,11 +1,11 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {applyNodeDefaults, Node, NodeData, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../data/Node"
-import {applyEdgeDefaults, Edge, EdgeData, Edges, EdgesImpl} from "../data/Edge";
+import {applyNodeDefaults, Node, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node"
+import {applyEdgeDefaults, Edge, Edges, EdgesImpl} from "../../data/Edge";
 import styled from "@emotion/styled";
-import {useController} from "../hooks/useController";
-import {useGraphState} from "../hooks/useGraphState";
-import {GrapherViewport} from "./GrapherViewport";
-import {Controller, ControllerImpl} from "../data/Controller";
+import {useController} from "../../hooks/useController";
+import {useGraphState} from "../../hooks/useGraphState";
+import {GrapherViewport} from "../GrapherViewport";
+import {ControllerImpl} from "../../data/Controller";
 import {
     EDGES_CLASS,
     MARKER_ARROW_CLASS,
@@ -17,120 +17,26 @@ import {
     VIEWPORT_CLASS,
     Z_INDEX_EDGES,
     Z_INDEX_NODE
-} from "../util/constants";
-import {GrapherConfig, GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet, withDefaultsConfig} from "../data/GrapherConfig";
-import {GrapherChange} from "../data/GrapherChange";
-import {
-    checkInvalidID,
-    criticalNoViewport,
-    errorParsingAllowedConnections,
-    errorUnknownDomID,
-    errorUnknownNode,
-    warnIllegalConnection,
-    warnNoReactGrapherID,
-    warnUnknownHandle
-} from "../util/log";
-import {BoundsContext} from "../context/BoundsContext";
-import {GrapherContext, GrapherContextValue} from "../context/GrapherContext";
-import {SimpleEdge} from "./SimpleEdge";
-import {getNodeIntersection} from "../util/EdgePath";
-import {convertToCSSLength, expandRect, localMemo, resolveValue} from "../util/utils";
-import {createEvent, GrapherEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../data/GrapherEvent";
+} from "../../util/constants";
+import {GrapherConfigSet, withDefaultsConfig} from "../../data/GrapherConfig";
+import {GrapherChange} from "../../data/GrapherChange";
+import {checkInvalidID, criticalNoViewport, errorUnknownNode, warnIllegalConnection, warnNoReactGrapherID, warnUnknownHandle} from "../../util/log";
+import {BoundsContext} from "../../context/BoundsContext";
+import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext";
+import {SimpleEdge} from "../SimpleEdge";
+import {getNodeIntersection} from "../../util/edgePath";
+import {expandRect, localMemo} from "../../util/utils";
+import {createEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../../data/GrapherEvent";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {Marker} from "./Marker";
-import {useUpdate} from "../hooks/useUpdate";
-import {Selection, SelectionImpl} from "../data/Selection";
-import {CallbacksContext, CallbacksContextValue} from "../context/CallbacksContext";
-import {usePersistent} from "../hooks/usePersistent";
+import {useUpdate} from "../../hooks/useUpdate";
+import {SelectionImpl} from "../../data/Selection";
+import {CallbacksContext, CallbacksContextValue} from "../../context/CallbacksContext";
+import {usePersistent} from "../../hooks/usePersistent";
 
-export interface CommonGraphProps {
-    /**
-     * ID for the element, must be specified for react versions <18
-     */
-    id?: string
-    /**
-     * The width of the root div element. Defaults to '100%'.
-     */
-    width?: string
-    /**
-     * The height of the root div element. Defaults to '100%'.
-     */
-    height?: string
-    /**
-     * Used to control the viewport
-     */
-    controller?: Controller
-    /**
-     * Elements that will be placed inside the Graph div.
-     */
-    children?: React.ReactNode
-    /**
-     * Fine configuration for the Graph.
-     *
-     * Note: You should *really* memoize this value to avoid performance issues.
-     */
-    config?: GrapherConfig
-    /**
-     * Quick option to completely disable all controls. Check `GrapherConfig` for finer tuning.
-     */
-    disableControls?: boolean
-    /**
-     * Automatic fit view function. You should not change the value of this prop across renders, it will likely lead to
-     * unexpected behaviour. Possible values:
-     * 'initial' - fit view after the first render
-     * 'always' - fit view every time nodes/edges are updated. You probably want to pair this with `disableControls`
-     * undefined/'manual - you can fit view using the Controller returned by useController()/useControlledGraph()
-     */
-    fitView?: "initial" | "always" | "manual"
-    /**
-     * Fit view when the DOM element's size changes
-     */
-    fitViewOnResize?: boolean
-    /**
-     * This config option will make the graph completely static, by implementing the following changes:
-     * - set config.hideControls = true (if undefined)
-     * - set config.fitViewConfig.abideMinMaxZoom = false (if undefined)
-     * - do not attach any pointer/key listeners
-     * - disable pointer events on nodes & edges to prevent CSS hover effects
-     *
-     * Additionally, if not already set (if undefined), the following props will be set:
-     * - fitView -> "always"
-     * - fitViewOnResize -> true
-     *
-     * This is meant to be used when you want to display a graph (e.g. for a preview), but without any user interaction. By default, the view will be permanently fitted, but
-     * if you manually set fitView/fitViewOnResize props, they will not be overridden, allowing you to manually call `controller.fitView()` when needed.
-     * TODO Test/improve this prop; make sure all pointer events are disabled when true
-     */
-    static?: boolean
-    /**
-     * Listen to events such as nodes or edges being clicked, selected, keystrokes or internal events.
-     */
-    onEvent?: (event: GrapherEvent) => GrapherChange[] | undefined | void
-    /**
-     * Called whenever the graph would suffer changes, such as nodes being moved or deleted. You can modify the changes before they are committed
-     * or cancel them entirely.
-     */
-    onChange?: (changes: GrapherChange[]) => GrapherChange[] | undefined | void
-    /**
-     * Custom markers to be used for Edges. They will be placed inside the SVG's `<defs>` element.
-     *
-     * You should use the {@link Marker} component instead of the standard svg `<marker>` element for them to work.
-     * For more info, read Marker's {@link Marker own documentation}.
-     */
-    customMarkers?: React.ReactNode
-}
+import {CommonGraphProps, ControlledGraphProps, UncontrolledGraphProps} from "./props";
+import {changeZoom, fitView, parseAllowedConnections, processDomElement, sendChanges} from "./utils";
 
-export interface ControlledGraphProps<N, E> extends CommonGraphProps {
-    nodes: Nodes<N>
-    edges: Edges<E>
-    selection: Selection
-}
-
-export interface UncontrolledGraphProps<N, E> extends CommonGraphProps {
-    defaultNodes?: NodeData<N>[]
-    defaultEdges?: EdgeData<E>[]
-}
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
   width: ${props => props.width ?? "100%"};
@@ -365,7 +271,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 if (!checkConnection(source, target, sourceHandle, targetHandle) && !config.allowIllegalEdges) {
                     warnIllegalConnection(edge.id,
                         edge.sourceHandle ?? "<node>", (sourceHandle ?? source).roles ?? "<all edges allowed>",
-                    edge.targetHandle ?? "<node>", (targetHandle ?? target).roles ?? "<all edges allowed>")
+                        edge.targetHandle ?? "<node>", (targetHandle ?? target).roles ?? "<all edges allowed>")
                     continue
                 }
             } else {
@@ -917,111 +823,4 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             {props.children}
         </GraphDiv>
     </CallbacksContext.Provider></GrapherContext.Provider></BoundsContext.Provider>
-}
-
-// Utility functions
-// TODO Unit test these, split into separate files
-
-const whitespaceRegex = /^\s+$/
-const allowedConnectionsRegex = /^([a-zA-Z0-9_-]+)\s*(?:<->|->|<-)\s*([a-zA-Z0-9_-]+)/
-
-type AllowedConnections = Map<string, string[]> & {sources: Set<string>, targets: Set<string>}
-// Parse allowed connections config option
-function parseAllowedConnections(s: string): AllowedConnections {
-    const map: AllowedConnections = Object.assign(new Map<string, string[]>(), {sources: new Set<string>(), targets: new Set<string>()})
-    // Parse config option
-    let index = 0
-    while (index < s.length) {
-        if (!whitespaceRegex.test(s[index])) {
-            const match = s.substring(index).match(allowedConnectionsRegex)
-            if (match == null) {
-                errorParsingAllowedConnections(s.substring(index))
-                return Object.assign(new Map<string, string[]>(), {sources: new Set<string>(), targets: new Set<string>()})
-            }
-            if (!map.has(match[1])) map.set(match[1], [])
-            map.get(match[1])!.push(match[2])
-
-            map.sources.add(match[1])
-            map.targets.add(match[2])
-
-            index += match[0].length
-        } else ++index
-    }
-    return map
-}
-
-// Extract DOM ID, type (node/edge) and internal ID from event target
-function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>, id: string)
-    : { domID: string, type: "node" | "edge", objID: string, obj: Node<N> | Edge<E> } | null {
-    const domID = (element as HTMLElement | null)?.id
-    if (domID == null) {
-        errorUnknownDomID(element, null)
-        return null
-    }
-    const objID = domID.substring(id.length + 2)
-    let type: "node" | "edge", obj: Node<N> | Edge<E> | undefined
-    if (domID.charAt(id.length) === "n") {
-        type = "node"
-        obj = nodes.get(objID)
-    } else if (domID.charAt(id.length) === "e") {
-        type = "edge"
-        obj = edges.get(objID)
-    } else {
-        errorUnknownDomID(element, domID)
-        return null
-    }
-    if (obj == null) {
-        errorUnknownDomID(element, `${domID} -> ${type} ${objID}`)
-        return null
-    }
-    return {domID, type, objID, obj}
-}
-
-// Send a change to the graph
-function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges<any>, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {
-    let c: GrapherChange[] | undefined | void = changes
-    if (onChange != null) c = onChange(changes)
-    if (c != null) {
-        nodes.processChanges(c)
-        edges.processChanges(c)
-    }
-}
-
-// Zoom the viewport
-function changeZoom(amount: number, controller: Controller, config: GrapherConfigSet) {
-    const viewport = controller.getViewport()
-    const zoom = viewport.zoom * (1 + amount)
-    controller.updateViewport({
-        zoom: Math.min(Math.max(zoom, config.viewportControls.minZoom), config.viewportControls.maxZoom)
-    })
-}
-
-// Fit the viewport
-function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: GrapherViewportControlsSet, controller: Controller, boundingRect: DOMRect, element: HTMLElement) {
-    if (element == null || boundingRect == null || (boundingRect.width === 0 && boundingRect.height === 0)) return
-    const w = element.offsetWidth, h = element.offsetHeight
-
-    // Calculate zoom value for paddings
-    const rect = new DOMRect(boundingRect.x, boundingRect.y, boundingRect.width, boundingRect.height)
-    let zoom = Math.min(w / rect.width, h / rect.height)
-    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
-
-    // Apply padding
-    element.style.padding = convertToCSSLength(fitConfig.padding)
-    const comp = getComputedStyle(element)
-    const pl = resolveValue(comp.paddingLeft, w) / zoom, pt = resolveValue(comp.paddingTop, h) / zoom,
-        pr = resolveValue(comp.paddingRight, w) / zoom, pb = resolveValue(comp.paddingBottom, h) / zoom
-    element.style.padding = "0"
-    rect.x -= pl
-    rect.y -= pt
-    rect.width += pl + pr
-    rect.height += pt + pb
-    // Calculate final zoom value
-    zoom = Math.min(w / rect.width, h / rect.height)
-    if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
-
-    // Update viewport
-    controller.setViewport({
-        centerX: (rect.left + rect.right) / 2, centerY: (rect.top + rect.bottom) / 2, zoom
-    })
 }
