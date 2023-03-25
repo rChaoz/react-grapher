@@ -7,7 +7,7 @@ import {GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet} f
 import {convertToCSSLength, resolveValue} from "../../util/utils";
 
 const whitespaceRegex = /^\s+$/
-const allowedConnectionsRegex = /^([a-zA-Z0-9_-]+)\s*(?:<->|->|<-)\s*([a-zA-Z0-9_-]+)/
+const allowedConnectionsRegex = /^([a-zA-Z0-9_-]+)\s*(<->|->|<-)\s*([a-zA-Z0-9_-]+)/
 
 type AllowedConnections = Map<string, string[]> & { sources: Set<string>, targets: Set<string> }
 
@@ -25,11 +25,28 @@ export function parseAllowedConnections(s: string): AllowedConnections {
                 errorParsingAllowedConnections(s.substring(index))
                 return Object.assign(new Map<string, string[]>(), {sources: new Set<string>(), targets: new Set<string>()})
             }
-            if (!map.has(match[1])) map.set(match[1], [])
-            map.get(match[1])!.push(match[2])
+            const first = match[1], second = match[3], direction = match[2]
 
-            map.sources.add(match[1])
-            map.targets.add(match[2])
+            if (direction === "->") {
+                if (!map.has(first)) map.set(first, [])
+                map.get(first)!.push(second)
+                map.sources.add(first)
+                map.targets.add(second)
+            } else if (direction === "<-") {
+                if (!map.has(second)) map.set(second, [])
+                map.get(second)!.push(first)
+                map.sources.add(second)
+                map.targets.add(first)
+            } else {
+                if (!map.has(first)) map.set(first, [])
+                if (!map.has(second)) map.set(second, [])
+                map.get(first)!.push(second)
+                map.sources.add(first)
+                map.targets.add(second)
+                map.get(second)!.push(first)
+                map.sources.add(second)
+                map.targets.add(first)
+            }
 
             index += match[0].length
         } else ++index
