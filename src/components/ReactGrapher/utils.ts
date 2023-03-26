@@ -1,10 +1,12 @@
 import {errorParsingAllowedConnections, errorUnknownDomID} from "../../util/log";
-import {Node, Nodes} from "../../data/Node";
-import {Edge, Edges} from "../../data/Edge";
+import {Node, Nodes, NodesImpl} from "../../data/Node";
+import {Edge, Edges, EdgesImpl} from "../../data/Edge";
 import {GrapherChange} from "../../data/GrapherChange";
 import {Controller} from "../../data/Controller";
 import {GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet} from "../../data/GrapherConfig";
 import {convertToCSSLength, resolveValue} from "../../util/utils";
+import {CommonGraphProps} from "./props";
+import {GrapherEvent} from "../../data/GrapherEvent";
 
 const whitespaceRegex = /^\s+$/
 const allowedConnectionsRegex = /^([a-zA-Z0-9_-]+)\s*(<->|->|<-)\s*([a-zA-Z0-9_-]+)/
@@ -86,13 +88,22 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
 /**
  * Send a change to the graph
  */
-export function sendChanges(changes: GrapherChange[], nodes: Nodes<any>, edges: Edges<any>, onChange?: (change: GrapherChange[]) => GrapherChange[] | undefined | void) {
+export function sendChanges<N, E>(changes: GrapherChange[], d: { onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E>}) {
     let c: GrapherChange[] | undefined | void = changes
-    if (onChange != null) c = onChange(changes)
+    if (d.onChange != null) c = d.onChange(changes)
     if (c != null) {
-        nodes.processChanges(c)
-        edges.processChanges(c)
+        d.nodes.processChanges(c)
+        d.edges.processChanges(c)
     }
+}
+
+/**
+ * Send an event to the graph
+ */
+export function sendEvent<N, E>(event: GrapherEvent, d: { onEvent: CommonGraphProps["onEvent"], onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E>}) {
+    if (d.onEvent ==  null) return
+    const c = d.onEvent(event)
+    if (c != null) sendChanges(c, d)
 }
 
 /**
