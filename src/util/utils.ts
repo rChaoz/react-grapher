@@ -139,3 +139,27 @@ export function localMemo<T>(factory: () => T, deps: any[], memoObject: MemoObje
 export function hasProperty<O extends object, P extends string>(object: O, prop: P): object is O & Record<P, unknown> {
     return prop in object
 }
+
+/**
+ * Checks for deep equality. First, if the arguments are the same (`Object.is()`), returns true. If they are objects, they must have the same constructor,
+ * prototype and attributes. The attributes are the compared using this same function, recursively.
+ *
+ * Note that function does not take special precautions against circular references, and these will result
+ * in a {@link RangeError} - Maximum call stack exceeded.
+ */
+export function deepEquals(o1: unknown, o2: unknown) {
+    if (Object.is(o1, o2)) return true
+    else if (o1 == null || o2 == null) return false
+    if (typeof o1 !== "object" || typeof o2 !== "object") return false
+    // Deep object comparison
+    const keys = Object.keys(o1)
+    // Check number of attributes as well as constructor and prototype
+    if (keys.length !== Object.keys(o2).length || o1.constructor !== o2.constructor || Object.getPrototypeOf(o1) !== Object.getPrototypeOf(o2)) return false
+    // Compare properties 1 by 1
+    for (const key of keys) {
+        if (!(key in o2)) return false
+        // @ts-ignore
+        else if (!deepEquals(o1[key], o2[key])) return false
+    }
+    return true
+}

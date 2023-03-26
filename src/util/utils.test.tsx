@@ -2,7 +2,7 @@ import React from "react"
 import {describe, expect, it, jest, test} from "@jest/globals"
 import styled from "@emotion/styled"
 
-import {splitCSSCalc, expandRect, hasProperty, localMemo, convertToCSSLength, resolveCSSCalc, resolveValue, resolveValues} from "./utils"
+import {convertToCSSLength, deepEquals, expandRect, hasProperty, localMemo, resolveCSSCalc, resolveValue, resolveValues, splitCSSCalc} from "./utils"
 import {render} from "@testing-library/react"
 
 const Container = styled.div`
@@ -267,4 +267,70 @@ test("hasProperty", () => {
     // Expect no compile error
     if (hasProperty(object, "b")) console.warn(object.b)
     expect(consoleWarn).toHaveBeenCalled()
+})
+
+describe("deepEquals", () => {
+    it("returns true for the same object, function or simple type", () => {
+        const obj = {a: 1}
+        expect(deepEquals(obj, obj)).toBe(true)
+        const str = "hello world", strArr = ["he", "ll", "o ", "world"]
+        expect(deepEquals(str, strArr.join(""))).toBe(true)
+
+        expect(deepEquals(4, +"4")).toBe(true)
+        expect(deepEquals(null, null)).toBe(true)
+        expect(deepEquals(undefined, undefined)).toBe(true)
+
+        function f() {
+            // empty
+        }
+
+        expect(deepEquals(f, f)).toBe(true)
+    })
+
+    it("returns false for null and undefined", () => {
+        expect(deepEquals(null, undefined)).toBe(false)
+        expect(deepEquals({}, undefined)).toBe(false)
+        expect(deepEquals(undefined, {})).toBe(false)
+    })
+
+    it("returns false for objects with different types, constructors, prototypes or number of properties", () => {
+        expect(deepEquals({}, [])).toBe(false)
+        expect(deepEquals({}, "")).toBe(false)
+        expect(deepEquals({}, 1)).toBe(false)
+        const obj1 = {a: 1, b: "test", c: {}}
+        const obj2 = {a: 1, b: "test"}
+        expect(deepEquals(obj1, obj2)).toBe(false)
+    })
+
+    it("returns true for equivalent objects", () => {
+        const obj1 = {a: 1}
+        const obj2 = {a: {b: 2}}
+        expect(deepEquals(obj1, {...obj1})).toBe(true)
+        expect(deepEquals(obj2, {...obj2})).toBe(true)
+    })
+
+    it("returns false for nested objects with different properties", () => {
+        expect(deepEquals({a: 1}, {a: 2})).toBe(false)
+        expect(deepEquals({a: 1}, {b: 1})).toBe(false)
+        expect(deepEquals({a: {b: 1}}, {a: {c: 2}})).toBe(false)
+        expect(deepEquals({a: {b: 1}}, {a: {b: 2}})).toBe(false)
+    })
+
+    it("returns false for objects with different constructors or prototypes", () => {
+        class MyClass1 {
+            constructor(public a: number) {
+            }
+        }
+
+        class MyClass2 {
+            constructor(public a: number) {
+            }
+        }
+
+        const obj1 = new MyClass1(1)
+        const obj2 = new MyClass2(1)
+        expect(deepEquals(obj1, obj2)).toBe(false)
+
+        expect(deepEquals({}, Object.create(null))).toBe(false)
+    })
 })

@@ -18,14 +18,14 @@ import {
     Z_INDEX_EDGES,
     Z_INDEX_NODE
 } from "../../util/constants";
-import {GrapherConfigSet, withDefaultsConfig} from "../../data/GrapherConfig";
+import {GrapherConfig, GrapherConfigSet, withDefaultsConfig} from "../../data/GrapherConfig";
 import {GrapherChange} from "../../data/GrapherChange";
 import {checkInvalidID, criticalNoViewport, errorUnknownNode, warnIllegalConnection, warnNoReactGrapherID, warnUnknownHandle} from "../../util/log";
 import {BoundsContext} from "../../context/BoundsContext";
 import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext";
 import {SimpleEdge} from "../SimpleEdge";
 import {getNodeIntersection} from "../../util/edgePath";
-import {expandRect, localMemo} from "../../util/utils";
+import {deepEquals, expandRect, localMemo} from "../../util/utils";
 import {createEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../../data/GrapherEvent";
 // This is used for documentation link
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -59,12 +59,17 @@ const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
 export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
     // Get default config and prevent config object from being created every re-render
     // Also apply settings for static graph if static prop is set
+    const inputConfig = useRef() as any as {oldConfig?: GrapherConfig, config: GrapherConfigSet}
     const config = useMemo(() => {
+        // If config changed, deep compare the config object
+        if (deepEquals(props.config, inputRef.oldConfig) && inputRef.config != null) return inputRef.config
         const c = withDefaultsConfig(props.config)
         if (props.static) {
             if (props.config?.hideControls === undefined) c.hideControls = true
             if (props.config?.fitViewConfig?.abideMinMaxZoom === undefined) c.fitViewConfig.abideMinMaxZoom = false
         }
+        inputRef.oldConfig = props.config
+        inputRef.config = c
         return c
     }, [props.config, props.static])
     // Set undefined props according to static prop
