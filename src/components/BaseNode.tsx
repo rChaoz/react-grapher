@@ -10,6 +10,7 @@ import {hasProperty, resolveValue, resolveValues, splitCSSCalc} from "../util/ut
 import {Node, NodeHandleInfo} from "../data/Node";
 import {HandlePresetToVariablePosition, NodeHandleProps, NodeHandlePropsPositioned} from "./NodeHandle";
 import {NodeContext, NodeContextValue} from "../context/NodeContext";
+import {useCallbackState} from "../hooks/useCallbackState";
 
 export interface BaseNodeProps {
     /**
@@ -81,9 +82,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
     const nodeID = `${grapherContext.id}n-${id}`
 
     // To allow recalculateNode to access new position & bounds without being re-created
-    const d = useRef() as any as {absolutePosition: DOMPoint, bounds: DOMRect}
-    d.absolutePosition = absolutePosition
-    d.bounds = bounds
+    const s = useCallbackState({absolutePosition, bounds})
 
     // Function to notify ReactGrapher of changes to this node (size, border radius)
     const recalculateNode = useCallback(() => {
@@ -103,10 +102,13 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
 
         if (sizeChanged) {
             grapherContext.rerenderEdges()
-            grapherContext.recalculateBounds()
+            // If node is out of bounds, need to recalculate them
+            const top = node.position.y - node.height / 2, left = node.position.x - node.width / 2
+            const bottom = top + node.height, right = left + node.width
+            if (top < s.bounds.top || bottom > s.bounds.bottom || left < s.bounds.left || right > s.bounds.right) grapherContext.recalculateBounds()
             // Update node position on-screen
-            container.style.left = d.absolutePosition.x - d.bounds.x - (node.width ?? 0) / 2 + "px"
-            container.style.top = d.absolutePosition.y - d.bounds.y - (node.height ?? 0) / 2 + "px"
+            container.style.left = s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2 + "px"
+            container.style.top = s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2 + "px"
         }
 
         // Update border radius
@@ -289,7 +291,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2})
         }
         node.handles = handles
-    }, [grapherContext, node])
+    }, [s, grapherContext, node])
 
     // Set listeners
     useEffect(() => {

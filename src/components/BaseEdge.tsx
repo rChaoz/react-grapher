@@ -9,6 +9,8 @@ import {Edge} from "../data/Edge";
 import {errorQueryFailed, errorUnknownEdge, warnInvalidEdgeLabelPos} from "../util/log";
 import {CallbacksContext} from "../context/CallbacksContext";
 import styled from "@emotion/styled";
+import {BoundsContext} from "../context/BoundsContext";
+import {useCallbackState} from "../hooks/useCallbackState";
 
 export interface BaseEdgeProps {
     /**
@@ -91,6 +93,9 @@ const BaseG = styled.g<{static?: boolean}>`
 export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
     const grapherContext = useContext(GrapherContext)
     const listeners = useContext(CallbacksContext)
+    const s = useCallbackState({
+        bounds: useContext(BoundsContext)
+    })
 
     const ref = useRef<SVGGraphicsElement>(null)
     const edge = grapherContext.getEdge(id)
@@ -105,7 +110,8 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
         if (Math.abs(edge.bounds.x - bounds.x) > 3 || Math.abs(edge.bounds.y - bounds.y) > 3
             || Math.abs(edge.bounds.width - bounds.width) > 5 || Math.abs(edge.bounds.height - bounds.height) > 5) {
             edge.bounds = bounds
-            grapherContext.recalculateBounds()
+            if (edge.bounds.y < s.bounds.top || edge.bounds.y + edge.bounds.height > s.bounds.bottom
+                || edge.bounds.x < s.bounds.left || edge.bounds.x + edge.bounds.width > s.bounds.right) grapherContext.recalculateBounds()
         }
 
         // Add listeners
@@ -146,7 +152,7 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
             elem.removeEventListener("pointerdown", listeners.onObjectPointerDown)
             elem.removeEventListener("pointerup", listeners.onObjectPointerUp)
         }
-    }, [grapherContext, listeners, edge, id, path, grabbed, selected])
+    }, [s, grapherContext, listeners, edge, id, path, grabbed, selected])
 
     const baseID = grapherContext.id
     return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={grapherContext.static}>
