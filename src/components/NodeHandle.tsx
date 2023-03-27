@@ -1,6 +1,6 @@
 import React from "react";
 import {cx} from "@emotion/css";
-import {NODE_HANDLE_CLASS} from "../util/constants";
+import {NODE_HANDLE_CLASS, NODE_HANDLE_CLASS_BOX, Z_INDEX_HANDLE_BOX} from "../util/constants";
 import styled from "@emotion/styled";
 import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
@@ -46,28 +46,32 @@ export interface NodeHandlePropsBase {
      */
     height?: Property.Height<number>
     /**
-     * CSS value for border radius. Defaults to "50%"
+     * Width of the outer box that appears on top of edges, used to represent the click-box for this handle. Should be larger than {@link width}. Defaults to 15px
      */
-    borderRadius?: Property.BorderRadius<number>
+    outerBoxWidth?: Property.Padding<number>
+    /**
+     * Height of the outer box that appears on top of edges, used to represent the click-box for this handle. Should be larger than {@link height}. Defaults to 15px
+     */
+    outerBoxHeight?: Property.Padding<number>
     /**
      * Optional content for the node
      */
     children?: React.ReactNode
     /**
-     * Normally, CSS percentages are relative to the `content-box` + padding of the parent, ignoring borders. This prop will ensure that percentage values used for
-     * {@link left}/{@link top} props will take the width of the node's border into account:
-     * - "full" - percentage values will use the node's `border-box`. For example, using `left = 0` or `left = '0%'` will place this handle's center point on the
-     * very edge of the node, so that half of this handle will be place outside the node.
-     * - "normal" - percentage values will take half of the node's borders into account. For example, using `left = 0` or `left = '100%'` will place this
-     * handle's center point in the middle of the border (on its thickness axis).
-     * - "disable" - `top` and `left` props will be passed to CSS directly, unmodified. This way, the handle's center point will be place on the inner edge of the
+     * As the handles are placed outside the `NodeContent` node, their top/left CSS properties will be relative to the  node's border-box (basically, the handle's center
+     * point will be on the outside edge of the node's border). This doesn't look great, and this is what this prop is for. Possible values:
+     * - "normal" - handle positioning will take half of the node's borders into account. For example, using `left = 0` or `left = '100%'` will place this
+     * handle's center point in the middle of the border (middle on its thickness axis).
+     * - "inner" - handle positioning will use the node's `content-box`. For example, using `left = 0` will place this handle's center point on the
+     * very inside edge of the node's border, so that half of this handle will be inside the node, and half will be on top of its border.
+     * - "disable" - `top` and `left` props will be passed to CSS directly, unmodified. This way, the handle's center point will be on the outer edge of the
      * node's border.
      *
      * Note: this prop also applies if you are using the `position` prop instead of `top`/`left`.
      *
-     * Defaults to "normal".
+     * Defaults to "normal"
      */
-    useNodeBorderBox?: "normal" | "full" | "disable"
+    useNodeBorderBox?: "normal" | "inner" | "disable"
 }
 
 export interface NodeHandlePropsPositioned extends NodeHandlePropsBase {
@@ -128,18 +132,22 @@ export interface NodeHandlePropsTopLeft extends NodeHandlePropsBase {
     left: Property.Left<number>
 }
 
-interface HandleDivProps {
-    width: Property.Width<number>
-    height: Property.Height<number>
-    borderRadius: Property.BorderRadius<number>
-}
+type HandleDivProps = { width: Property.Width<number> | undefined, height: Property.Height<number> | undefined }
 
 const HandleDiv = styled.div<HandleDivProps>`
   position: absolute;
-  width: ${props => convertToCSSLength(props.width)};
-  height: ${props => convertToCSSLength(props.height)};
-  border-radius: ${props => convertToCSSLength(props.borderRadius)};
+  width: ${props => convertToCSSLength(props.width ?? 6)};
+  height: ${props => convertToCSSLength(props.height ?? 6)};
+`
+
+const HandleBoxDiv = styled.div<HandleDivProps>`
+  z-index: ${Z_INDEX_HANDLE_BOX};
+  position: absolute;
+  top: 50%;
+  left: 50%;
   transform: translate(-50%, -50%);
+  width: ${props => convertToCSSLength(props.width ?? 15)};
+  height: ${props => convertToCSSLength(props.height ?? 15)};
 `
 
 export function NodeHandle(props: NodeHandleProps) {
@@ -154,11 +162,13 @@ export function NodeHandle(props: NodeHandleProps) {
     }
 
     const useNodeBorder = props.useNodeBorderBox === "normal" || props.useNodeBorderBox === undefined ? "normal"
-        : props.useNodeBorderBox === "full" ? "full" : undefined
+        : props.useNodeBorderBox === "inner" ? "inner": undefined
 
-    return <HandleDiv className={cx(NODE_HANDLE_CLASS, props.className)} width={props.width ?? "6px"} height={props.height ?? "6px"}
-                      borderRadius={props.borderRadius ?? "50%"} style={customPosition} data-position={position}
-                      data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>
-        {props.children}
+    return <HandleDiv className={cx(NODE_HANDLE_CLASS, props.className)} style={customPosition} data-position={position}
+                      data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}
+                      width={props.width} height={props.height}>
+        <HandleBoxDiv className={NODE_HANDLE_CLASS_BOX} width={props.outerBoxWidth} height={props.outerBoxHeight}>
+            {props.children}
+        </HandleBoxDiv>
     </HandleDiv>
 }

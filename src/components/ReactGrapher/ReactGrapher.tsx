@@ -59,7 +59,7 @@ const Nodes = styled.div<Pick<GrapherConfigSet, "nodesOverEdges">>`
 export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | UncontrolledGraphProps<N, E>) {
     // Get default config and prevent config object from being created every re-render
     // Also apply settings for static graph if static prop is set
-    const inputConfig = useRef() as any as {oldConfig?: GrapherConfig, config: GrapherConfigSet}
+    const inputRef = useRef() as any as {oldConfig?: GrapherConfig, config: GrapherConfigSet}
     const config = useMemo(() => {
         // If config changed, deep compare the config object
         if (deepEquals(props.config, inputRef.oldConfig) && inputRef.config != null) return inputRef.config

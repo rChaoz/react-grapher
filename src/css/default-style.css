@@ -8,6 +8,7 @@
     --react-grapher-node-border-selected: #FFFDD0;
     --react-grapher-node-text-color: white;
 
+    --react-grapher-handle-outer-background-hover: #fff3;
     --react-grapher-handle-border: #eee;
     --react-grapher-handle-background: #777;
 
@@ -59,7 +60,16 @@
 }
 
 /* Node Handle */
+.react-grapher-node-handle-box {
+    border-radius: 50%;
+}
+
+.react-grapher-node-handle-box:hover {
+    background-color: var(--react-grapher-handle-outer-background-hover);
+}
+
 .react-grapher-node-handle {
+    border-radius: 50%;
     background-color: var(--react-grapher-handle-background);
     border: 1px solid var(--react-grapher-handle-border);
 }
@@ -76,6 +86,10 @@
     stroke-linecap: round
 }
 
+.react-grapher-edge:hover .react-grapher-edge-path {
+    stroke: var(--react-grapher-edge-color-hover);
+}
+
 .react-grapher-edge[data-grabbed=true] .react-grapher-edge-path {
     stroke: var(--react-grapher-edge-color-active);
 }
@@ -85,10 +99,6 @@
     stroke-width: var(--react-grapher-edge-stroke-width-selected);
     /* TODO Better selected design */
     filter: drop-shadow(0 0 3px var(--react-grapher-edge-shadow-color)) drop-shadow(0 0 4px var(--react-grapher-edge-shadow-color));
-}
-
-.react-grapher-edge:hover .react-grapher-edge-path {
-    stroke: var(--react-grapher-edge-color-hover);
 }
 
 /* Edge Label */

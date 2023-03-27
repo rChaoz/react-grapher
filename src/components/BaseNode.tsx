@@ -1,35 +1,112 @@
-import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext";
-import React, {useCallback, useContext, useEffect, useRef} from "react";
-import {CallbacksContext} from "../../context/CallbacksContext";
-import {errorUnknownNode} from "../../util/log";
-import {splitCSSCalc, hasProperty, resolveValue, resolveValues} from "../../util/utils";
-import {NODE_HANDLE_CLASS} from "../../util/constants";
-import {NodeHandleInfo} from "../../data/Node";
-import {HandlePresetToVariablePosition, NodeHandleProps, NodeHandlePropsPositioned} from "../NodeHandle";
+import React, {useCallback, useContext, useEffect, useMemo, useRef} from "react";
+import {BoundsContext} from "../context/BoundsContext";
+import {NODE_CONTAINER_CLASS, NODE_HANDLE_CLASS} from "../util/constants";
+import {Property} from "csstype";
+import styled from "@emotion/styled";
+import {GrapherContext} from "../context/GrapherContext";
+import {CallbacksContext} from "../context/CallbacksContext";
+import {errorUnknownNode} from "../util/log";
+import {hasProperty, resolveValue, resolveValues, splitCSSCalc} from "../util/utils";
+import {Node, NodeHandleInfo} from "../data/Node";
+import {HandlePresetToVariablePosition, NodeHandleProps, NodeHandlePropsPositioned} from "./NodeHandle";
+import {NodeContext, NodeContextValue} from "../context/NodeContext";
 
-// Common code of BaseNode and BaseNodeResizable
-export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue, React.RefObject<HTMLDivElement>] {
+export interface BaseNodeProps {
+    /**
+     * ID of the node
+     */
+    id: string
+    /**
+     * CSS classes to be added to the node element
+     */
+    classes: string[]
+    /**
+     * Absolute position of this node
+     */
+    absolutePosition: DOMPoint
+    /**
+     * Whether this node is grabbed (being moved)
+     */
+    grabbed: boolean
+    /**
+     * Whether this node is selected
+     */
+    selected: boolean
+    /**
+     * Contents of your node should be placed here
+     */
+    children: React.ReactNode
+    /**
+     * Whether this node should be user-resizable, as set in the {@link Node Node's} properties.
+     */
+    resize?: Property.Resize
+}
+
+export interface NodeProps<T> extends Omit<BaseNodeProps, "children"> {
+    /**
+     * Custom node data
+     */
+    data: T
+    /**
+     * Parent of this node, if it exists
+     */
+    parent?: Node<unknown> | null
+    /**
+     * Position relative to parent, if parent is not null, or same as {@link absolutePosition} if it is null
+     */
+    position: DOMPoint
+    /**
+     * Spacing between this node and the edges that connect to it. This space is *automatically taken into consideration* for the calculation of edges.
+     */
+    edgeMargin: number
+}
+
+const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable: boolean }>`
+  position: absolute;
+  resize: ${props => props.resize ?? "initial"};
+  overflow: ${props => props.resizable ? "auto" : "initial"};
+  width: max-content;
+  height: max-content;
+`
+
+export function BaseNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseNodeProps) {
     const grapherContext = useContext(GrapherContext)
     const listeners = useContext(CallbacksContext)
+    const bounds = useContext(BoundsContext)
 
     const ref = useRef<HTMLDivElement>(null)
     const node = grapherContext.getNode(id)
     if (node == null) errorUnknownNode(id)
+    const resizable = resize != null && resize !== "none" && resize !== "initial"
+    const nodeID = `${grapherContext.id}n-${id}`
+
+    // To allow recalculateNode to access new position & bounds without being re-created
+    const d = useRef() as any as {absolutePosition: DOMPoint, bounds: DOMRect}
+    d.absolutePosition = absolutePosition
+    d.bounds = bounds
 
     // Function to notify ReactGrapher of changes to this node (size, border radius)
     const recalculateNode = useCallback(() => {
         const elem = ref.current
-        if (elem == null || node == null) return
+        const container = elem?.parentElement
+        if (elem == null || node == null || container == null) return
         // Update node size
+        let sizeChanged = false
         if (Math.abs(node.width - elem.offsetWidth) > .5) {
             node.width = elem.offsetWidth
-            grapherContext.rerenderEdges()
-            grapherContext.recalculateBounds()
+            sizeChanged = true
         }
         if (Math.abs(node.height - elem.offsetHeight) > .5) {
             node.height = elem.offsetHeight
+            sizeChanged = true
+        }
+
+        if (sizeChanged) {
             grapherContext.rerenderEdges()
             grapherContext.recalculateBounds()
+            // Update node position on-screen
+            container.style.left = d.absolutePosition.x - d.bounds.x - (node.width ?? 0) / 2 + "px"
+            container.style.top = d.absolutePosition.y - d.bounds.y - (node.height ?? 0) / 2 + "px"
         }
 
         // Update border radius
@@ -51,20 +128,25 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
             resolveValue(style.borderBottomWidth, 0),
             resolveValue(style.borderLeftWidth, 0),
         ]
+        for (let i = 0; i < 4; ++i) if (Math.abs(border[i] - node.border[i]) > .5) {
+            borderChanged = true
+            break
+        }
         for (let i = 0; i < 4; ++i) if (Math.abs(bRadius[i][0] - node.borderRadius[i][0]) > .5 || Math.abs(bRadius[i][1] - node.borderRadius[i][1]) > .5) {
             borderChanged = true
             break
         }
         if (borderChanged) {
+            node.border = border
             node.borderRadius = bRadius
             grapherContext.rerenderEdges()
         }
 
         // Get handles
-        const handleElems = elem.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CLASS)
+        const handleElems = container.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CLASS)
         // Check if handles have changed
         let handlesChanged = false
-        if (node.handles == null) handlesChanged = true
+        if (node.handles == null || borderChanged) handlesChanged = true
         else {
             if (node.handles.length !== handleElems.length) handlesChanged = true
             else for (let i = 0; i < handleElems.length; ++i) {
@@ -179,36 +261,32 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
             let x: number, y: number
 
             // Set x and y to account for border, if needed
-            if (useNodeBorder === "full") {
-                x = left + leftP * node.width
-                y = top + topP * node.width
+            if (useNodeBorder === "inner") {
+                // Use padding box
+                const pWidth = node.width - border[1] - border[3], pHeight = node.height - border[0] - border[2]
+                x = border[3] + leftP * pWidth + left
+                y = border[0] + topP * pHeight + top
             } else if (useNodeBorder === "normal") {
-                // "Updated padding box" - padding box extended to contain half of the borders' widths
+                // 'border-box' reduced to exclude half of the borders' widths
                 const uWidth = node.width - (border[1] + border[3]) / 2, uHeight = node.height - (border[0] + border[2]) / 2
                 x = border[3] / 2 + left + leftP * uWidth
                 y = border[0] / 2 + top + topP * uHeight
             } else {
-                // Padding box
-                const pWidth = node.width - border[1] - border[3], pHeight = node.height - border[0] - border[2]
-                x = border[3] + leftP * pWidth + left
-                y = border[0] + topP * pHeight + top
+                x = left + leftP * node.width
+                y = top + topP * node.width
             }
 
             // If requested, update the handle's DOM position
             if (useNodeBorder != null) {
-                h.style.left = x - border[3] + "px"
-                h.style.top = y - border[0] + "px"
+                h.style.left = x - h.offsetWidth / 2 + "px"
+                h.style.top = y - h.offsetHeight / 2 + "px"
             }
-
-            // Make x and y relative to the node's center
-            x -= node.width / 2
-            y -= node.height / 2
 
             // Get handle roles
             const roles = h.dataset.role?.split(",")
 
-            // Save data
-            handles.push({name, roles, x, y})
+            // Save data and make x and y relative to the node's center
+            handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2})
         }
         node.handles = handles
     }, [grapherContext, node])
@@ -230,7 +308,36 @@ export function useBaseNode(id: string, updateDeps: any[]): [GrapherContextValue
     }, [grapherContext, listeners, node, recalculateNode])
 
     // Additionally, recalculateNode() should be called any time any prop changes
-    useEffect(recalculateNode, [recalculateNode, ...updateDeps])
+    useEffect(recalculateNode, [recalculateNode, id, classes, absolutePosition, grabbed, selected])
 
-    return [grapherContext, ref]
+    // Set listeners for resizable node (if needed)
+    useEffect(() => {
+        if (ref.current == null || !resizable || grapherContext.static) return
+        const parent = ref.current.parentElement
+        if (parent == null) return
+
+        const onResizeStart = grapherContext.onResizeStart
+
+        parent.addEventListener("pointerdown", onResizeStart)
+        return () => parent.removeEventListener("pointerdown", onResizeStart)
+    }, [grapherContext.onResizeStart, grapherContext.static, ref, resizable])
+
+    // Data that needs to be passed to NodeContent
+    const nodeContextValue = useMemo<NodeContextValue>(() => ({
+        id: nodeID,
+        ref,
+        baseZIndex: grapherContext.nodeZIndex,
+        classes,
+        selected,
+        grabbed,
+    }), [ref, grapherContext, nodeID, classes, selected, grabbed])
+
+    return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={grapherContext.static ? undefined : resize} resizable={resizable} style={{
+        left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
+        top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
+    }}>
+        <NodeContext.Provider value={nodeContextValue}>
+            {children}
+        </NodeContext.Provider>
+    </ContainerDiv>
 }

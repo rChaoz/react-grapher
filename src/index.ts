@@ -16,7 +16,8 @@ import {ReactGrapher, ControlledGraphProps, UncontrolledGraphProps} from "./comp
 import {GrapherViewport} from "./components/GrapherViewport";
 import {Marker} from "./components/Marker";
 // Sub-components
-import {BaseNode, BaseNodeProps, NodeProps, BaseResizableNode, BaseResizableNodeProps} from "./components/BaseNode";
+import {BaseNode, BaseNodeProps, NodeProps} from "./components/BaseNode";
+import {NodeContent, NodeContentProps} from "./components/NodeContent";
 import {NodeHandle, NodeHandleProps, SOURCE, TARGET} from "./components/NodeHandle"
 import {SimpleNode, SimpleNodeData, SimpleNodeHandle} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
@@ -38,7 +39,7 @@ export {
     // React Grapher
     ReactGrapher, ControlledGraphProps, UncontrolledGraphProps, GrapherViewport, Marker,
     // Sub-components
-    BaseNode, BaseNodeProps, NodeProps, BaseResizableNode, BaseResizableNodeProps,
+    BaseNode, BaseNodeProps, NodeProps, NodeContent, NodeContentProps,
     NodeHandle, NodeHandleProps, SOURCE, TARGET,
     SimpleNode, SimpleNodeData, SimpleNodeHandle,
     BaseEdge, BaseEdgeProps, EdgeProps,

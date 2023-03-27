@@ -52,10 +52,11 @@ export interface CommonGraphProps {
     fitViewOnResize?: boolean
     /**
      * This config option will make the graph completely static, by implementing the following changes:
-     * - set config.hideControls = true (if undefined)
-     * - set config.fitViewConfig.abideMinMaxZoom = false (if undefined)
+     * - set config.hideControls = true (if unset)
+     * - set config.fitViewConfig.abideMinMaxZoom = false (if unset)
      * - do not attach any pointer/key listeners
      * - disable pointer events on nodes & edges to prevent CSS hover effects
+     * - make all resizable nodes non-resizable
      *
      * Additionally, if not already set (if undefined), the following props will be set:
      * - fitView -> "always"

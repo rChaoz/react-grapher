@@ -56,6 +56,10 @@ export function errorUnknownNode(id: string) {
     error(`Error: unable to find node with ID ${id}`)
 }
 
+export function errorNodeContentPlacement() {
+    error("NodeContent must only be used inside a BaseNode!")
+}
+
 export function errorUnknownEdge(id: string) {
     error(`Error: unable to find edge with ID ${id}`)
 }

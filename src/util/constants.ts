@@ -14,9 +14,10 @@ export const EDGES_CLASS = "react-grapher-edges"
 
 
 
-export const NODE_RESIZABLE_WRAPPER = "react-grapher-node-resizable"
+export const NODE_CONTAINER_CLASS = "react-grapher-node-container"
 export const NODE_CLASS = "react-grapher-node"
 export const NODE_HANDLE_CLASS = "react-grapher-node-handle"
+export const NODE_HANDLE_CLASS_BOX = "react-grapher-node-handle-box"
 
 
 export const EDGE_CLASS = "react-grapher-edge"
@@ -37,6 +38,7 @@ export const Z_INDEX_INTERFACE = 7
  * 5 if config option "nodesOverEdges" is enabled
   */
 export const Z_INDEX_NODE = 3
+export const Z_INDEX_HANDLE_BOX = 6
 export const Z_INDEX_GRABBED_NODE = 6
 /**
  * 3 if config option "nodesOverEdges" is enabled
