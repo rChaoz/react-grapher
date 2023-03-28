@@ -58,5 +58,6 @@
     "watch": "rollup -c --watch",
     "lint": "eslint \"{**/*,*}.{js,ts,jsx,tsx}\"",
     "test": "jest"
-  }
+  },
+  "packageManager": "yarn@3.5.0"
 }
