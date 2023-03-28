@@ -56,8 +56,8 @@ export function errorUnknownNode(id: string) {
     error(`Error: unable to find node with ID ${id}`)
 }
 
-export function errorNodeContentPlacement() {
-    error("NodeContent must only be used inside a BaseNode!")
+export function errorComponentOutsideContext(element: string, container: string) {
+    error(`${element} can only be used inside a ${container}!`)
 }
 
 export function errorUnknownEdge(id: string) {

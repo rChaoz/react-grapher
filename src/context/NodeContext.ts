@@ -10,11 +10,13 @@ export interface NodeContextValue {
     selected: boolean
 }
 
+export const CONTEXT_ERROR = "context-error"
+
 /**
  * Used to pass information from the BaseNode to the NodeContent
  */
 export const NodeContext = React.createContext<NodeContextValue>({
-    id: "context-error",
+    id: CONTEXT_ERROR,
     ref: React.createRef(),
     baseZIndex: Z_INDEX_NODE,
     classes: [],

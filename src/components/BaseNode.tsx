@@ -1,6 +1,6 @@
 import React, {useCallback, useContext, useEffect, useMemo, useRef} from "react";
 import {BoundsContext} from "../context/BoundsContext";
-import {NODE_CONTAINER_CLASS, NODE_HANDLE_CLASS} from "../util/constants";
+import {NODE_CONTAINER_CLASS, NODE_HANDLE_CONTAINER_CLASS} from "../util/constants";
 import {Property} from "csstype";
 import styled from "@emotion/styled";
 import {GrapherContext} from "../context/GrapherContext";
@@ -145,7 +145,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         }
 
         // Get handles
-        const handleElems = container.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CLASS)
+        const handleElems = container.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CONTAINER_CLASS)
         // Check if handles have changed
         let handlesChanged = false
         if (node.handles == null || borderChanged) handlesChanged = true
@@ -280,8 +280,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
 
             // If requested, update the handle's DOM position
             if (useNodeBorder != null) {
-                h.style.left = x - h.offsetWidth / 2 + "px"
-                h.style.top = y - h.offsetHeight / 2 + "px"
+                h.style.left = x + "px"
+                h.style.top = y + "px"
             }
 
             // Get handle roles

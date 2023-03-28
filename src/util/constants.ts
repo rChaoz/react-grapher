@@ -17,7 +17,8 @@ export const EDGES_CLASS = "react-grapher-edges"
 export const NODE_CONTAINER_CLASS = "react-grapher-node-container"
 export const NODE_CLASS = "react-grapher-node"
 export const NODE_HANDLE_CLASS = "react-grapher-node-handle"
-export const NODE_HANDLE_CLASS_BOX = "react-grapher-node-handle-box"
+export const NODE_HANDLE_CONTAINER_CLASS = "react-grapher-node-handle-container"
+export const NODE_HANDLE_BOX_CLASS = "react-grapher-node-handle-box"
 
 
 export const EDGE_CLASS = "react-grapher-edge"

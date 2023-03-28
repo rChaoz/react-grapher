@@ -13,13 +13,13 @@ export function isNodeChange(change: GrapherChange): change is NodeMoveChange {
     return change.type.startsWith("node")
 }
 
-export function isEdgeChange(change: GrapherChange): boolean { // TODO is NoveChange
+export function isEdgeChange(change: GrapherChange): boolean { // TODO is EdgeChange
     return change.type.startsWith("edge")
 }
 
 /**
- * Used when the changes the node's position using a pointer. The user can move multiple nodes at once by selecting them and them
- * dragging any of them.
+ * Normally used when the changes the node's position using a pointer. The user can move multiple nodes at once by selecting them and them
+ * dragging any of them. When sent, updates the node's position.
  */
 export interface NodeMoveChange extends NodeChange {
     type: "node-move"

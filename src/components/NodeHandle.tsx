@@ -1,12 +1,14 @@
-import React from "react";
+import React, {useContext} from "react";
 import {cx} from "@emotion/css";
-import {NODE_HANDLE_CLASS, NODE_HANDLE_CLASS_BOX, Z_INDEX_HANDLE_BOX} from "../util/constants";
+import {NODE_HANDLE_CONTAINER_CLASS, NODE_HANDLE_BOX_CLASS, Z_INDEX_HANDLE_BOX, NODE_HANDLE_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
 import styled from "@emotion/styled";
 import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherConfig} from "../data/GrapherConfig";
+import {CONTEXT_ERROR, NodeContext} from "../context/NodeContext";
+import {errorComponentOutsideContext} from "../util/log";
 
 export type NodeHandleProps = NodeHandlePropsPositioned | NodeHandlePropsTopLeft
 
@@ -38,11 +40,11 @@ export interface NodeHandlePropsBase {
      */
     role?: null | string | string[]
     /**
-     * CSS value for width. Defaults to 6px
+     * CSS value for width. Note that the handle uses `box-sizing: border-box`. Defaults to 6px
      */
     width?: Property.Width<number>
     /**
-     * CSS value for height. Defaults to "6px"
+     * CSS value for height. Note that the handle uses `box-sizing: border-box`. Defaults to "6px"
      */
     height?: Property.Height<number>
     /**
@@ -132,25 +134,41 @@ export interface NodeHandlePropsTopLeft extends NodeHandlePropsBase {
     left: Property.Left<number>
 }
 
-type HandleDivProps = { width: Property.Width<number> | undefined, height: Property.Height<number> | undefined }
+type SizeProps = { width: Property.Width<number> | undefined, height: Property.Height<number> | undefined }
+type ZIndexProps = { zIndex: number }
 
-const HandleDiv = styled.div<HandleDivProps>`
+const HandleContainerDiv = styled.div<SizeProps>`
   position: absolute;
+  box-sizing: border-box;
   width: ${props => convertToCSSLength(props.width ?? 6)};
   height: ${props => convertToCSSLength(props.height ?? 6)};
 `
 
-const HandleBoxDiv = styled.div<HandleDivProps>`
-  z-index: ${Z_INDEX_HANDLE_BOX};
+const HandleDiv = styled.div<SizeProps & ZIndexProps>`
   position: absolute;
-  top: 50%;
-  left: 50%;
+  top: 0;
+  left: 0;
+  z-index: ${props => props.zIndex};
+  box-sizing: border-box;
+  width: ${props => convertToCSSLength(props.width ?? 6)};
+  height: ${props => convertToCSSLength(props.height ?? 6)};
   transform: translate(-50%, -50%);
+`
+
+const HandleBoxDiv = styled.div<SizeProps>`
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: ${Z_INDEX_HANDLE_BOX};
   width: ${props => convertToCSSLength(props.width ?? 15)};
   height: ${props => convertToCSSLength(props.height ?? 15)};
+  transform: translate(-50%, -50%);
 `
 
 export function NodeHandle(props: NodeHandleProps) {
+    const context = useContext(NodeContext)
+    if (context.id === CONTEXT_ERROR) errorComponentOutsideContext("NodeHandle", "BaseNode")
+
     let customPosition: { top: string, left: string } | undefined
     let position: string | undefined = undefined, name = props.name
     if ("top" in props) customPosition = {
@@ -164,11 +182,12 @@ export function NodeHandle(props: NodeHandleProps) {
     const useNodeBorder = props.useNodeBorderBox === "normal" || props.useNodeBorderBox === undefined ? "normal"
         : props.useNodeBorderBox === "inner" ? "inner": undefined
 
-    return <HandleDiv className={cx(NODE_HANDLE_CLASS, props.className)} style={customPosition} data-position={position}
-                      data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}
-                      width={props.width} height={props.height}>
-        <HandleBoxDiv className={NODE_HANDLE_CLASS_BOX} width={props.outerBoxWidth} height={props.outerBoxHeight}>
+    return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position} width={props.width} height={props.height}
+                               data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>
+        <HandleDiv className={cx(NODE_HANDLE_CLASS, props.className)} width={props.width} height={props.height}
+                   zIndex={context.grabbed ? Z_INDEX_GRABBED_NODE : context.baseZIndex}>
             {props.children}
-        </HandleBoxDiv>
-    </HandleDiv>
+        </HandleDiv>
+        <HandleBoxDiv className={NODE_HANDLE_BOX_CLASS} width={props.outerBoxWidth} height={props.outerBoxHeight}/>
+    </HandleContainerDiv>
 }
