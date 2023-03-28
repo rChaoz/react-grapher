@@ -41,6 +41,7 @@
     "react-dom": "^18.2.0",
     "react-test-renderer": "^18.2.0",
     "rollup": "^2.66.1",
+    "rollup-plugin-copy": "^3.4.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-typescript2": "^0.34.1",
@@ -53,7 +54,7 @@
   },
   "scripts": {
     "prepublishOnly": "yarn run build",
-    "build": "rollup -c && cp src/css/* dist/",
+    "build": "rollup -c",
     "watch": "rollup -c --watch",
     "lint": "eslint \"{**/*,*}.{js,ts,jsx,tsx}\"",
     "test": "jest"

@@ -6,6 +6,7 @@ import babel from "@rollup/plugin-babel"
 import postcss from "rollup-plugin-postcss";
 
 import packageJson from "./package.json";
+import copy from "rollup-plugin-copy";
 
 export default {
     input: "src/index.ts",
@@ -32,5 +33,10 @@ export default {
         }),
         postcss(),
         babel({babelHelpers: 'bundled'}),
+        copy({
+            targets: [
+                {src: "src/css/*", dest: "dist/"},
+            ]
+        })
     ],
 };
