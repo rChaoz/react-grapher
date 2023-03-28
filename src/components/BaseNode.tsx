@@ -289,7 +289,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2})
         }
         node.handles = handles
-    }, [s, grapherContext, node])
+    }, [grapherContext, node])
 
     // Set listeners
     useEffect(() => {

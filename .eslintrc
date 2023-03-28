@@ -16,7 +16,17 @@
     "no-inner-declarations": "off",
     "react/prop-types": "off",
     "react-hooks/rules-of-hooks": "error",
-    "react-hooks/exhaustive-deps": "warn",
+    "react-hooks/exhaustive-deps": [
+      "warn",
+      {
+        "staticHooks": {
+          "useCallbackState": true,
+          "usePersistent": true,
+          "usePersistentComplex": true,
+          "useUpdate": [true, true]
+        }
+      }
+    ],
     "@typescript-eslint/no-non-null-assertion": "off",
     "@typescript-eslint/ban-ts-comment": "off",
     "@typescript-eslint/no-explicit-any": "off"

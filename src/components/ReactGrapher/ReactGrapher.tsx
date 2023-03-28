@@ -116,7 +116,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         warnNoReactGrapherID()
     } else id = ownID
 
-    // We want callbacks to be able to use new state values but without re-creating the callbacks
+    // We want callbacks to be able to use new state/prop values but without re-creating the callbacks
     const s = useCallbackState({
         nodes, edges, selection, controller,
         config, onEvent: props.onEvent, onChange: props.onChange,
@@ -181,7 +181,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={node.absolutePosition} edgeMargin={node.edgeMargin}
                           resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
-    }), [s, grabbed, nodes, selection, shouldUpdateGrabbed])
+    }), [nodes, selection, shouldUpdateGrabbed])
 
     // Same for Edges
     const [shouldUpdateEdges, updateEdges] = useUpdate()
@@ -222,7 +222,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
                           selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
-    }), [s, grabbed, nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
+    }), [nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
 
     // Verify edges and compute handles for those that have them set to "auto" (undefined)
     useEffect(() => {
@@ -318,7 +318,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             newEdges.push(edge)
         }
         if (newEdges.length < edges.length) edges.set(newEdges)
-    }, [s, updateEdges, edges, config.allowIllegalEdges, allowedConnections])
+    }, [edges, config.allowIllegalEdges, allowedConnections])
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
@@ -366,7 +366,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             || Math.abs(domRect.right - bounds.right) > 100 || Math.abs(domRect.bottom - bounds.bottom) > 100) {
             setBounds(domRect)
         }
-    }, [s, shouldRecalculateBounds, bounds, nodes, edges])
+    }, [shouldRecalculateBounds, bounds, nodes, edges])
 
     // Add listeners to viewport & document
     useEffect(() => {
@@ -654,12 +654,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             document.removeEventListener("pointermove", onPointerMove)
             document.removeEventListener("pointerup", onPointerUp)
         }
-    }, [s, grabbed, updateGrabbed, lastClicked, props.static])
+    }, [props.static])
 
     // Fit view
     useEffect(() => {
         if (props.fitView === "always") s.controller.fitView()
-    }, [s, nodes, edges, props.fitView])
+    }, [nodes, edges, props.fitView])
 
     useEffect(() => {
         if (s.controller.fitViewValue > needFitView.current) {
@@ -680,7 +680,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             observer.observe(ref.current)
             return () => observer.disconnect()
         }
-    }, [s, props.fitViewOnResize])
+    }, [props.fitViewOnResize])
 
     // Internal context and object event listeners
     const contextValue: GrapherContextValue = useMemo(() => ({
@@ -791,7 +791,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // Null because it's set below
         getNode: null as any,
         getEdge: null as any,
-    }), [id, props.static, config.nodesOverEdges, updateEdges, recalculateBounds, grabbed, s, lastClicked, updateGrabbed])
+    }), [id, props.static, config.nodesOverEdges])
     // This is not put in the useMemo above because nodes/edges objects changing should not trigger a context value change & subsequent re-renders
     // As the result of the function itself does not change
     contextValue.getNode = nodes.internalMap.get.bind(nodes.internalMap)

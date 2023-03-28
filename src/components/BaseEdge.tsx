@@ -151,7 +151,7 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
             elem.removeEventListener("pointerdown", onObjectPointerDown)
             elem.removeEventListener("pointerup", onObjectPointerUp)
         }
-    }, [s, grapherContext, edge, id, path, grabbed, selected])
+    }, [grapherContext, edge, id, path, grabbed, selected])
 
     const baseID = grapherContext.id
     return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={grapherContext.isStatic}>
