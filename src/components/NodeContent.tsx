@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import {NODE_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
 import React, {useContext} from "react";
 import {NodeContext} from "../context/NodeContext";
-import {errorComponentOutsideContext} from "../util/log";
+import {CONTEXT_ERROR, errorComponentOutsideContext} from "../util/log";
 import {cx} from "@emotion/css";
 
 export interface NodeContentProps {
@@ -16,7 +16,7 @@ const ContentDiv = styled.div<{baseZIndex: number, grabbed: boolean,}>`
 
 export function NodeContent({children}: NodeContentProps) {
     const c = useContext(NodeContext)
-    if (c.id === "context-error") errorComponentOutsideContext("NodeContent", "BaseNode")
+    if (c.id === CONTEXT_ERROR) errorComponentOutsideContext("NodeContent", "BaseNode")
 
     return <ContentDiv ref={c.ref} id={c.id} className={cx(NODE_CLASS, c.classes)} baseZIndex={c.baseZIndex}
                        grabbed={c.grabbed} data-grabbed={c.grabbed} data-selected={c.selected}>

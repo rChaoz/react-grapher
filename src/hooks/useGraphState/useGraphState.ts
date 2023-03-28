@@ -3,14 +3,8 @@ import {EdgeData, EdgeImpl, Edges} from "../../data/Edge";
 import {useMemo} from "react";
 import useNodes from "./useNodes";
 import useEdges from "./useEdges";
-import {useSelection} from "./useSelection";
-import {Selection} from "../../data/Selection";
 
-export interface GraphState<N, E> {
-    nodes: Nodes<N>
-    edges: Edges<E>
-    selection: Selection
-}
+export type GraphState<N, E> = [Nodes<N>, Edges<E>]
 
 /**
  * Returns a pair of stateful array-like objects that initially hold the given data.
@@ -20,6 +14,5 @@ export interface GraphState<N, E> {
 export function useGraphState<N, E>(initialNodes?: NodeData<N>[], initialEdges?: EdgeData<E>[]): GraphState<N, E> {
     const nodes = useNodes(initialNodes as NodeImpl<N>[])
     const edges = useEdges(initialEdges as EdgeImpl<E>[])
-    const selection = useSelection(nodes, edges)
-    return useMemo<GraphState<N, E>>(() => ({nodes, edges, selection}), [nodes, edges, selection])
+    return useMemo(() => ([nodes, edges]), [nodes, edges])
 }

@@ -35,6 +35,7 @@ import {CommonGraphProps, ControlledGraphProps, UncontrolledGraphProps} from "./
 import {changeZoom, fitView, parseAllowedConnections, processDomElement, sendChanges, sendEvent} from "./utils";
 import {useCallbackState} from "../../hooks/useCallbackState";
 import {useUpdate} from "../../hooks/useUpdate";
+import {useSelection} from "../../hooks/useSelection";
 
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
@@ -79,11 +80,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     let nodes: NodesImpl<N>
     let edges: EdgesImpl<E>
-    let selection: SelectionImpl
 
     // Ensure rules of hooks are always met - we never know when this component is uncontrolled one render and controlled the next render
-    const {nodes: ownNodes, edges: ownEdges, selection: ownSelection}
-        = useGraphState((props as UncontrolledGraphProps<N, E>).defaultNodes, (props as UncontrolledGraphProps<N, E>).defaultEdges)
+    const [ownNodes, ownEdges] = useGraphState((props as UncontrolledGraphProps<N, E>).defaultNodes, (props as UncontrolledGraphProps<N, E>).defaultEdges)
     const ownController = useController()
     const controller = (props.controller ?? ownController) as ControllerImpl
 
@@ -91,14 +90,15 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     if ("nodes" in props) {
         nodes = props.nodes as NodesImpl<N>
         edges = props.edges as EdgesImpl<E>
-        selection = props.selection as SelectionImpl
     }
     // Uncontrolled Graphs manage their own state
     else {
         nodes = ownNodes as NodesImpl<N>
         edges = ownEdges as EdgesImpl<E>
-        selection = ownSelection as SelectionImpl
     }
+    const ownSelection = useSelection<N, E>(nodes, edges)
+    const selection = ("selection" in props && props.selection != null ? props.selection : ownSelection) as SelectionImpl
+
     // 'Notify' selection if multiple selection is allowed
     selection.multipleSelection = config.userControls.multipleSelection
 

@@ -6,6 +6,15 @@ import {GrapherChange} from "../../data/GrapherChange";
 import {NodeData, Nodes} from "../../data/Node";
 import {EdgeData, Edges} from "../../data/Edge";
 import {Selection} from "../../data/Selection";
+// Used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {useGraphState} from "../../hooks/useGraphState";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {useController} from "../../hooks/useController";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {useSelection} from "../../hooks/useSelection";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {useControlledGrapher} from "../../hooks/useControlledGrapher";
 
 export interface CommonGraphProps {
     /**
@@ -21,7 +30,11 @@ export interface CommonGraphProps {
      */
     height?: string
     /**
-     * Used to control the viewport
+     * Used to control the viewport. If undefined, the viewport will be uncontrolled (the graph will manage it itself).
+     * If you need access to it, obtain a controller state with {@link useController} and lift it up your component tree as much as you want.
+     *
+     * Also check {@link useControlledGrapher} for a fully-controlled graph.
+     * @see Controller
      */
     controller?: Controller
     /**
@@ -86,12 +99,39 @@ export interface CommonGraphProps {
 }
 
 export interface ControlledGraphProps<N, E> extends CommonGraphProps {
+    /**
+     * For controlled graphs. Obtain graph state with {@link useGraphState} and lift it as high up the component tree as you want.
+     *
+     * Also check {@link useControlledGrapher} for a fully-controlled graph.
+     * @see Nodes
+     */
     nodes: Nodes<N>
+    /**
+     * For controlled graphs. Obtain graph state with {@link useGraphState} and lift it as high up the component tree as you want.
+     *
+     * Also check {@link useControlledGrapher} for a fully-controlled graph.
+     * @see Edges
+     */
     edges: Edges<E>
-    selection: Selection
+    /**
+     * Used to observe and change the selected nodes/edges. If undefined, the graph will manage this state by itself.
+     * If you need acces to it, obtain a selection state with {@link useSelection} and lift it as high up the component tree as you want.
+     *
+     * Also check {@link useControlledGrapher} for a fully-controlled graph.
+     * @see Selection
+     */
+    selection?: Selection
 }
 
 export interface UncontrolledGraphProps<N, E> extends CommonGraphProps {
+    /**
+     * For uncontrolled graph. The graph will manage its own state, and state can be changed via user interactions.
+     * This represents the starting nodes of the graph.
+     */
     defaultNodes?: NodeData<N>[]
+    /**
+     * For uncontrolled graph. The graph will manage its own state, and state can be changed via user interactions.
+     * This represents the starting edges of the graph.
+     */
     defaultEdges?: EdgeData<E>[]
 }

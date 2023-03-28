@@ -1,6 +1,6 @@
-import {NodesImpl} from "../../data/Node";
-import {EdgesImpl} from "../../data/Edge";
-import {Selection, SelectionImpl} from "../../data/Selection";
+import {Nodes} from "../data/Node";
+import {Edges} from "../data/Edge";
+import {Selection, SelectionImpl} from "../data/Selection";
 import {useMemo, useState} from "react";
 
 function selectionsEqual(sel1: string[], sel2: string[]) {
@@ -9,7 +9,7 @@ function selectionsEqual(sel1: string[], sel2: string[]) {
     return true
 }
 
-export function useSelection<N, E>(nodes: NodesImpl<N>, edges: EdgesImpl<E>): Selection {
+export function useSelection<N, E>(nodes: Nodes<N>, edges: Edges<E>): Selection {
     const [nodesSelection, setNodesSelection] = useState<string[]>([])
     const [edgesSelection, setEdgesSelection] = useState<string[]>([])
     return useMemo<SelectionImpl>(() => ({
