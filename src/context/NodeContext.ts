@@ -1,5 +1,6 @@
 import React from "react";
 import {Z_INDEX_NODE} from "../util/constants";
+import {CONTEXT_ERROR} from "../util/log";
 
 export interface NodeContextValue {
     id: string
@@ -9,8 +10,6 @@ export interface NodeContextValue {
     grabbed: boolean
     selected: boolean
 }
-
-export const CONTEXT_ERROR = "context-error"
 
 /**
  * Used to pass information from the BaseNode to the NodeContent

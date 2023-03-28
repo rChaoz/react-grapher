@@ -1,14 +1,14 @@
 import React, {useContext} from "react";
 import {cx} from "@emotion/css";
-import {NODE_HANDLE_CONTAINER_CLASS, NODE_HANDLE_BOX_CLASS, Z_INDEX_HANDLE_BOX, NODE_HANDLE_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
+import {NODE_HANDLE_BOX_CLASS, NODE_HANDLE_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z_INDEX_GRABBED_NODE, Z_INDEX_HANDLE_BOX} from "../util/constants";
 import styled from "@emotion/styled";
 import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherConfig} from "../data/GrapherConfig";
-import {CONTEXT_ERROR, NodeContext} from "../context/NodeContext";
-import {errorComponentOutsideContext} from "../util/log";
+import {NodeContext} from "../context/NodeContext";
+import {CONTEXT_ERROR, errorComponentOutsideContext} from "../util/log";
 
 export type NodeHandleProps = NodeHandlePropsPositioned | NodeHandlePropsTopLeft
 
@@ -140,7 +140,7 @@ const HandleDiv = styled.div<{ zIndex: number }>`
   transform: translate(-50%, -50%);
 `
 
-const HandleBoxDiv = styled.div<{width: Property.Width<number> | undefined, height: Property.Height<number> | undefined}>`
+const HandleBoxDiv = styled.div<{ width: Property.Width<number> | undefined, height: Property.Height<number> | undefined }>`
   position: absolute;
   top: 0;
   left: 0;
@@ -165,7 +165,7 @@ export function NodeHandle(props: NodeHandleProps) {
     }
 
     const useNodeBorder = props.useNodeBorderBox === "normal" || props.useNodeBorderBox === undefined ? "normal"
-        : props.useNodeBorderBox === "inner" ? "inner": undefined
+        : props.useNodeBorderBox === "inner" ? "inner" : undefined
 
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position}
                                data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>

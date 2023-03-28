@@ -2,11 +2,12 @@ import React from "react";
 import {NodeImpl} from "../data/Node"
 import {EdgeImpl} from "../data/Edge";
 import {Z_INDEX_NODE} from "../util/constants";
+import {CONTEXT_ERROR, criticalInternalContext} from "../util/log";
 
 export interface GrapherContextValue {
     id: string
     nodeZIndex: number
-    static?: boolean
+    isStatic?: boolean
 
     // When these properties are changed, the context itself doesn't change (no re-render):
     getNode(id: string): NodeImpl<any> | undefined
@@ -18,6 +19,11 @@ export interface GrapherContextValue {
     recalculateBounds(): void
 
     onResizeStart(): void
+
+    // Object click events
+    onObjectPointerDown(event: PointerEvent): void
+
+    onObjectPointerUp(event: PointerEvent): void
 }
 
 /**
@@ -26,6 +32,30 @@ export interface GrapherContextValue {
  * be empty (if not provided, a random ID is used for React 18 or later, otherwise, "react-grapher" is used, which might cause duplicated DOM ID issues).
  */
 export const GrapherContext = React.createContext<GrapherContextValue>(
-    {id: "react-grapher", nodeZIndex: Z_INDEX_NODE, static: false,
-        getNode: null as any, getEdge: null as any, rerenderEdges: null as any, recalculateBounds: null as any, onResizeStart: null as any}
+    {
+        id: CONTEXT_ERROR, nodeZIndex: Z_INDEX_NODE, isStatic: true,
+        getNode() {
+            criticalInternalContext()
+            return undefined
+        },
+        getEdge() {
+            criticalInternalContext()
+            return undefined
+        },
+        rerenderEdges() {
+            criticalInternalContext()
+        },
+        recalculateBounds() {
+            criticalInternalContext()
+        },
+        onResizeStart() {
+            criticalInternalContext()
+        },
+        onObjectPointerDown() {
+            criticalInternalContext()
+        },
+        onObjectPointerUp() {
+            criticalInternalContext()
+        },
+    }
 )

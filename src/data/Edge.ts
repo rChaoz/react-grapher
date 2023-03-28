@@ -2,7 +2,7 @@ import {GrapherChange} from "./GrapherChange";
 import React, {SVGProps} from "react";
 import {EdgeProps} from "../components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
-import {checkInvalidID} from "../util/log";
+import {checkErrorInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 
 /**
@@ -160,7 +160,7 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowGrabbing" | "allo
 export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
     const i = target as EdgeImpl<any>
     if (i.isInitialized) return
-    checkInvalidID("edge", i.id)
+    checkErrorInvalidID("edge", i.id)
     // Set undefined values to their defaults
     const edgeDefaults = getEdgeDefaults()
     // @ts-ignore

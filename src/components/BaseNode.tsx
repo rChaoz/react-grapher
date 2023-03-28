@@ -4,7 +4,6 @@ import {NODE_CONTAINER_CLASS, NODE_HANDLE_CONTAINER_CLASS} from "../util/constan
 import {Property} from "csstype";
 import styled from "@emotion/styled";
 import {GrapherContext} from "../context/GrapherContext";
-import {CallbacksContext} from "../context/CallbacksContext";
 import {errorUnknownNode} from "../util/log";
 import {hasProperty, resolveValue, resolveValues, splitCSSCalc} from "../util/utils";
 import {Node, NodeHandleInfo} from "../data/Node";
@@ -72,7 +71,6 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
 
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseNodeProps) {
     const grapherContext = useContext(GrapherContext)
-    const listeners = useContext(CallbacksContext)
     const bounds = useContext(BoundsContext)
 
     const ref = useRef<HTMLDivElement>(null)
@@ -107,8 +105,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             const bottom = top + node.height, right = left + node.width
             if (top < s.bounds.top || bottom > s.bounds.bottom || left < s.bounds.left || right > s.bounds.right) grapherContext.recalculateBounds()
             // Update node position on-screen
-            container.style.left = s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2 + "px"
-            container.style.top = s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2 + "px"
+            container.style.left = Math.round(s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2) + "px"
+            container.style.top = Math.round(s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2) + "px"
         }
 
         // Update border radius
@@ -296,25 +294,27 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
     // Set listeners
     useEffect(() => {
         const elem = ref.current
-        if (elem == null || node == null || grapherContext.static) return
+        if (elem == null || node == null || grapherContext.isStatic) return
 
-        elem.addEventListener("pointerdown", listeners.onObjectPointerDown)
-        elem.addEventListener("pointerup", listeners.onObjectPointerUp)
+        // Destruct to ensure callbacks don't change until onEffect cleanup runs
+        const {onObjectPointerDown, onObjectPointerUp} = grapherContext
+        elem.addEventListener("pointerdown", onObjectPointerDown)
+        elem.addEventListener("pointerup", onObjectPointerUp)
         const observer = new ResizeObserver(recalculateNode)
         observer.observe(elem)
         return () => {
-            elem.removeEventListener("pointerdown", listeners.onObjectPointerDown)
-            elem.removeEventListener("pointerup", listeners.onObjectPointerUp)
+            elem.removeEventListener("pointerdown", onObjectPointerDown)
+            elem.removeEventListener("pointerup", onObjectPointerUp)
             observer.disconnect()
         }
-    }, [grapherContext, listeners, node, recalculateNode])
+    }, [grapherContext, node, recalculateNode])
 
     // Additionally, recalculateNode() should be called any time any prop changes
     useEffect(recalculateNode, [recalculateNode, id, classes, absolutePosition, grabbed, selected])
 
     // Set listeners for resizable node (if needed)
     useEffect(() => {
-        if (ref.current == null || !resizable || grapherContext.static) return
+        if (ref.current == null || !resizable || grapherContext.isStatic) return
         const parent = ref.current.parentElement
         if (parent == null) return
 
@@ -322,7 +322,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
 
         parent.addEventListener("pointerdown", onResizeStart)
         return () => parent.removeEventListener("pointerdown", onResizeStart)
-    }, [grapherContext.onResizeStart, grapherContext.static, ref, resizable])
+    }, [grapherContext.onResizeStart, grapherContext.isStatic, ref, resizable])
 
     // Data that needs to be passed to NodeContent
     const nodeContextValue = useMemo<NodeContextValue>(() => ({
@@ -334,9 +334,9 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         grabbed,
     }), [ref, grapherContext, nodeID, classes, selected, grabbed])
 
-    return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={grapherContext.static ? undefined : resize} resizable={resizable} style={{
-        left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
-        top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
+    return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={grapherContext.isStatic ? undefined : resize} resizable={resizable} style={{
+        left: Math.round(absolutePosition.x - bounds.x - (node?.width ?? 0) / 2),
+        top: Math.round(absolutePosition.y - bounds.y - (node?.height ?? 0) / 2),
     }}>
         <NodeContext.Provider value={nodeContextValue}>
             {children}

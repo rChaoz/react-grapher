@@ -2,7 +2,7 @@ import {GrapherChange} from "./GrapherChange";
 import React from "react";
 import {NodeProps} from "../components/BaseNode";
 import {SimpleNode, SimpleNodeData} from "../components/SimpleNode";
-import {checkInvalidID} from "../util/log";
+import {checkErrorInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 import {Property} from "csstype";
 // Used by documentation
@@ -184,7 +184,7 @@ function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "all
 export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
     const i = target as NodeImpl<any>
     if (i.isInitialized) return
-    checkInvalidID("node", i.id)
+    checkErrorInvalidID("node", i.id)
     // Set undefined values to their defaults
     const nodeDefaults = getNodeDefaults()
     // @ts-ignore

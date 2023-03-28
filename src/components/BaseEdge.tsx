@@ -7,7 +7,6 @@ import {Node} from "../data/Node";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {Edge} from "../data/Edge";
 import {errorQueryFailed, errorUnknownEdge, warnInvalidEdgeLabelPos} from "../util/log";
-import {CallbacksContext} from "../context/CallbacksContext";
 import styled from "@emotion/styled";
 import {BoundsContext} from "../context/BoundsContext";
 import {useCallbackState} from "../hooks/useCallbackState";
@@ -92,7 +91,6 @@ const BaseG = styled.g<{static?: boolean}>`
 
 export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
     const grapherContext = useContext(GrapherContext)
-    const listeners = useContext(CallbacksContext)
     const s = useCallbackState({
         bounds: useContext(BoundsContext)
     })
@@ -114,10 +112,11 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
                 || edge.bounds.x < s.bounds.left || edge.bounds.x + edge.bounds.width > s.bounds.right) grapherContext.recalculateBounds()
         }
 
-        // Add listeners
-        if (!grapherContext.static) {
-            elem.addEventListener("pointerdown", listeners.onObjectPointerDown)
-            elem.addEventListener("pointerup", listeners.onObjectPointerUp)
+        // Add listeners (destruct to ensure they do not modify, so we can remove the same listeners later(
+        const {isStatic, onObjectPointerUp, onObjectPointerDown} = grapherContext
+        if (!isStatic) {
+            elem.addEventListener("pointerdown", onObjectPointerDown)
+            elem.addEventListener("pointerup", onObjectPointerUp)
         }
 
         // Label stuff
@@ -148,14 +147,14 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
             labelBg.setAttribute("height", String(labelBounds.height + p * 2))
         }
 
-        if (!grapherContext.static) return () => {
-            elem.removeEventListener("pointerdown", listeners.onObjectPointerDown)
-            elem.removeEventListener("pointerup", listeners.onObjectPointerUp)
+        if (!isStatic) return () => {
+            elem.removeEventListener("pointerdown", onObjectPointerDown)
+            elem.removeEventListener("pointerup", onObjectPointerUp)
         }
-    }, [s, grapherContext, listeners, edge, id, path, grabbed, selected])
+    }, [s, grapherContext, edge, id, path, grabbed, selected])
 
     const baseID = grapherContext.id
-    return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={grapherContext.static}>
+    return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={grapherContext.isStatic}>
         <path d={path} className={EDGE_HANDLE_CLASS} stroke={"transparent"} fill={"none"} strokeWidth={15}/>
         <path d={path} className={EDGE_PATH_CLASS}
               markerStart={markerStart != null ? `url(#${baseID}-${markerStart})` : undefined}
