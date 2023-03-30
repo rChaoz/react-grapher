@@ -36,6 +36,7 @@ import {changeZoom, fitView, parseAllowedConnections, processDomElement, sendCha
 import {useCallbackState} from "../../hooks/useCallbackState";
 import {useUpdate} from "../../hooks/useUpdate";
 import {useSelection} from "../../hooks/useSelection";
+import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext";
 
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
@@ -683,7 +684,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }, [props.fitViewOnResize])
 
     // Internal context and object event listeners
-    const contextValue: InternalContextValue = useMemo(() => ({
+    const internalContext: InternalContextValue = useMemo(() => ({
         id,
         isStatic: props.static,
         nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE,
@@ -794,10 +795,15 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }), [id, props.static, config.nodesOverEdges])
     // This is not put in the useMemo above because nodes/edges objects changing should not trigger a context value change & subsequent re-renders
     // As the result of the function itself does not change
-    contextValue.getNode = nodes.internalMap.get.bind(nodes.internalMap)
-    contextValue.getEdge = edges.internalMap.get.bind(edges.internalMap)
+    internalContext.getNode = nodes.internalMap.get.bind(nodes.internalMap)
+    internalContext.getEdge = edges.internalMap.get.bind(edges.internalMap)
 
-    return <BoundsContext.Provider value={bounds}><InternalContext.Provider value={contextValue}>
+    // Context for other components outside the Viewport
+    const grapherContext: GrapherContextValue = useMemo(() => ({
+        nodes: nodes as any, edges: edges as any, selection, controller
+    }), [nodes, edges, selection, controller])
+
+    return <BoundsContext.Provider value={bounds}><InternalContext.Provider value={internalContext}><GrapherContext.Provider value={grapherContext}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
                 <Nodes className={NODES_CLASS} nodesOverEdges={config.nodesOverEdges}>
@@ -818,5 +824,5 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             </GrapherViewport>
             {props.children}
         </GraphDiv>
-    </InternalContext.Provider></BoundsContext.Provider>
+    </GrapherContext.Provider></InternalContext.Provider></BoundsContext.Provider>
 }
