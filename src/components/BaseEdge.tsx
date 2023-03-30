@@ -1,5 +1,5 @@
 import React, {useContext, useEffect, useRef} from "react";
-import {GrapherContext} from "../context/GrapherContext";
+import {InternalContext} from "../context/InternalContext";
 import {cx} from "@emotion/css";
 import {EDGE_CLASS, EDGE_HANDLE_CLASS, EDGE_LABEL_BACKGROUND_CLASS, EDGE_LABEL_CLASS, EDGE_PATH_CLASS} from "../util/constants";
 import {Node} from "../data/Node";
@@ -90,7 +90,7 @@ const BaseG = styled.g<{static?: boolean}>`
 `
 
 export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
-    const grapherContext = useContext(GrapherContext)
+    const grapherContext = useContext(InternalContext)
     const s = useCallbackState({
         bounds: useContext(BoundsContext)
     })

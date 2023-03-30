@@ -4,7 +4,7 @@ import {EdgeImpl} from "../data/Edge";
 import {Z_INDEX_NODE} from "../util/constants";
 import {CONTEXT_ERROR, criticalInternalContext} from "../util/log";
 
-export interface GrapherContextValue {
+export interface InternalContextValue {
     id: string
     nodeZIndex: number
     isStatic?: boolean
@@ -31,7 +31,7 @@ export interface GrapherContextValue {
  * which is an issue. To fix this, each Node (or any other element that needs a DOM ID) will have its ID prepended with the owning ReactGrapher ID, which cannot
  * be empty (if not provided, a random ID is used for React 18 or later, otherwise, "react-grapher" is used, which might cause duplicated DOM ID issues).
  */
-export const GrapherContext = React.createContext<GrapherContextValue>(
+export const InternalContext = React.createContext<InternalContextValue>(
     {
         id: CONTEXT_ERROR, nodeZIndex: Z_INDEX_NODE, isStatic: true,
         getNode() {
@@ -42,20 +42,10 @@ export const GrapherContext = React.createContext<GrapherContextValue>(
             criticalInternalContext()
             return undefined
         },
-        rerenderEdges() {
-            criticalInternalContext()
-        },
-        recalculateBounds() {
-            criticalInternalContext()
-        },
-        onResizeStart() {
-            criticalInternalContext()
-        },
-        onObjectPointerDown() {
-            criticalInternalContext()
-        },
-        onObjectPointerUp() {
-            criticalInternalContext()
-        },
+        rerenderEdges: criticalInternalContext,
+        recalculateBounds: criticalInternalContext,
+        onResizeStart: criticalInternalContext,
+        onObjectPointerDown: criticalInternalContext,
+        onObjectPointerUp: criticalInternalContext,
     }
 )

@@ -1,5 +1,5 @@
 import React, {forwardRef, useContext} from "react";
-import {GrapherContext} from "../context/GrapherContext";
+import {InternalContext} from "../context/InternalContext";
 
 // SVG props with ID required
 export type MarkerProps = React.ComponentPropsWithoutRef<"marker"> & { id: string }
@@ -24,6 +24,6 @@ export type MarkerProps = React.ComponentPropsWithoutRef<"marker"> & { id: strin
  * ```
  */
 export const Marker = forwardRef<SVGMarkerElement, MarkerProps>(function Marker(props, ref) {
-    const baseID = useContext(GrapherContext).id
+    const baseID = useContext(InternalContext).id
     return <marker ref={ref} {...props} id={`${baseID}-${props.id}`}/>
 })

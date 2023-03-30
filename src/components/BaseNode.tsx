@@ -3,7 +3,7 @@ import {BoundsContext} from "../context/BoundsContext";
 import {NODE_CONTAINER_CLASS, NODE_HANDLE_CONTAINER_CLASS} from "../util/constants";
 import {Property} from "csstype";
 import styled from "@emotion/styled";
-import {GrapherContext} from "../context/GrapherContext";
+import {InternalContext} from "../context/InternalContext";
 import {errorUnknownNode} from "../util/log";
 import {hasProperty, resolveValue, resolveValues, splitCSSCalc} from "../util/utils";
 import {Node, NodeHandleInfo} from "../data/Node";
@@ -70,7 +70,7 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
 `
 
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseNodeProps) {
-    const grapherContext = useContext(GrapherContext)
+    const grapherContext = useContext(InternalContext)
     const bounds = useContext(BoundsContext)
 
     const ref = useRef<HTMLDivElement>(null)

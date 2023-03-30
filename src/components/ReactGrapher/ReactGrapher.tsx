@@ -22,7 +22,7 @@ import {GrapherConfig, GrapherConfigSet, withDefaultsConfig} from "../../data/Gr
 import {GrapherChange} from "../../data/GrapherChange";
 import {checkErrorInvalidID, criticalNoViewport, errorUnknownNode, warnIllegalConnection, warnNoReactGrapherID, warnUnknownHandle} from "../../util/log";
 import {BoundsContext} from "../../context/BoundsContext";
-import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext";
+import {InternalContext, InternalContextValue} from "../../context/InternalContext";
 import {SimpleEdge} from "../SimpleEdge";
 import {getNodeIntersection} from "../../util/edgePath";
 import {deepEquals, expandRect, localMemo} from "../../util/utils";
@@ -683,7 +683,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }, [props.fitViewOnResize])
 
     // Internal context and object event listeners
-    const contextValue: GrapherContextValue = useMemo(() => ({
+    const contextValue: InternalContextValue = useMemo(() => ({
         id,
         isStatic: props.static,
         nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE,
@@ -797,7 +797,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     contextValue.getNode = nodes.internalMap.get.bind(nodes.internalMap)
     contextValue.getEdge = edges.internalMap.get.bind(edges.internalMap)
 
-    return <BoundsContext.Provider value={bounds}><GrapherContext.Provider value={contextValue}>
+    return <BoundsContext.Provider value={bounds}><InternalContext.Provider value={contextValue}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport controller={controller}>
                 <Nodes className={NODES_CLASS} nodesOverEdges={config.nodesOverEdges}>
@@ -818,5 +818,5 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             </GrapherViewport>
             {props.children}
         </GraphDiv>
-    </GrapherContext.Provider></BoundsContext.Provider>
+    </InternalContext.Provider></BoundsContext.Provider>
 }
