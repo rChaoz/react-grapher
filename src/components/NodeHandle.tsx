@@ -126,28 +126,28 @@ export interface NodeHandlePropsTopLeft extends NodeHandlePropsBase {
     left: Property.Left<number>
 }
 
+interface HandleDivProps {
+    width: Property.Width<number> | undefined
+    height: Property.Height<number> | undefined
+}
+
 const HandleContainerDiv = styled.div`
   position: absolute;
-  box-sizing: border-box;
 `
 
 const HandleDiv = styled.div<{ zIndex: number }>`
-  position: absolute;
-  top: 0;
-  left: 0;
+  position: relative;
   z-index: ${props => props.zIndex};
-  box-sizing: border-box;
-  transform: translate(-50%, -50%);
 `
 
-const HandleBoxDiv = styled.div<{ width: Property.Width<number> | undefined, height: Property.Height<number> | undefined }>`
+const HandleBoxDiv = styled.div<HandleDivProps>`
   position: absolute;
-  top: 0;
-  left: 0;
   z-index: ${Z_INDEX_HANDLE_BOX};
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   width: ${props => convertToCSSLength(props.width ?? 15)};
   height: ${props => convertToCSSLength(props.height ?? 15)};
-  transform: translate(-50%, -50%);
 `
 
 export function NodeHandle(props: NodeHandleProps) {

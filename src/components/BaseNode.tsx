@@ -105,8 +105,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             const bottom = top + node.height, right = left + node.width
             if (top < s.bounds.top || bottom > s.bounds.bottom || left < s.bounds.left || right > s.bounds.right) grapherContext.recalculateBounds()
             // Update node position on-screen
-            container.style.left = Math.round(s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2) + "px"
-            container.style.top = Math.round(s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2) + "px"
+            container.style.left = s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2 + "px"
+            container.style.top = s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2 + "px"
         }
 
         // Update border radius
@@ -278,8 +278,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
 
             // If requested, update the handle's DOM position
             if (useNodeBorder != null) {
-                h.style.left = x + "px"
-                h.style.top = y + "px"
+                h.style.left = x - h.offsetWidth / 2 + "px"
+                h.style.top = y - h.offsetHeight / 2 + "px"
             }
 
             // Get handle roles
@@ -335,8 +335,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
     }), [ref, grapherContext, nodeID, classes, selected, grabbed])
 
     return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={grapherContext.isStatic ? undefined : resize} resizable={resizable} style={{
-        left: Math.round(absolutePosition.x - bounds.x - (node?.width ?? 0) / 2),
-        top: Math.round(absolutePosition.y - bounds.y - (node?.height ?? 0) / 2),
+        left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
+        top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
     }}>
         <NodeContext.Provider value={nodeContextValue}>
             {children}

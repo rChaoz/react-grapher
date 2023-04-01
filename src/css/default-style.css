@@ -62,8 +62,8 @@
 
 /* Node Handle */
 .react-grapher-node-handle {
-    width: 6px;
-    height: 6px;
+    width: 4px;
+    height: 4px;
     border-radius: 50%;
     background-color: var(--react-grapher-handle-background);
     border: 1px solid var(--react-grapher-handle-border);
