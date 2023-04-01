@@ -9,6 +9,7 @@
       <excludeFolder url="file://$MODULE_DIR$/examples/build" />
       <excludeFolder url="file://$MODULE_DIR$/coverage" />
       <excludeFolder url="file://$MODULE_DIR$/.yarn" />
+      <excludeFolder url="file://$MODULE_DIR$/examples/.yarn/cache" />
       <excludePattern pattern="yarn.lock" />
       <excludePattern pattern="yarn-error.log" />
     </content>
