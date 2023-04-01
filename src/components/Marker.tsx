@@ -1,6 +1,6 @@
 import React, {forwardRef, useContext} from "react";
-import {InternalContext} from "../context/InternalContext";
-import {CONTEXT_ERROR, criticalInternalContext} from "../util/log";
+import {errorGrapherContext} from "../util/log";
+import {GrapherContext} from "../context/GrapherContext";
 
 // SVG props with ID required
 export type MarkerProps = React.ComponentPropsWithoutRef<"marker"> & { id: string }
@@ -25,7 +25,7 @@ export type MarkerProps = React.ComponentPropsWithoutRef<"marker"> & { id: strin
  * ```
  */
 export const Marker = forwardRef<SVGMarkerElement, MarkerProps>(function Marker(props, ref) {
-    const baseID = useContext(InternalContext).id
-    if (baseID === CONTEXT_ERROR) criticalInternalContext()
-    return <marker ref={ref} {...props} id={`${baseID}-${props.id}`}/>
+    const context = useContext(GrapherContext)
+    if (context == null) errorGrapherContext("Marker")
+    return <marker ref={ref} {...props} id={`${context?.id ?? "context-error"}-${props.id}`}/>
 })

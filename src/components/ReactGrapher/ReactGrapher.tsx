@@ -800,8 +800,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Context for other components outside the Viewport
     const grapherContext: GrapherContextValue = useMemo(() => ({
-        nodes: nodes as any, edges: edges as any, selection, controller
-    }), [nodes, edges, selection, controller])
+        id, nodes: nodes as any, edges: edges as any, selection, controller
+    }), [id, nodes, edges, selection, controller])
 
     return <BoundsContext.Provider value={bounds}><InternalContext.Provider value={internalContext}><GrapherContext.Provider value={grapherContext}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>

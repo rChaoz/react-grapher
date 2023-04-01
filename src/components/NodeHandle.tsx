@@ -8,7 +8,7 @@ import {Property} from "csstype";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherConfig} from "../data/GrapherConfig";
 import {NodeContext} from "../context/NodeContext";
-import {CONTEXT_ERROR, errorComponentOutsideContext} from "../util/log";
+import {errorComponentOutsideContext} from "../util/log";
 
 export type NodeHandleProps = NodeHandlePropsPositioned | NodeHandlePropsTopLeft
 
@@ -152,7 +152,7 @@ const HandleBoxDiv = styled.div<HandleDivProps>`
 
 export function NodeHandle(props: NodeHandleProps) {
     const context = useContext(NodeContext)
-    if (context.id === CONTEXT_ERROR) errorComponentOutsideContext("NodeHandle", "BaseNode")
+    if (context.id == null) errorComponentOutsideContext("NodeHandle", "BaseNode")
 
     let customPosition: { top: string, left: string } | undefined
     let position: string | undefined = undefined, name = props.name

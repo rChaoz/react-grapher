@@ -2,7 +2,7 @@ import React from "react";
 import {NodeImpl} from "../data/Node"
 import {EdgeImpl} from "../data/Edge";
 import {Z_INDEX_NODE} from "../util/constants";
-import {CONTEXT_ERROR, criticalInternalContext} from "../util/log";
+import {criticalInternalContext} from "../util/log";
 
 export interface InternalContextValue {
     id: string
@@ -33,7 +33,7 @@ export interface InternalContextValue {
  */
 export const InternalContext = React.createContext<InternalContextValue>(
     {
-        id: CONTEXT_ERROR, nodeZIndex: Z_INDEX_NODE, isStatic: true,
+        id: undefined as any, nodeZIndex: Z_INDEX_NODE, isStatic: true,
         getNode() {
             criticalInternalContext()
             return undefined

@@ -25,7 +25,9 @@ export function criticalInternalContext() {
 
 // Errors
 
-export const CONTEXT_ERROR = "context-error"
+export function errorGrapherContext(component: string) {
+    error(component + " tried to use GrapherContext but none was found! Make sure you place all ReactGrapher related components as child nodes of <ReactGrapher>!")
+}
 
 export function checkErrorInvalidID(target: string, id: string) {
     if (id.match(/^[a-zA-Z0-9\-_]+$/)) return
