@@ -1,6 +1,6 @@
 /* Variables */
 .react-grapher {
-    --react-grapher-background: #f1f1f5;
+    --react-grapher-background: #f5f5f8;
     --react-grapher-node-background: #ce4c13;
     --react-grapher-node-background-hover: #e1581c;
     --react-grapher-node-background-active: #bb440f;
