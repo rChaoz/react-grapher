@@ -125,6 +125,7 @@
 
 /* Edge Label Background */
 .react-grapher-edge-label-background {
+    stroke: none;
     fill: var(--react-grapher-background);
 }
 

@@ -70,14 +70,14 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
 `
 
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseNodeProps) {
-    const grapherContext = useContext(InternalContext)
+    const internals = useContext(InternalContext)
     const bounds = useContext(BoundsContext)
 
     const ref = useRef<HTMLDivElement>(null)
-    const node = grapherContext.getNode(id)
+    const node = internals.getNode(id)
     if (node == null) errorUnknownNode(id)
     const resizable = resize != null && resize !== "none" && resize !== "initial"
-    const nodeID = `${grapherContext.id}n-${id}`
+    const nodeID = `${internals.id}n-${id}`
 
     // To allow recalculateNode to access new position & bounds without being re-created
     const s = useCallbackState({absolutePosition, bounds})
@@ -99,11 +99,11 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         }
 
         if (sizeChanged) {
-            grapherContext.rerenderEdges()
+            internals.rerenderEdges()
             // If node is out of bounds, need to recalculate them
             const top = node.position.y - node.height / 2, left = node.position.x - node.width / 2
             const bottom = top + node.height, right = left + node.width
-            if (top < s.bounds.top || bottom > s.bounds.bottom || left < s.bounds.left || right > s.bounds.right) grapherContext.recalculateBounds()
+            if (top < s.bounds.top || bottom > s.bounds.bottom || left < s.bounds.left || right > s.bounds.right) internals.recalculateBounds()
             // Update node position on-screen
             container.style.left = s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2 + "px"
             container.style.top = s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2 + "px"
@@ -139,7 +139,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         if (borderChanged) {
             node.border = border
             node.borderRadius = bRadius
-            grapherContext.rerenderEdges()
+            internals.rerenderEdges()
         }
 
         // Get handles
@@ -160,7 +160,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         }
         if (!handlesChanged) return
 
-        grapherContext.rerenderEdges()
+        internals.rerenderEdges()
         // Set handles on Node object
         const handles: NodeHandleInfo[] = []
         let handleNum = 1; // to name nameless handles
@@ -289,15 +289,15 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2})
         }
         node.handles = handles
-    }, [grapherContext, node])
+    }, [internals, node])
 
     // Set listeners
     useEffect(() => {
         const elem = ref.current
-        if (elem == null || node == null || grapherContext.isStatic) return
+        if (elem == null || node == null || internals.isStatic) return
 
         // Destruct to ensure callbacks don't change until onEffect cleanup runs
-        const {onObjectPointerDown, onObjectPointerUp} = grapherContext
+        const {onObjectPointerDown, onObjectPointerUp} = internals
         elem.addEventListener("pointerdown", onObjectPointerDown)
         elem.addEventListener("pointerup", onObjectPointerUp)
         const observer = new ResizeObserver(recalculateNode)
@@ -307,34 +307,34 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             elem.removeEventListener("pointerup", onObjectPointerUp)
             observer.disconnect()
         }
-    }, [grapherContext, node, recalculateNode])
+    }, [internals, node, recalculateNode])
 
     // Additionally, recalculateNode() should be called any time any prop changes
     useEffect(recalculateNode, [recalculateNode, id, classes, absolutePosition, grabbed, selected])
 
     // Set listeners for resizable node (if needed)
     useEffect(() => {
-        if (ref.current == null || !resizable || grapherContext.isStatic) return
+        if (ref.current == null || !resizable || internals.isStatic) return
         const parent = ref.current.parentElement
         if (parent == null) return
 
-        const onResizeStart = grapherContext.onResizeStart
+        const onResizeStart = internals.onResizeStart
 
         parent.addEventListener("pointerdown", onResizeStart)
         return () => parent.removeEventListener("pointerdown", onResizeStart)
-    }, [grapherContext.onResizeStart, grapherContext.isStatic, ref, resizable])
+    }, [internals.onResizeStart, internals.isStatic, ref, resizable])
 
     // Data that needs to be passed to NodeContent
     const nodeContextValue = useMemo<NodeContextValue>(() => ({
         id: nodeID,
         ref,
-        baseZIndex: grapherContext.nodeZIndex,
+        baseZIndex: internals.nodeZIndex,
         classes,
         selected,
         grabbed,
-    }), [ref, grapherContext, nodeID, classes, selected, grabbed])
+    }), [ref, internals, nodeID, classes, selected, grabbed])
 
-    return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={grapherContext.isStatic ? undefined : resize} resizable={resizable} style={{
+    return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={internals.isStatic ? undefined : resize} resizable={resizable} style={{
         left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
         top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
     }}>

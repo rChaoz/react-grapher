@@ -90,13 +90,13 @@ const BaseG = styled.g<{static?: boolean}>`
 `
 
 export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
-    const grapherContext = useContext(InternalContext)
+    const internals = useContext(InternalContext)
     const s = useCallbackState({
         bounds: useContext(BoundsContext)
     })
 
     const ref = useRef<SVGGraphicsElement>(null)
-    const edge = grapherContext.getEdge(id)
+    const edge = internals.getEdge(id)
     if (edge == null) errorUnknownEdge(id)
 
     useEffect(() => {
@@ -109,11 +109,11 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
             || Math.abs(edge.bounds.width - bounds.width) > 5 || Math.abs(edge.bounds.height - bounds.height) > 5) {
             edge.bounds = bounds
             if (edge.bounds.y < s.bounds.top || edge.bounds.y + edge.bounds.height > s.bounds.bottom
-                || edge.bounds.x < s.bounds.left || edge.bounds.x + edge.bounds.width > s.bounds.right) grapherContext.recalculateBounds()
+                || edge.bounds.x < s.bounds.left || edge.bounds.x + edge.bounds.width > s.bounds.right) internals.recalculateBounds()
         }
 
         // Add listeners (destruct to ensure they do not modify, so we can remove the same listeners later(
-        const {isStatic, onObjectPointerUp, onObjectPointerDown} = grapherContext
+        const {isStatic, onObjectPointerUp, onObjectPointerDown} = internals
         if (!isStatic) {
             elem.addEventListener("pointerdown", onObjectPointerDown)
             elem.addEventListener("pointerup", onObjectPointerUp)
@@ -129,7 +129,7 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
                 if (labelPos < 0 || labelPos > 1) warnInvalidEdgeLabelPos(edge.id, labelElem.dataset.labelPos)
                 else {
                     const pathElem = elem.querySelector<SVGGeometryElement>("." + EDGE_PATH_CLASS)
-                    if (pathElem == null) errorQueryFailed(`#${id}e-${edge.id} .${EDGE_PATH_CLASS}`, `SVG path element of edge ${edge.id}`)
+                    if (pathElem == null) errorQueryFailed(`'.${EDGE_PATH_CLASS}' from element #${elem.id}`, `SVG path element of edge ${edge.id}`)
                     else {
                         const pos = pathElem.getPointAtLength(labelPos * pathElem.getTotalLength())
                         labelElem.setAttribute("x", String(pos.x))
@@ -151,16 +151,16 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
             elem.removeEventListener("pointerdown", onObjectPointerDown)
             elem.removeEventListener("pointerup", onObjectPointerUp)
         }
-    }, [grapherContext, edge, id, path, grabbed, selected])
+    }, [internals, edge, id, path, grabbed, selected])
 
-    const baseID = grapherContext.id
-    return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={grapherContext.isStatic}>
+    const baseID = internals.id
+    return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={internals.isStatic}>
         <path d={path} className={EDGE_HANDLE_CLASS} stroke={"transparent"} fill={"none"} strokeWidth={15}/>
         <path d={path} className={EDGE_PATH_CLASS}
               markerStart={markerStart != null ? `url(#${baseID}-${markerStart})` : undefined}
               markerEnd={markerEnd != null ? `url(#${baseID}-${markerEnd})` : undefined}/>
         {label != null && <>
-            <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={edge?.labelRadius}/>
+            <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={edge?.labelRadius} pointerEvents={internals.isStatic ? "none" : "fill"}/>
             {typeof labelPosition === "number" || labelPosition == null
                 ? <text className={EDGE_LABEL_CLASS} textAnchor={"middle"}
                         dominantBaseline={"middle"} data-label-pos={String(labelPosition)}>{label}</text>
