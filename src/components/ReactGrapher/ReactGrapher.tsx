@@ -40,6 +40,8 @@ import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext"
 
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
+  position: relative;
+  isolation: isolate;
   width: ${props => props.width ?? "100%"};
   height: ${props => props.height ?? "100%"};
 `

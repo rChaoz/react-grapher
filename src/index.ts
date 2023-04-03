@@ -23,6 +23,8 @@ import {NodeHandle, NodeHandleProps, SOURCE, TARGET} from "./components/NodeHand
 import {SimpleNode, SimpleNodeData, SimpleNodeHandle} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
+// Child components
+import {Background, BackgroundProps} from "./components/Background";
 // Other
 import {getNodeIntersection, getStraightEdgePath, getRoundEdgePath} from "./util/edgePath";
 
@@ -45,6 +47,8 @@ export {
     SimpleNode, SimpleNodeData, SimpleNodeHandle,
     BaseEdge, BaseEdgeProps, EdgeProps,
     SimpleEdge, SimpleEdgeData,
+    // Child components
+    Background, BackgroundProps,
     // Others
     getNodeIntersection, getStraightEdgePath, getRoundEdgePath
 }

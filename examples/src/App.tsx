@@ -1,5 +1,5 @@
 import React from 'react';
-import {EdgeData, NodeData, ReactGrapher} from "reactgrapher";
+import {EdgeData, NodeData, ReactGrapher, Background} from "reactgrapher";
 import "reactgrapher/dist/default-style.css"
 import "./App.css"
 
@@ -25,7 +25,9 @@ export default function App() {
         <div style={{
             height: 400,
         }}>
-            <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"}/>
+            <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"}>
+                <Background/>
+            </ReactGrapher>
         </div>
     </div>
 }

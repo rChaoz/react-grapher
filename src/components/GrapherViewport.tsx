@@ -1,7 +1,7 @@
 import React, {useContext} from "react";
 import {Controller} from "../data/Controller";
 import styled from "@emotion/styled";
-import {CONTENT_CLASS, VIEWPORT_CLASS} from "../util/constants";
+import {CONTENT_CLASS, VIEWPORT_CLASS, Z_INDEX_VIEWPORT} from "../util/constants";
 import {BoundsContext} from "../context/BoundsContext";
 
 export interface GrapherViewportProps {
@@ -11,6 +11,7 @@ export interface GrapherViewportProps {
 
 const BaseDiv = styled.div`
   position: relative;
+  z-index: ${Z_INDEX_VIEWPORT};
   width: 100%;
   height: 100%;
   overflow: clip;
