@@ -71,12 +71,12 @@ export function warnNoReactGrapherID() {
     warn("No ID provided to the ReactGrapher component. This could lead to errors if multiple ReactGrapher components are used on the same page.")
 }
 
-export function warnUnknownEdgeType(type: string) {
-    warn(`Edge type passed to DefaultEdge is unknown: edge.data.type = "${type}"`)
+export function warnInvalidPropValue(component: string, prop: string, value: any, candidates?: string[]) {
+    warn(`${prop} passed to ${component} has invalid value: '${value}'.` + (candidates == null ? "" : ` Possible candidates: [${candidates.join()}]`))
 }
 
 export function warnUnknownHandle(edge: string, node: string, handle: string, handles: string[]) {
-    warn(`Edge "${edge}" wants to connect to handle "${handle}" of node "${node}", but this node has no such handle. Possible candidates: [${handles.join()}]`)
+    warn(`Edge '${edge}' wants to connect to handle '${handle}' of node '${node}', but this node has no such handle. Possible candidates: [${handles.join()}]`)
 }
 
 export function warnIllegalConnection(edge: string, sourceHandle: string, sourceRoles: string | string[], targetHandle: string, targetRoles: string | string[]) {
@@ -84,11 +84,7 @@ export function warnIllegalConnection(edge: string, sourceHandle: string, source
         + `target handle ${targetHandle} (with roles ${targetRoles}) has been removed.`)
 }
 
-export function warnInvalidEdgeLabelPos(edge: string, pos: string | undefined) {
-    warn(`Invalid label position for edge "${edge}": ${pos}`)
-}
-
 export function errorParsingAllowedConnections(token: string) {
-    error("Error while parsing config option allowedEdges:")
+    error("Error while parsing config option 'allowedEdges':")
     console.error(token)
 }

@@ -6,7 +6,7 @@ import {Node} from "../data/Node";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {Edge} from "../data/Edge";
-import {errorQueryFailed, errorUnknownEdge, warnInvalidEdgeLabelPos} from "../util/log";
+import {errorQueryFailed, errorUnknownEdge, warnInvalidPropValue} from "../util/log";
 import styled from "@emotion/styled";
 
 export interface BaseEdgeProps {
@@ -120,7 +120,8 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
             // Set position of label
             if ("labelPos" in labelElem.dataset) {
                 const labelPos = Number(labelElem.dataset.labelPos)
-                if (labelPos < 0 || labelPos > 1) warnInvalidEdgeLabelPos(edge.id, labelElem.dataset.labelPos)
+                if (labelPos < 0 || labelPos > 1)
+                    warnInvalidPropValue(`Edge '${edge.id}'`, "labelPosition", labelElem.dataset.labelPos, ["0..1"])
                 else {
                     const pathElem = elem.querySelector<SVGGeometryElement>("." + EDGE_PATH_CLASS)
                     if (pathElem == null) errorQueryFailed(`'.${EDGE_PATH_CLASS}' from element #${elem.id}`, `SVG path element of edge ${edge.id}`)

@@ -1,7 +1,7 @@
 import {BaseEdge, EdgeProps} from "./BaseEdge";
 import React from "react";
-import {getStraightEdgePath, getRoundEdgePath} from "../util/edgePath";
-import {warnUnknownEdgeType} from "../util/log";
+import {getRoundEdgePath, getStraightEdgePath} from "../util/edgePath";
+import {warnInvalidPropValue} from "../util/log";
 
 export type SimpleEdgeData = {
     /**
@@ -28,6 +28,7 @@ export const SimpleEdge = React.memo<EdgeProps<SimpleEdgeData>>(
     function SimpleEdge(props) {
         let path: string
         switch (props.data?.type) {
+            case null:
             case undefined:
             case "straight":
                 path = getStraightEdgePath(props.sourcePos, props.targetPos)
@@ -37,11 +38,9 @@ export const SimpleEdge = React.memo<EdgeProps<SimpleEdgeData>>(
                 break
             default:
                 path = getStraightEdgePath(props.sourcePos, props.targetPos)
-                // Typescript cannot fathom that the undefined case is already dealt with, above, with "case undefined:"
-                // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-                warnUnknownEdgeType(props.data?.type!)
+                warnInvalidPropValue("SimpleEdge", "type", props.data?.type, ["straight", "round"])
                 break
         }
-        return <BaseEdge {...props} path={path} />
+        return <BaseEdge {...props} path={path}/>
     }
 )
