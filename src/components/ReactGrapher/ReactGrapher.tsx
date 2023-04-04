@@ -331,43 +331,41 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     const fitViewBounds = useRef(new DOMRect())
     const [shouldRecalculateBounds, recalculateBounds] = useUpdate()
     useEffect(() => {
-        // This function calculates 2 bounding rects - one that will be used for the DOM size of the container, and 1 that will be used for fitting view
-        const domRect = nodes.length > 0
+        const rect = nodes.length > 0
             ? new DOMRect(nodes[0].position.x, nodes[0].position.y, 0, 0)
             : new DOMRect()
+
+        // Expand bounds rect for every node
+        for (const node of nodes)
+            expandRect(rect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width, height: node.height})
+
 
         // Do edges first as they are the same for both rects
         for (const edge of edges) {
             if (edge.bounds == null) continue
-            expandRect(domRect, edge.bounds)
+            expandRect(rect, edge.bounds)
         }
-        const realRect = new DOMRect(domRect.x, domRect.y, domRect.width, domRect.height)
 
-        for (const node of nodes) {
-            /* Update DOM bounding rect
-            'right' needs to be x + width and not x + width/2 because nodes use translateX(-50%) to center themselves. This means, although its true 'right'
-            is indeed x + width/2, its layout 'right' does not take transforms into account. And, if the node's layout right is out of bounds, text inside the node
-            will start wrapping, and we don't want that! Same thing for 'bottom' - it needs to be y + height, not y + height/2. */
-            expandRect(domRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width * 1.5, height: node.height * 1.5})
-            // Update real rect
-            expandRect(realRect, {x: node.position.x - node.width / 2, y: node.position.y - node.height / 2, width: node.width, height: node.height})
-        }
         // Update bounds for fitView if they changed
-        if (Math.abs(realRect.left - bounds.left) > 5 || Math.abs(realRect.top - bounds.top) > 5
-            || Math.abs(realRect.right - bounds.right) > 5 || Math.abs(realRect.bottom - bounds.bottom) > 5) {
-            fitViewBounds.current = realRect
+        if (Math.abs(rect.left - bounds.left) > 5 || Math.abs(rect.top - bounds.top) > 5
+            || Math.abs(rect.right - bounds.right) > 5 || Math.abs(rect.bottom - bounds.bottom) > 5) {
+            fitViewBounds.current.x = rect.x
+            fitViewBounds.current.y = rect.y
+            fitViewBounds.current.width = rect.width
+            fitViewBounds.current.height = rect.height
             // When bounds change during a fitView, the fitView should repeat after the re-rendering is complete
             if (needFitView.current + 1 === s.controller.fitViewValue) s.controller.fitView()
         }
-        // Enlarge bounds by decent amount to make sure everything fits
-        domRect.x -= 200
-        domRect.y -= 200
-        domRect.width += 400
-        domRect.height += 400
+        // Enlarge bounds by decent amount to make sure everything fits (this is for container div size)
+        rect.x -= 200
+        rect.y -= 200
+        rect.width += 400
+        rect.height += 400
+
         // Update bounds state if bounds changed too much
-        if (Math.abs(domRect.left - bounds.left) > 100 || Math.abs(domRect.top - bounds.top) > 100
-            || Math.abs(domRect.right - bounds.right) > 100 || Math.abs(domRect.bottom - bounds.bottom) > 100) {
-            setBounds(domRect)
+        if (Math.abs(rect.left - bounds.left) > 100 || Math.abs(rect.top - bounds.top) > 100
+            || Math.abs(rect.right - bounds.right) > 100 || Math.abs(rect.bottom - bounds.bottom) > 100) {
+            setBounds(rect)
         }
     }, [shouldRecalculateBounds, bounds, nodes, edges])
 

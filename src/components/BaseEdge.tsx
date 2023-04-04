@@ -8,8 +8,6 @@ import {Node} from "../data/Node";
 import {Edge} from "../data/Edge";
 import {errorQueryFailed, errorUnknownEdge, warnInvalidEdgeLabelPos} from "../util/log";
 import styled from "@emotion/styled";
-import {BoundsContext} from "../context/BoundsContext";
-import {useCallbackState} from "../hooks/useCallbackState";
 
 export interface BaseEdgeProps {
     /**
@@ -85,15 +83,12 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
     targetHandle: string | null | undefined
 }
 
-const BaseG = styled.g<{static?: boolean}>`
+const BaseG = styled.g<{ static?: boolean }>`
   pointer-events: ${props => props.static ? "none" : "stroke"};
 `
 
 export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
     const internals = useContext(InternalContext)
-    const s = useCallbackState({
-        bounds: useContext(BoundsContext)
-    })
 
     const ref = useRef<SVGGraphicsElement>(null)
     const edge = internals.getEdge(id)
@@ -105,11 +100,10 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
 
         // Update edge size if it has changed
         const bounds = elem.getBBox()
-        if (Math.abs(edge.bounds.x - bounds.x) > 3 || Math.abs(edge.bounds.y - bounds.y) > 3
-            || Math.abs(edge.bounds.width - bounds.width) > 5 || Math.abs(edge.bounds.height - bounds.height) > 5) {
+        if (Math.abs(edge.bounds.x - bounds.x) > 2 || Math.abs(edge.bounds.y - bounds.y) > 2
+            || Math.abs(edge.bounds.width - bounds.width) > 4 || Math.abs(edge.bounds.height - bounds.height) > 4) {
             edge.bounds = bounds
-            if (edge.bounds.y < s.bounds.top || edge.bounds.y + edge.bounds.height > s.bounds.bottom
-                || edge.bounds.x < s.bounds.left || edge.bounds.x + edge.bounds.width > s.bounds.right) internals.recalculateBounds()
+            internals.recalculateBounds()
         }
 
         // Add listeners (destruct to ensure they do not modify, so we can remove the same listeners later(

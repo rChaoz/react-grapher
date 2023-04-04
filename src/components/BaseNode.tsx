@@ -79,7 +79,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
     const resizable = resize != null && resize !== "none" && resize !== "initial"
     const nodeID = `${internals.id}n-${id}`
 
-    // To allow recalculateNode to access new position & bounds without being re-created
+    // To allow recalculateNode to access new position without having to re-create callback
     const s = useCallbackState({absolutePosition, bounds})
 
     // Function to notify ReactGrapher of changes to this node (size, border radius)
@@ -100,10 +100,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
 
         if (sizeChanged) {
             internals.rerenderEdges()
-            // If node is out of bounds, need to recalculate them
-            const top = node.position.y - node.height / 2, left = node.position.x - node.width / 2
-            const bottom = top + node.height, right = left + node.width
-            if (top < s.bounds.top || bottom > s.bounds.bottom || left < s.bounds.left || right > s.bounds.right) internals.recalculateBounds()
+            internals.recalculateBounds()
             // Update node position on-screen
             container.style.left = s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2 + "px"
             container.style.top = s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2 + "px"
