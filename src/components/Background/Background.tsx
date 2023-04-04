@@ -1,12 +1,13 @@
 import React, {useContext} from "react";
 import styled from "@emotion/styled";
 import {GrapherContext} from "../../context/GrapherContext";
-import {errorGrapherContext} from "../../util/log";
+import {errorGrapherContext, warnInvalidPropValue} from "../../util/log";
 import {BACKGROUND_CLASS, Z_INDEX_BACKGROUND} from "../../util/constants";
 import {PatternLines} from "./PatternLines";
 import {DataType} from "csstype";
 import {cx} from "@emotion/css";
 import {PatternDots} from "./PatternDots";
+import {PatternGrid} from "./PatternGrid";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
 export type SvgPaint = "none" | "context-fill" | "context-stroke" | DataType.NamedColor | string & {}
@@ -23,7 +24,7 @@ export interface BackgroundProps {
     /**
      * Background pattern. Defaults to "dots".
      */
-    pattern?: "lines" | "dots"
+    pattern?: "lines" | "dots" | "grid"
     /**
      * Color used for background {@link pattern}. If not provided, the chosen pattern's default will be used.
      */
@@ -64,7 +65,7 @@ const patternSizeMap = {
     "xl": 2.5,
 }
 
-// TODO More background patterns
+// TODO More background patterns, customize strokeWidth, rotation
 export function Background({id, className, pattern, color, size}: BackgroundProps) {
     const grapherContext = useContext(GrapherContext)
     if (grapherContext == null) {
@@ -80,12 +81,18 @@ export function Background({id, className, pattern, color, size}: BackgroundProp
     let p
     const pSize = typeof size === "number" ? size : patternSizeMap[size ?? "md"]
     const xShift = -viewport.centerX * viewport.zoom, yShift = -viewport.centerY * viewport.zoom
-    switch (pattern ?? "dots") {
+    switch (pattern) {
         case "lines":
             p = <PatternLines id={pID} color={color} scale={viewport.zoom} size={pSize} xShift={xShift} yShift={yShift}/>
             break
         case "dots":
             p = <PatternDots id={pID} color={color} scale={viewport.zoom} size={pSize} xShift={xShift} yShift={yShift}/>
+            break
+        case "grid":
+            p = <PatternGrid id={pID} color={color} scale={viewport.zoom} size={pSize} xShift={xShift} yShift={yShift}/>
+            break
+        default:
+            warnInvalidPropValue("Background", "pattern", pattern, ["lines", "dots", "grid"])
             break
     }
 
