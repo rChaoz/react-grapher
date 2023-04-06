@@ -36,6 +36,31 @@ export interface Selection {
     setEdgeSelected(node: string, selected: boolean, newSelection?: boolean): void
 
     /**
+     * Selects all nodes
+     */
+    selectAllNodes(): void
+
+    /**
+     * Deselects all nodes
+     */
+    deselectAllNodes(): void
+
+    /**
+     * Selects all edges
+     */
+    selectAllEdges(): void
+
+    /**
+     * Deselects all edges
+     */
+    deselectAllEdges(): void
+
+    /**
+     * Selects everything
+     */
+    selectAll(): void
+
+    /**
      * Deselect all nodes and edges
      */
     deselectAll(): void

@@ -100,6 +100,8 @@ export function Background({id, className, pattern, color, size, strokeWidth, an
         const sizeMul = typeof size === "number" ? size : patternSizeMap[size ?? "md"]
         const strokeWidthMul = strokeWidth ?? 1
         switch (pattern) {
+            case null:
+            case undefined:
             case "grid":
                 return patternGrid(color, strokeWidthMul, sizeMul)
             case "lines":

@@ -2,15 +2,15 @@
 const TAG = "[ReactGrapher]"
 
 function critical(...message: any) {
-    console.error(TAG + " - CRITICAL: ", message)
+    console.error(TAG + " - CRITICAL:", message)
 }
 
 function error(...message: any) {
-    console.error(TAG + " - ERROR: ", ...message)
+    console.error(TAG + " - ERROR:", ...message)
 }
 
 function warn(...message: any) {
-    console.warn(TAG + " - WARN: ", ...message)
+    console.warn(TAG + " - WARN:", ...message)
 }
 
 // Critical errors

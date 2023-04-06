@@ -60,6 +60,22 @@ export function useSelection<N, E>(nodes: Nodes<N>, edges: Edges<E>): Selection 
                 if (selected) this.setEdgesSelection(edgesSelection.concat(id))
             }
         },
+        selectAllNodes() {
+            this.setNodesSelection(nodes.map(node => node.id))
+        },
+        deselectAllNodes() {
+            this.setNodesSelection([])
+        },
+        selectAllEdges() {
+            this.setEdgesSelection(edges.map(edge => edge.id))
+        },
+        deselectAllEdges() {
+            this.setEdgesSelection([])
+        },
+        selectAll() {
+            this.selectAllNodes()
+            this.selectAllEdges()
+        },
         deselectAll() {
             this.setNodesSelection([])
             this.setEdgesSelection([])

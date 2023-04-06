@@ -587,9 +587,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                             node: n,
                         })
                     }
-                } else s.selection.setNodesSelection([])
+                } else s.selection.deselectAllNodes() // if an unselected node is moved, move just that one, deselect the others
                 // Deselect edges TODO should edges stay selected?
-                s.selection.setEdgesSelection([])
+                s.selection.deselectAllEdges()
 
                 sendChanges(changes, s)
             }
@@ -789,7 +789,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 }
             }
         },
-        // Null because it's set below
+        // Doesn't matter because it's set below
+        nodeBeingResized: false,
         getNode: null as any,
         getEdge: null as any,
     }), [id, props.static, config.nodesOverEdges])
@@ -797,6 +798,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // As the result of the function itself does not change
     internalContext.getNode = nodes.internalMap.get.bind(nodes.internalMap)
     internalContext.getEdge = edges.internalMap.get.bind(edges.internalMap)
+    internalContext.nodeBeingResized = grabbed.type === "resizing"
 
     // Context for other components outside the Viewport
     const grapherContext: GrapherContextValue = useMemo(() => ({
