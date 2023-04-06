@@ -26,7 +26,7 @@ export default function App() {
             height: 400,
         }}>
             <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"}>
-                <Background pattern={"grid"}/>
+                <Background/>
             </ReactGrapher>
         </div>
     </div>
