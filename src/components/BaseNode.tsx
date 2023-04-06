@@ -67,7 +67,12 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
   overflow: ${props => props.resizable ? "auto" : "initial"};
   width: max-content;
   height: max-content;
+  display: flex;
+  justify-content: stretch;
+  align-items: stretch;
 `
+
+type ResizeAnchor = "top-left" | "top" | "top-right" | "right" | "bottom-right" | "bottom" | "bottom-left" | "left"
 
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseNodeProps) {
     const internals = useContext(InternalContext)
@@ -77,7 +82,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
     const node = internals.getNode(id)
     if (node == null) errorUnknownNode(id)
     const resizable = resize != null && resize !== "none" && resize !== "initial"
-    const nodeID = `${internals.id}n-${id}`
+    const resizeAnchor = useRef<ResizeAnchor>("bottom-right")
 
     // To allow recalculateNode to access new position without having to re-create callback
     const s = useCallbackState({absolutePosition, bounds})
@@ -87,6 +92,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         const elem = ref.current
         const container = elem?.parentElement
         if (elem == null || node == null || container == null) return
+        const style = getComputedStyle(elem)
         // Update node size
         let sizeChanged = false
         if (Math.abs(node.width - elem.offsetWidth) > .5) {
@@ -99,16 +105,44 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         }
 
         if (sizeChanged) {
+            if (internals.nodeBeingResized) {
+                // If node is being resized, it needs to be moved to account the resize anchor point
+                const containerStyle = getComputedStyle(container)
+                const left = resolveValue(containerStyle.left, 0)
+                const top = resolveValue(containerStyle.top, 0)
+                /* Calculate new absolute x and y, extracted from formula (same for top/y):
+                 - left = absolutePosition.x - bounds.x - node.width / 2
+                 == results into =>
+                 - absolutePosition.x = left + bounds.x + node.width / 2
+                 However, we need to update node's position, not absolute position (position might be relative to a parent). So, calculate delta:
+                 - deltaX = newAbsolute.x - oldAbsolute.x
+                 We can add this delta to the node's position to correctly set the new position.
+                 */
+                let dx = 0, dy = 0
+                switch (resizeAnchor.current) {
+                    case "bottom-right":
+                        dx = left + s.bounds.x + node.width / 2 - s.absolutePosition.x
+                        dy = top + s.bounds.y + node.height / 2 - s.absolutePosition.y
+                        break
+                    default:
+                        // TODO
+                }
+                // Update state position, to have correct position until next render
+                s.absolutePosition.x += dx
+                s.absolutePosition.y += dy
+                // Update node position
+                node.absolutePosition = new DOMPoint(node.absolutePosition.x + dx, node.absolutePosition.y + dy)
+                node.position = new DOMPoint(node.position.x + dx, node.position.y + dy)
+            }
+            // Update node position on-screen
+            container.style.left = s.absolutePosition.x - s.bounds.x - node.width / 2 + "px"
+            container.style.top = s.absolutePosition.y - s.bounds.y - node.height / 2 + "px"
             internals.rerenderEdges()
             internals.recalculateBounds()
-            // Update node position on-screen
-            container.style.left = s.absolutePosition.x - s.bounds.x - (node.width ?? 0) / 2 + "px"
-            container.style.top = s.absolutePosition.y - s.bounds.y - (node.height ?? 0) / 2 + "px"
         }
 
         // Update border radius
         let borderChanged = false
-        const style = getComputedStyle(elem)
         /* bRadius[pos][axis] - bRadius radius for every corner
         pos = 0 (top-left) / 1 (top-right) / 2 (bottom-right) / 3 (bottom-left)
         axis = 0 (x-axis) / 1 (y-axis)
@@ -315,12 +349,14 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         const parent = ref.current.parentElement
         if (parent == null) return
 
+        // Extract to variable to prevent cleanup to being called with a different argument
         const onResizeStart = internals.onResizeStart
 
         parent.addEventListener("pointerdown", onResizeStart)
         return () => parent.removeEventListener("pointerdown", onResizeStart)
     }, [internals.onResizeStart, internals.isStatic, ref, resizable])
 
+    const nodeID = `${internals.id}n-${id}`
     // Data that needs to be passed to NodeContent
     const nodeContextValue = useMemo<NodeContextValue>(() => ({
         id: nodeID,

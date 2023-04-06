@@ -5,7 +5,7 @@ import "./App.css"
 
 const nodes: NodeData[] = [
     {id: "0", position: new DOMPoint(0, 0), data: {label: "0", handles: [{position: "right"}]}},
-    {id: "1", position: new DOMPoint(0, 100), data: "1"},
+    {id: "1", position: new DOMPoint(0, 100), data: "1", resize: "both"},
     {id: "2", position: new DOMPoint(100, 0), data: "2"},
     {id: "3", position: new DOMPoint(200, 200), data: "3"},
 ]

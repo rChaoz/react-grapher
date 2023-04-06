@@ -7,7 +7,8 @@ import {criticalInternalContext} from "../util/log";
 export interface InternalContextValue {
     id: string
     nodeZIndex: number
-    isStatic?: boolean
+    isStatic: boolean
+    nodeBeingResized: boolean
 
     // When these properties are changed, the context itself doesn't change (no re-render):
     getNode(id: string): NodeImpl<any> | undefined
@@ -33,7 +34,7 @@ export interface InternalContextValue {
  */
 export const InternalContext = React.createContext<InternalContextValue>(
     {
-        id: undefined as any, nodeZIndex: Z_INDEX_NODE, isStatic: true,
+        id: undefined as any, nodeZIndex: Z_INDEX_NODE, isStatic: true, nodeBeingResized: false,
         getNode() {
             criticalInternalContext()
             return undefined

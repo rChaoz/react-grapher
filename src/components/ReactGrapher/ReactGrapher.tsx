@@ -686,7 +686,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // Internal context and object event listeners
     const internalContext: InternalContextValue = useMemo(() => ({
         id,
-        isStatic: props.static,
+        isStatic: props.static ?? false,
         nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE,
         rerenderEdges: updateEdges,
         recalculateBounds,

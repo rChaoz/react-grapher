@@ -11,6 +11,7 @@ export interface NodeContentProps {
 
 const ContentDiv = styled.div<{baseZIndex: number, grabbed: boolean,}>`
   position: relative;
+  flex-grow: 1;
   z-index: ${props => props.grabbed ? Z_INDEX_GRABBED_NODE : props.baseZIndex};
 `
 
