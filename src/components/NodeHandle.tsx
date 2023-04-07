@@ -169,7 +169,8 @@ export function NodeHandle(props: NodeHandleProps) {
 
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position}
                                data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>
-        <HandleDiv className={cx(NODE_HANDLE_CLASS, props.className)}
+        {/* TODO Improve nodes & edges IDs following same format */}
+        <HandleDiv id={`${context.id}-handle-${name}`} className={cx(NODE_HANDLE_CLASS, props.className)}
                    zIndex={context.grabbed ? Z_INDEX_GRABBED_NODE : context.baseZIndex}>
             {props.children}
         </HandleDiv>

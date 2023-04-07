@@ -1,15 +1,19 @@
 import React, {useCallback, useContext, useEffect, useMemo, useRef} from "react";
 import {BoundsContext} from "../context/BoundsContext";
-import {NODE_CONTAINER_CLASS, NODE_HANDLE_CONTAINER_CLASS} from "../util/constants";
+import {NODE_CLASS, NODE_CONTAINER_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
 import {Property} from "csstype";
 import styled from "@emotion/styled";
 import {InternalContext} from "../context/InternalContext";
 import {errorUnknownNode} from "../util/log";
 import {hasProperty, resolveValue, resolveValues, splitCSSCalc} from "../util/utils";
-import {Node, NodeHandleInfo} from "../data/Node";
-import {HandlePresetToVariablePosition, NodeHandleProps, NodeHandlePropsPositioned} from "./NodeHandle";
-import {NodeContext, NodeContextValue} from "../context/NodeContext";
+import {NodeHandleInfo} from "../data/Node";
 import {useCallbackState} from "../hooks/useCallbackState";
+import {cx} from "@emotion/css";
+import {isFragment} from "react-is";
+import {NodeContext, NodeContextValue} from "../context/NodeContext";
+// Used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {HandlePresetToVariablePosition, NodeHandle, NodeHandleProps, NodeHandlePropsPositioned} from "./NodeHandle";
 
 export interface BaseNodeProps {
     /**
@@ -33,33 +37,21 @@ export interface BaseNodeProps {
      */
     selected: boolean
     /**
-     * Contents of your node should be placed here
-     */
-    children: React.ReactNode
-    /**
      * Whether this node should be user-resizable, as set in the {@link Node Node's} properties.
      */
     resize?: Property.Resize
+    /**
+     * Handles of this node. You should use an array of {@link SimpleNodeHandle SimpleNodeHandles} initially, and use a {@link React.ReactFragment &lt;&gt;...&lt;/&gt;}
+     * (ReactFragment) containing multiple {@link NodeHandle} elements for more complex needs.
+     */
+    handles?: SimpleNodeHandle[] | React.ReactFragment
+    /**
+     * Contents of your node should be placed here
+     */
+    children: React.ReactNode
 }
 
-export interface NodeProps<T> extends Omit<BaseNodeProps, "children"> {
-    /**
-     * Custom node data
-     */
-    data: T
-    /**
-     * Parent of this node, if it exists
-     */
-    parent?: Node<unknown> | null
-    /**
-     * Position relative to parent, if parent is not null, or same as {@link absolutePosition} if it is null
-     */
-    position: DOMPoint
-    /**
-     * Spacing between this node and the edges that connect to it. This space is *automatically taken into consideration* for the calculation of edges.
-     */
-    edgeMargin: number
-}
+export type SimpleNodeHandle = Pick<NodeHandlePropsPositioned, "name" | "role" | "position">
 
 const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable: boolean }>`
   position: absolute;
@@ -72,9 +64,15 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
   align-items: stretch;
 `
 
+const ContentDiv = styled.div<{ baseZIndex: number, grabbed: boolean, }>`
+  position: relative;
+  flex-grow: 1;
+  z-index: ${props => props.grabbed ? Z_INDEX_GRABBED_NODE : props.baseZIndex};
+`
+
 type ResizeAnchor = "top-left" | "top" | "top-right" | "right" | "bottom-right" | "bottom" | "bottom-left" | "left"
 
-export function BaseNode({id, classes, absolutePosition, grabbed, selected, children, resize}: BaseNodeProps) {
+export function BaseNode({id, classes, absolutePosition, grabbed, selected, resize, handles, children}: BaseNodeProps) {
     const internals = useContext(InternalContext)
     const bounds = useContext(BoundsContext)
 
@@ -356,12 +354,21 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         return () => parent.removeEventListener("pointerdown", onResizeStart)
     }, [internals.onResizeStart, id, internals.isStatic, ref, resizable])
 
+    // Node Context value
+    const nodeContext = useMemo<NodeContextValue>(() => ({
+        id, baseZIndex: internals.nodeZIndex, grabbed
+    }), [id, internals.nodeZIndex, grabbed])
+
     return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={internals.isStatic ? undefined : resize} resizable={resizable} style={{
         left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
         top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
     }}>
-        <NodeContext.Provider value={nodeContextValue}>
+        <ContentDiv ref={ref} id={`${internals.id}n-${id}`} className={cx(NODE_CLASS, classes)} baseZIndex={internals.nodeZIndex}
+                    grabbed={grabbed} data-grabbed={grabbed} data-selected={selected}>
             {children}
+        </ContentDiv>
+        <NodeContext.Provider value={nodeContext}>
+            {handles && (isFragment(handles) ? handles : (handles as SimpleNodeHandle[]).map(h => <NodeHandle key={h.position} {...h}/>))}
         </NodeContext.Provider>
     </ContainerDiv>
 }

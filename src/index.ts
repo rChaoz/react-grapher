@@ -17,10 +17,9 @@ import {ReactGrapher, ControlledGraphProps, UncontrolledGraphProps} from "./comp
 import {GrapherViewport} from "./components/GrapherViewport";
 import {Marker} from "./components/Marker";
 // Sub-components
-import {BaseNode, BaseNodeProps, NodeProps} from "./components/BaseNode";
-import {NodeContent, NodeContentProps} from "./components/NodeContent";
+import {BaseNode, BaseNodeProps} from "./components/BaseNode";
 import {NodeHandle, NodeHandleProps, SOURCE, TARGET} from "./components/NodeHandle"
-import {SimpleNode, SimpleNodeData, SimpleNodeHandle} from "./components/SimpleNode";
+import {SimpleNode, NodeProps} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
 import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
 // Child components
@@ -42,9 +41,9 @@ export {
     // React Grapher
     ReactGrapher, ControlledGraphProps, UncontrolledGraphProps, GrapherViewport, Marker,
     // Sub-components
-    BaseNode, BaseNodeProps, NodeProps, NodeContent, NodeContentProps,
+    BaseNode, BaseNodeProps,
     NodeHandle, NodeHandleProps, SOURCE, TARGET,
-    SimpleNode, SimpleNodeData, SimpleNodeHandle,
+    SimpleNode, NodeProps,
     BaseEdge, BaseEdgeProps, EdgeProps,
     SimpleEdge, SimpleEdgeData,
     // Child components

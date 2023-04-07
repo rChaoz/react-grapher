@@ -2401,6 +2401,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/react-is@npm:^17.0.3":
+  version: 17.0.3
+  resolution: "@types/react-is@npm:17.0.3"
+  dependencies:
+    "@types/react": "*"
+  checksum: 6abb7c47d54f012272650df8a962a28bd82f219291e5ef8b4dfa7fe0bb98ae243b060bf9fbe8ceff6213141794855a006db194b490b00ffd15842ae19d0ce1f0
+  languageName: node
+  linkType: hard
+
 "@types/react-test-renderer@npm:^18.0.0":
   version: 18.0.0
   resolution: "@types/react-test-renderer@npm:18.0.0"
@@ -7320,6 +7329,7 @@ __metadata:
     "@rollup/plugin-node-resolve": ^15.0.1
     "@testing-library/react": ^14.0.0
     "@types/react": ^18.0.27
+    "@types/react-is": ^17.0.3
     "@types/react-test-renderer": ^18.0.0
     "@typescript-eslint/eslint-plugin": ^5.49.0
     "@typescript-eslint/parser": ^5.49.0
@@ -7333,6 +7343,7 @@ __metadata:
     postcss: ^8.4.21
     react: ^18.2.0
     react-dom: ^18.2.0
+    react-is: ^18.2.0
     react-test-renderer: ^18.2.0
     rollup: ^2.66.1
     rollup-plugin-copy: ^3.4.0

@@ -1,7 +1,6 @@
 import {GrapherChange} from "./GrapherChange";
 import React from "react";
-import {NodeProps} from "../components/BaseNode";
-import {SimpleNode, SimpleNodeData} from "../components/SimpleNode";
+import {NodeProps, SimpleNode, SimpleNodeData} from "../components/SimpleNode";
 import {checkErrorInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 import {Property} from "csstype";
@@ -20,7 +19,7 @@ import {NodeHandlePropsBase, SOURCE, TARGET} from "../components/NodeHandle";
  * component function, it is up to that function to decide everything about the node it is rendering: CSS classes, resizability, data displayed, even the position
  * can be adjusted.
  */
-export interface Node<T = SimpleNodeData> {
+export interface Node<T> {
     id: string
     /**
      * Custom data for this node. The default node implementation displays this value as a string.

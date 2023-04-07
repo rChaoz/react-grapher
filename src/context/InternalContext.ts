@@ -8,7 +8,7 @@ export interface InternalContextValue {
     id: string
     nodeZIndex: number
     isStatic: boolean
-    nodeBeingResized: boolean
+    nodeBeingResized: false | string
 
     // When these properties are changed, the context itself doesn't change (no re-render):
     getNode(id: string): NodeImpl<any> | undefined
@@ -19,7 +19,7 @@ export interface InternalContextValue {
 
     recalculateBounds(): void
 
-    onResizeStart(): void
+    onResizeStart(id: string): void
 
     // Object click events
     onObjectPointerDown(event: PointerEvent): void
