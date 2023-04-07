@@ -1,4 +1,4 @@
-import {errorParsingAllowedConnections, errorUnknownDomID} from "../../util/log";
+import {errorCustom, errorParsingDOMElement, errorUnknownEdge, errorUnknownNode} from "../../util/log";
 import {Node, Nodes, NodesImpl} from "../../data/Node";
 import {Edge, Edges, EdgesImpl} from "../../data/Edge";
 import {GrapherChange} from "../../data/GrapherChange";
@@ -24,7 +24,7 @@ export function parseAllowedConnections(s: string): AllowedConnections {
         if (!whitespaceRegex.test(s[index])) {
             const match = s.substring(index).match(allowedConnectionsRegex)
             if (match == null) {
-                errorParsingAllowedConnections(s.substring(index))
+                errorCustom(`Error while parsing config option 'allowedEdges' at index ${index}:\n`, s)
                 return Object.assign(new Map<string, string[]>(), {sources: new Set<string>(), targets: new Set<string>()})
             }
             const first = match[1], second = match[3], direction = match[2]
@@ -58,37 +58,53 @@ export function parseAllowedConnections(s: string): AllowedConnections {
 
 /**
  * Extract DOM ID, type (node/edge) and internal ID from event target
+ * TODO Implement required changes for this to work with handles
  */
-export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>, id: string)
-    : { domID: string, type: "node" | "edge", objID: string, obj: Node<N> | Edge<E> } | null {
-    const domID = (element as HTMLElement | null)?.id
-    if (domID == null) {
-        errorUnknownDomID(element, null)
+export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>)
+    : { type: "node"; objID: string; obj: Node<N> } | { type: "edge"; objID: string; obj: Edge<E> } | null {
+    if (element == null) {
+        errorCustom("Node/Edge/Handle pointer event listener callback was called with a null event.currentTarget")
         return null
     }
-    const objID = domID.substring(id.length + 2)
-    let type: "node" | "edge", obj: Node<N> | Edge<E> | undefined
-    if (domID.charAt(id.length) === "n") {
-        type = "node"
-        obj = nodes.get(objID)
-    } else if (domID.charAt(id.length) === "e") {
-        type = "edge"
-        obj = edges.get(objID)
-    } else {
-        errorUnknownDomID(element, domID)
+    const elem = element as HTMLElement
+    const type = elem.dataset.type, objID = elem.dataset.id
+
+    if (type == null || objID == null) {
+        errorParsingDOMElement(elem)
         return null
     }
-    if (obj == null) {
-        errorUnknownDomID(element, `${domID} -> ${type} ${objID}`)
-        return null
+
+    let obj
+    switch (type) {
+        case "node":
+            obj = nodes.get(objID)
+            if (obj == null) {
+                errorParsingDOMElement(elem)
+                errorUnknownNode(objID)
+                return null
+            }
+            return {type: "node", objID, obj: obj}
+        case "edge":
+            obj = edges.get(objID)
+            if (obj == null) {
+                errorParsingDOMElement(elem)
+                errorUnknownEdge(objID)
+                return null
+            }
+            return {type: "edge", objID, obj: obj}
+        case "handle":
+            // @ts-ignore
+            return {type: "handle", objID, obj: null}
     }
-    return {domID, type, objID, obj}
+
+    errorParsingDOMElement(elem)
+    return null
 }
 
 /**
  * Send a change to the graph
  */
-export function sendChanges<N, E>(changes: GrapherChange[], d: { onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E>}) {
+export function sendChanges<N, E>(changes: GrapherChange[], d: { onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E> }) {
     let c: GrapherChange[] | undefined | void = changes
     if (d.onChange != null) c = d.onChange(changes)
     if (c != null) {
@@ -100,8 +116,8 @@ export function sendChanges<N, E>(changes: GrapherChange[], d: { onChange: Commo
 /**
  * Send an event to the graph
  */
-export function sendEvent<N, E>(event: GrapherEvent, d: { onEvent: CommonGraphProps["onEvent"], onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E>}) {
-    if (d.onEvent ==  null) return
+export function sendEvent<N, E>(event: GrapherEvent, d: { onEvent: CommonGraphProps["onEvent"], onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E> }) {
+    if (d.onEvent == null) return
     const c = d.onEvent(event)
     if (c != null) sendChanges(c, d)
 }

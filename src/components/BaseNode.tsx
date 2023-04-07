@@ -70,7 +70,7 @@ const ContentDiv = styled.div<{ baseZIndex: number, grabbed: boolean, }>`
   z-index: ${props => props.grabbed ? Z_INDEX_GRABBED_NODE : props.baseZIndex};
 `
 
-type ResizeAnchor = "top-left" | "top" | "top-right" | "right" | "bottom-right" | "bottom" | "bottom-left" | "left"
+type ResizeAnchor = "top-left" | "top-right" | "bottom-right" | "bottom-left" | "center"
 
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, resize, handles, children}: BaseNodeProps) {
     const internals = useContext(InternalContext)
@@ -112,25 +112,40 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                  - left = absolutePosition.x - bounds.x - node.width / 2
                  == results into =>
                  - absolutePosition.x = left + bounds.x + node.width / 2
-                 However, we need to update node's position, not absolute position (position might be relative to a parent). So, calculate delta:
+                 Note: only node.width changes when resizing; by doing this (using the old 'left' value), we get the X it should have if we want to *keep*
+                 the same left (and top), which means "bottom-right" anchor. This needs to be adjusted for other anchor positions.
+                 Additionally, we need to update node's position too, not just absolute position (position might be relative to a parent). So, calculate delta:
                  - deltaX = newAbsolute.x - oldAbsolute.x
-                 We can add this delta to the node's position to correctly set the new position.
+                 We can add this delta to the node's position to correctly set the new position. This needs to be done because, on render, absolutePosition is
+                 recalculated, so the changes absolutePosition would be revered next render.
                  */
-                let dx = 0, dy = 0
+                const dx = left + s.bounds.x + node.width / 2 - s.absolutePosition.x, dy = top + s.bounds.y + node.height / 2 - s.absolutePosition.y
+                let ndx = 0, ndy = 0 // node delta x - how much we want to actually move the node
                 switch (resizeAnchor.current) {
                     case "bottom-right":
-                        dx = left + s.bounds.x + node.width / 2 - s.absolutePosition.x
-                        dy = top + s.bounds.y + node.height / 2 - s.absolutePosition.y
+                        ndx = dx;
+                        ndy = dy;
                         break
-                    default:
-                        // TODO
+                    case "bottom-left": // keep y, reverse x movement
+                        ndx = -dx;
+                        ndy = dy;
+                        break
+                    case "top-right": // keep x, reverse y movement
+                        ndx = dx;
+                        ndy = -dy;
+                        break
+                    case "top-left": // reverse both
+                        ndx = -dx;
+                        ndy = -dy;
+                        break
+                    // For "center" anchor, we don't move the node (keep ndx = 0, ndy = 0)
                 }
                 // Update state position, to have correct position until next render
-                s.absolutePosition.x += dx
-                s.absolutePosition.y += dy
+                s.absolutePosition.x += ndx
+                s.absolutePosition.y += ndy
                 // Update node position
-                node.absolutePosition = new DOMPoint(node.absolutePosition.x + dx, node.absolutePosition.y + dy)
-                node.position = new DOMPoint(node.position.x + dx, node.position.y + dy)
+                node.absolutePosition = new DOMPoint(node.absolutePosition.x + ndx, node.absolutePosition.y + ndy)
+                node.position = new DOMPoint(node.position.x + ndx, node.position.y + ndy)
             }
             // Update node position on-screen
             container.style.left = s.absolutePosition.x - s.bounds.x - node.width / 2 + "px"
@@ -363,8 +378,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
         top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
     }}>
-        <ContentDiv ref={ref} id={`${internals.id}n-${id}`} className={cx(NODE_CLASS, classes)} baseZIndex={internals.nodeZIndex}
-                    grabbed={grabbed} data-grabbed={grabbed} data-selected={selected}>
+        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} baseZIndex={internals.nodeZIndex}
+                    grabbed={grabbed} data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"node"}>
             {children}
         </ContentDiv>
         <NodeContext.Provider value={nodeContext}>

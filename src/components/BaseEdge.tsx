@@ -149,7 +149,8 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
     }, [internals, edge, id, path, grabbed, selected])
 
     const baseID = internals.id
-    return <BaseG ref={ref} id={`${baseID}e-${id}`} className={cx(classes, EDGE_CLASS)} data-grabbed={grabbed} data-selected={selected} static={internals.isStatic}>
+    return <BaseG ref={ref} id={`${baseID}-edge-${id}`} className={cx(classes, EDGE_CLASS)} static={internals.isStatic}
+                  data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"edge"}>
         <path d={path} className={EDGE_HANDLE_CLASS} stroke={"transparent"} fill={"none"} strokeWidth={15}/>
         <path d={path} className={EDGE_PATH_CLASS}
               markerStart={markerStart != null ? `url(#${baseID}-${markerStart})` : undefined}

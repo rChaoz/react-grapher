@@ -5,19 +5,21 @@ function critical(...message: any) {
     console.error(TAG + " - CRITICAL:", message)
 }
 
+export const criticalCustom = critical
+
 function error(...message: any) {
     console.error(TAG + " - ERROR:", ...message)
 }
+
+export const errorCustom = error
 
 function warn(...message: any) {
     console.warn(TAG + " - WARN:", ...message)
 }
 
-// Critical errors
+export const warnCustom = warn
 
-export function criticalNoViewport() {
-    critical("Unable to find viewport DOM node")
-}
+// Critical errors
 
 export function criticalInternalContext() {
     critical("A component tried to use an internal context but none was found! Make sure you don't explicitly use ReactGrapher components outside of a ReactGrapher!")
@@ -35,9 +37,8 @@ export function checkErrorInvalidID(target: string, id: string) {
     console.error("ID must be composed of a-z, A-Z, 0-9, - and _")
 }
 
-export function errorUnknownDomID(node: EventTarget | null, id?: string | null) {
-    if (id == null) error("DOM Node/Edge has no ID")
-    else error("DOM Element has unknown ID: " + id)
+export function errorParsingDOMElement(node: HTMLElement | null) {
+    error("Unable to parse DOM element's dataset (type, id). Usually this means that your custom Node or Edge component doesn't use BaseNode or BaseEdge as its root element.")
     console.error("Element: ", node)
 }
 
@@ -45,12 +46,12 @@ export function errorUnknownNode(id: string) {
     error(`Error: unable to find node with ID ${id}`)
 }
 
-export function errorComponentOutsideContext(element: string, container: string) {
-    error(`${element} can only be used inside a ${container}!`)
-}
-
 export function errorUnknownEdge(id: string) {
     error(`Error: unable to find edge with ID ${id}`)
+}
+
+export function errorComponentOutsideContext(element: string, container: string) {
+    error(`${element} can only be used inside a ${container}!`)
 }
 
 export function errorQueryFailed(query: string, desc: string) {
@@ -59,32 +60,10 @@ export function errorQueryFailed(query: string, desc: string) {
 
 // Warnings
 
-export function warnUnknownCSSComputedValue(value: string) {
-    warn(`Parse CSS computed value failed: '${value}'`)
-}
-
-export function warnCalcUnknownToken(expression: string, token: string) {
-    warn(`Parse "calc(${expression})": unknown token: ${token}`);
-}
-
-export function warnNoReactGrapherID() {
-    warn("No ID provided to the ReactGrapher component. This could lead to errors if multiple ReactGrapher components are used on the same page.")
-}
-
 export function warnInvalidPropValue(component: string, prop: string, value: any, candidates?: string[]) {
     warn(`${prop} passed to ${component} has invalid value: '${value}'.` + (candidates == null ? "" : ` Possible candidates: [${candidates.join()}]`))
 }
 
 export function warnUnknownHandle(edge: string, node: string, handle: string, handles: string[]) {
     warn(`Edge '${edge}' wants to connect to handle '${handle}' of node '${node}', but this node has no such handle. Possible candidates: [${handles.join()}]`)
-}
-
-export function warnIllegalConnection(edge: string, sourceHandle: string, sourceRoles: string | string[], targetHandle: string, targetRoles: string | string[]) {
-    warn(`Invalid edge with ID "${edge}" between source handle ${sourceHandle} (with roles ${sourceRoles}) and`
-        + `target handle ${targetHandle} (with roles ${targetRoles}) has been removed.`)
-}
-
-export function errorParsingAllowedConnections(token: string) {
-    error("Error while parsing config option 'allowedEdges':")
-    console.error(token)
 }

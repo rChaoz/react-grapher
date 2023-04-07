@@ -1,4 +1,4 @@
-import {warnCalcUnknownToken, warnUnknownCSSComputedValue} from "./log"
+import {warnCustom} from "./log"
 
 /**
  * Function that takes a computed CSS calc expression (i.e. composed of only percentage and pixel values, added or subtracted)
@@ -19,7 +19,7 @@ export function splitCSSCalc(expr: string): [number, number] {
         else if (t.endsWith("%")) percentage += Number(t.substring(0, t.length - 1)) * sign
         else if (t === "+") sign = 1
         else if (t === "-") sign = -1
-        else warnCalcUnknownToken(expr, t)
+        else warnCustom(`Parse "calc(${expr}) failed": unknown token: ${t}`)
     }
     return [percentage, absolute]
 }
@@ -48,7 +48,7 @@ export function resolveValue(value: string, length: number): number {
     else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?px$/)) return Number(value.slice(0, value.length - 2))
     else if (value.match(/^-?(\d+(\.\d+)?|\.\d+)?%$/)) return Number(value.slice(0, value.length - 1)) / 100 * length
     else {
-        warnUnknownCSSComputedValue(value)
+        warnCustom(`Parse CSS computed value failed: '${value}'`)
         return 0;
     }
 }

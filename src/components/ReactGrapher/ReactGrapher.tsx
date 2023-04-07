@@ -20,7 +20,7 @@ import {
 } from "../../util/constants";
 import {GrapherConfig, GrapherConfigSet, withDefaultsConfig} from "../../data/GrapherConfig";
 import {GrapherChange} from "../../data/GrapherChange";
-import {checkErrorInvalidID, criticalNoViewport, errorUnknownNode, warnIllegalConnection, warnNoReactGrapherID, warnUnknownHandle} from "../../util/log";
+import {checkErrorInvalidID, criticalCustom, errorUnknownNode, warnCustom, warnUnknownHandle} from "../../util/log";
 import {BoundsContext} from "../../context/BoundsContext";
 import {InternalContext, InternalContextValue} from "../../context/InternalContext";
 import {SimpleEdge} from "../SimpleEdge";
@@ -116,7 +116,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         id = props.id
     } else if (ownID == null) {
         id = "react-grapher"
-        warnNoReactGrapherID()
+        warnCustom("No ID provided to the ReactGrapher component. This could lead to errors if multiple ReactGrapher components are used on the same page.")
     } else id = ownID
 
     // We want callbacks to be able to use new state/prop values but without re-creating the callbacks
@@ -274,9 +274,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // If both are set, just check if connection is allowed
             if (sourceHandle !== undefined && targetHandle !== undefined) {
                 if (!checkConnection(source, target, sourceHandle, targetHandle) && !config.allowIllegalEdges) {
-                    warnIllegalConnection(edge.id,
-                        edge.sourceHandle ?? "<node>", (sourceHandle ?? source).roles ?? "<all edges allowed>",
-                        edge.targetHandle ?? "<node>", (targetHandle ?? target).roles ?? "<all edges allowed>")
+                    warnCustom(`Invalid edge with ID "${edge.id}" between ${sourceHandle ? `source handle ${sourceHandle}, ` : ""}source node ${source.id} ` +
+                        `(with roles ${(sourceHandle ?? source).roles ?? "<all edges allowed>"}) and ${targetHandle ? `source handle ${targetHandle}, ` : ""}target node ` +
+                        `${target.id} (with roles ${(targetHandle ?? target).roles ?? "<all edges allowed>"}) has been removed.`)
                     continue
                 }
             } else {
@@ -628,7 +628,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         // Viewport-level listeners
         const viewportElem = ref.current.querySelector<HTMLElement>("." + VIEWPORT_CLASS)
-        if (viewportElem == null) criticalNoViewport()
+        if (viewportElem == null) criticalCustom("Unable to find viewport DOM node")
         else if (!props.static) {
             viewportElem.addEventListener("pointerdown", onViewportPointerDown)
             viewportElem.addEventListener("pointerup", onViewportPointerUp)
@@ -697,7 +697,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         },
         onObjectPointerDown(event: PointerEvent) {
-            const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges, id)
+            const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
             if (r == null) return
             let prevented = false
             if (s.onEvent != null) {
@@ -745,7 +745,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         },
         onObjectPointerUp(event: PointerEvent) {
-            const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges, id)
+            const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
             if (r == null) return
             if (s.onEvent != null) {
                 const upEvent: GrapherPointerEvent = {

@@ -167,13 +167,13 @@ export function NodeHandle(props: NodeHandleProps) {
     const useNodeBorder = props.useNodeBorderBox === "normal" || props.useNodeBorderBox === undefined ? "normal"
         : props.useNodeBorderBox === "inner" ? "inner" : undefined
 
+    // data-id is used by ReactGrapher's processDomElement
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position}
                                data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>
-        {/* TODO Improve nodes & edges IDs following same format */}
         <HandleDiv id={`${context.id}-handle-${name}`} className={cx(NODE_HANDLE_CLASS, props.className)}
                    zIndex={context.grabbed ? Z_INDEX_GRABBED_NODE : context.baseZIndex}>
             {props.children}
         </HandleDiv>
-        <HandleBoxDiv className={NODE_HANDLE_BOX_CLASS} width={props.outerBoxWidth} height={props.outerBoxHeight}/>
+        <HandleBoxDiv className={NODE_HANDLE_BOX_CLASS} width={props.outerBoxWidth} height={props.outerBoxHeight} data-id={name} data-type={"handle"}/>
     </HandleContainerDiv>
 }

@@ -74,7 +74,7 @@ const patternSizeMap = {
 }
 
 // noinspection JSUnusedGlobalSymbols
-const defaultContext = {
+const defaultContext: any = {
     id: "context-error",
     controller: {
         defaultViewport: {centerX: 0, centerY: 0, zoom: 1},
@@ -89,7 +89,7 @@ export function Background({id, className, pattern, color, size, strokeWidth, an
     let grapherContext = useContext(GrapherContext)
     if (grapherContext == null) {
         errorGrapherContext("Background")
-        grapherContext = defaultContext as any
+        grapherContext = defaultContext
     }
 
     if (id == null) id = grapherContext.id + "-background"
