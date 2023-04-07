@@ -690,8 +690,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         nodeZIndex: config.nodesOverEdges ? Z_INDEX_EDGES : Z_INDEX_NODE,
         rerenderEdges: updateEdges,
         recalculateBounds,
-        onResizeStart: () => {
-            if (grabbed.type == null) grabbed.type = "resizing"
+        onResizeStart: id => {
+            if (grabbed.type == null) {
+                grabbed.type = "resizing"
+                grabbed.id = id
+            }
         },
         onObjectPointerDown(event: PointerEvent) {
             const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges, id)
@@ -798,7 +801,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // As the result of the function itself does not change
     internalContext.getNode = nodes.internalMap.get.bind(nodes.internalMap)
     internalContext.getEdge = edges.internalMap.get.bind(edges.internalMap)
-    internalContext.nodeBeingResized = grabbed.type === "resizing"
+    internalContext.nodeBeingResized = grabbed.type === "resizing" && grabbed.id
 
     // Context for other components outside the Viewport
     const grapherContext: GrapherContextValue = useMemo(() => ({

@@ -105,7 +105,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         }
 
         if (sizeChanged) {
-            if (internals.nodeBeingResized) {
+            if (internals.nodeBeingResized === id) {
                 // If node is being resized, it needs to be moved to account the resize anchor point
                 const containerStyle = getComputedStyle(container)
                 const left = resolveValue(containerStyle.left, 0)
@@ -320,7 +320,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
             handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2})
         }
         node.handles = handles
-    }, [internals, node])
+    }, [id, internals, node])
 
     // Set listeners
     useEffect(() => {
@@ -350,22 +350,11 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, chil
         if (parent == null) return
 
         // Extract to variable to prevent cleanup to being called with a different argument
-        const onResizeStart = internals.onResizeStart
+        const onResizeStart = internals.onResizeStart.bind(null, id)
 
         parent.addEventListener("pointerdown", onResizeStart)
         return () => parent.removeEventListener("pointerdown", onResizeStart)
-    }, [internals.onResizeStart, internals.isStatic, ref, resizable])
-
-    const nodeID = `${internals.id}n-${id}`
-    // Data that needs to be passed to NodeContent
-    const nodeContextValue = useMemo<NodeContextValue>(() => ({
-        id: nodeID,
-        ref,
-        baseZIndex: internals.nodeZIndex,
-        classes,
-        selected,
-        grabbed,
-    }), [ref, internals, nodeID, classes, selected, grabbed])
+    }, [internals.onResizeStart, id, internals.isStatic, ref, resizable])
 
     return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={internals.isStatic ? undefined : resize} resizable={resizable} style={{
         left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
