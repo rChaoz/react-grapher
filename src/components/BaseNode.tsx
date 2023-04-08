@@ -72,6 +72,10 @@ const ContentDiv = styled.div<{ baseZIndex: number, grabbed: boolean, }>`
 
 type ResizeAnchor = "top-left" | "top-right" | "bottom-right" | "bottom-left" | "center"
 
+const dummyNode = {
+    width: 0, height: 0, margin: [0, 0, 0, 0]
+}
+
 export function BaseNode({id, classes, absolutePosition, grabbed, selected, resize, handles, children}: BaseNodeProps) {
     const internals = useContext(InternalContext)
     const bounds = useContext(BoundsContext)
@@ -102,6 +106,22 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
             sizeChanged = true
         }
 
+        // Update margins
+        const containerWidth = container.offsetWidth, containerHeight = container.offsetHeight
+        const margin: [number, number, number, number] = [
+            resolveValue(style.marginTop, containerHeight),
+            resolveValue(style.marginRight, containerWidth),
+            resolveValue(style.marginBottom, containerHeight),
+            resolveValue(style.marginLeft, containerWidth),
+        ]
+        for (let i = 0; i < 4; i++) {
+            if (Math.abs(margin[i] - node.margin[i]) > .5) {
+                sizeChanged = true
+                node.margin = margin
+                break
+            }
+        }
+
         if (sizeChanged) {
             if (internals.nodeBeingResized === id) {
                 // If node is being resized, it needs to be moved to account the resize anchor point
@@ -119,7 +139,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                  We can add this delta to the node's position to correctly set the new position. This needs to be done because, on render, absolutePosition is
                  recalculated, so the changes absolutePosition would be revered next render.
                  */
-                const dx = left + s.bounds.x + node.width / 2 - s.absolutePosition.x, dy = top + s.bounds.y + node.height / 2 - s.absolutePosition.y
+                const dx = left + s.bounds.x + node.width / 2 + node.margin[3] - s.absolutePosition.x, dy = top + s.bounds.y + node.height / 2 + node.margin[0] - s.absolutePosition.y
                 let ndx = 0, ndy = 0 // node delta x - how much we want to actually move the node
                 switch (resizeAnchor.current) {
                     case "bottom-right":
@@ -148,8 +168,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                 node.position = new DOMPoint(node.position.x + ndx, node.position.y + ndy)
             }
             // Update node position on-screen
-            container.style.left = s.absolutePosition.x - s.bounds.x - node.width / 2 + "px"
-            container.style.top = s.absolutePosition.y - s.bounds.y - node.height / 2 + "px"
+            container.style.left = s.absolutePosition.x - s.bounds.x - node.width / 2 - node.margin[3] + "px"
+            container.style.top = s.absolutePosition.y - s.bounds.y - node.height / 2 - node.margin[0] + "px"
             internals.rerenderEdges()
             internals.recalculateBounds()
         }
@@ -322,8 +342,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
 
             // If requested, update the handle's DOM position
             if (useNodeBorder != null) {
-                h.style.left = x - h.offsetWidth / 2 + "px"
-                h.style.top = y - h.offsetHeight / 2 + "px"
+                h.style.left = x - h.offsetWidth / 2 + node.margin[3] + "px"
+                h.style.top = y - h.offsetHeight / 2 + node.margin[0] + "px"
             }
 
             // Get handle roles
@@ -374,9 +394,12 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         id, baseZIndex: internals.nodeZIndex, grabbed
     }), [id, internals.nodeZIndex, grabbed])
 
+    // Use dummy node if node is null to avoid having to test node for nullability for top and left calculations
+    const n = node ?? dummyNode
+
     return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={internals.isStatic ? undefined : resize} resizable={resizable} style={{
-        left: absolutePosition.x - bounds.x - (node?.width ?? 0) / 2,
-        top: absolutePosition.y - bounds.y - (node?.height ?? 0) / 2,
+        left: absolutePosition.x - bounds.x - n.width / 2 - n.margin[3],
+        top: absolutePosition.y - bounds.y - n.height / 2 - n.margin[0],
     }}>
         <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} baseZIndex={internals.nodeZIndex}
                     grabbed={grabbed} data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"node"}>

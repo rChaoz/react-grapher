@@ -73,20 +73,20 @@ const patternSizeMap = {
     "xl": 2.5,
 }
 
-// noinspection JSUnusedGlobalSymbols
-const defaultContext: any = {
+// Defaults values to be used if GrapherContext is null to allow component to still render
+const defaultViewport = { centerX: 0, centerY: 0, zoom: 1 }
+const defaultContext = {
     id: "context-error",
     controller: {
-        defaultViewport: {centerX: 0, centerY: 0, zoom: 1},
         getViewport() {
-            return this.defaultViewport
+            return defaultViewport
         },
     }
 }
 
 // TODO More background patterns
 export function Background({id, className, pattern, color, size, strokeWidth, angle, patternTransform}: BackgroundProps) {
-    let grapherContext = useContext(GrapherContext)
+    let grapherContext: typeof defaultContext = useContext(GrapherContext)
     if (grapherContext == null) {
         errorGrapherContext("Background")
         grapherContext = defaultContext

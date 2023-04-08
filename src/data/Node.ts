@@ -114,6 +114,10 @@ interface NodeInternals {
      */
     border: [number, number, number, number]
     /**
+     * Automatically set during rendering. Margins of node in CSS order.
+     */
+    margin: [number, number, number, number]
+    /**
      * Automatically set during rendering. Border radii of this node in CSS order (top-left/top-right/bottom-right/bottom-left), each having x-radius and y-radius.
      */
     borderRadius: [[number, number], [number, number], [number, number], [number, number]]
@@ -174,6 +178,7 @@ function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "all
         width: 0,
         height: 0,
         border: [0, 0, 0, 0],
+        margin: [0, 0, 0, 0],
         borderRadius: [[0, 0], [0, 0], [0, 0], [0, 0]],
         absolutePositionMemoObject: {},
         handles: [],
