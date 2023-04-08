@@ -25,10 +25,7 @@ export default function App() {
         <div style={{
             height: 400,
         }}>
-            <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"} onEvent={event => {
-                if (event.type !== "pointer" || event.target !== "handle") return
-                console.log(`Handle ${event.subType} event`)
-            }}>
+            <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"}>
                 <Background/>
             </ReactGrapher>
         </div>

@@ -3,7 +3,7 @@ import {Z_INDEX_NODE} from "../util/constants";
 
 export interface NodeContextValue {
     id: string
-    baseZIndex: number
+    zIndex: number
     grabbed: boolean
 }
 
@@ -12,6 +12,6 @@ export interface NodeContextValue {
  */
 export const NodeContext = React.createContext<NodeContextValue>({
     id: undefined as any,
-    baseZIndex: Z_INDEX_NODE,
+    zIndex: Z_INDEX_NODE,
     grabbed: false,
 })

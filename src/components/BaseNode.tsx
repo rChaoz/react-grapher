@@ -64,10 +64,10 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
   align-items: stretch;
 `
 
-const ContentDiv = styled.div<{ baseZIndex: number, grabbed: boolean, }>`
+const ContentDiv = styled.div<{ zIndex: number, grabbed: boolean, }>`
   position: relative;
   flex-grow: 1;
-  z-index: ${props => props.grabbed ? Z_INDEX_GRABBED_NODE : props.baseZIndex};
+  z-index: ${props => props.zIndex};
 `
 
 type ResizeAnchor = "top-left" | "top-right" | "bottom-right" | "bottom-left" | "center"
@@ -80,10 +80,14 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
     const internals = useContext(InternalContext)
     const bounds = useContext(BoundsContext)
 
+    // Ref to node content div
     const ref = useRef<HTMLDivElement>(null)
+    // Get node object
     const node = internals.getNode(id)
     if (node == null) errorUnknownNode(id)
+    // Whether this node is resizable
     const resizable = resize != null && resize !== "none" && resize !== "initial"
+    // Resize position (always bottom right for HTML-based resize via 'resize' CSS property)
     const resizeAnchor = useRef<ResizeAnchor>("bottom-right")
 
     // To allow recalculateNode to access new position without having to re-create callback
@@ -139,7 +143,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                  We can add this delta to the node's position to correctly set the new position. This needs to be done because, on render, absolutePosition is
                  recalculated, so the changes absolutePosition would be revered next render.
                  */
-                const dx = left + s.bounds.x + node.width / 2 + node.margin[3] - s.absolutePosition.x, dy = top + s.bounds.y + node.height / 2 + node.margin[0] - s.absolutePosition.y
+                const dx = left + s.bounds.x + node.width / 2 + node.margin[3] - s.absolutePosition.x,
+                    dy = top + s.bounds.y + node.height / 2 + node.margin[0] - s.absolutePosition.y
                 let ndx = 0, ndy = 0 // node delta x - how much we want to actually move the node
                 switch (resizeAnchor.current) {
                     case "bottom-right":
@@ -400,10 +405,11 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         return () => parent.removeEventListener("pointerdown", onResizeStart)
     }, [internals.onResizeStart, id, internals.isStatic, ref, resizable])
 
+    // Z Index of this node
+    const zIndex = grabbed ? Z_INDEX_GRABBED_NODE : selected ? internals.nodeZIndex + 1 : internals.nodeZIndex
+
     // Node Context value
-    const nodeContext = useMemo<NodeContextValue>(() => ({
-        id, baseZIndex: internals.nodeZIndex, grabbed
-    }), [id, internals.nodeZIndex, grabbed])
+    const nodeContext = useMemo<NodeContextValue>(() => ({id, zIndex, grabbed}), [id, zIndex, grabbed])
 
     // Use dummy node if node is null to avoid having to test node for nullability for top and left calculations
     const n = node ?? dummyNode
@@ -412,7 +418,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         left: absolutePosition.x - bounds.x - n.width / 2 - n.margin[3],
         top: absolutePosition.y - bounds.y - n.height / 2 - n.margin[0],
     }}>
-        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} baseZIndex={internals.nodeZIndex}
+        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} zIndex={zIndex}
                     grabbed={grabbed} data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"node"}>
             {children}
         </ContentDiv>

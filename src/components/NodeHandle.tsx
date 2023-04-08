@@ -1,6 +1,6 @@
 import React, {useContext} from "react";
 import {cx} from "@emotion/css";
-import {NODE_HANDLE_BOX_CLASS, NODE_HANDLE_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z_INDEX_GRABBED_NODE, Z_INDEX_HANDLE_BOX} from "../util/constants";
+import {NODE_HANDLE_BOX_CLASS, NODE_HANDLE_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z_INDEX_HANDLE_BOX} from "../util/constants";
 import styled from "@emotion/styled";
 import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
@@ -171,7 +171,7 @@ export function NodeHandle(props: NodeHandleProps) {
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position} data-node={context.id}
                                data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>
         <HandleDiv id={`${context.id}-handle-${name}`} className={cx(NODE_HANDLE_CLASS, props.className)}
-                   zIndex={context.grabbed ? Z_INDEX_GRABBED_NODE : context.baseZIndex}>
+                   zIndex={context.zIndex}>
             {props.children}
         </HandleDiv>
         <HandleBoxDiv className={NODE_HANDLE_BOX_CLASS} width={props.outerBoxWidth} height={props.outerBoxHeight} data-id={name} data-node={context.id} data-type={"handle"}/>

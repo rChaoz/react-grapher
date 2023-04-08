@@ -48,5 +48,5 @@ export const Z_INDEX_INTERFACE = 9;
 
 export const Z_INDEX_NODE = 3
 export const Z_INDEX_HANDLE_BOX = 6
-export const Z_INDEX_GRABBED_NODE = 6
+export const Z_INDEX_GRABBED_NODE = 7
 export const Z_INDEX_EDGES = 5
