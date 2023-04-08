@@ -5,7 +5,7 @@ import {Property} from "csstype";
 import styled from "@emotion/styled";
 import {InternalContext} from "../context/InternalContext";
 import {errorUnknownNode} from "../util/log";
-import {hasProperty, resolveValue, resolveValues, splitCSSCalc} from "../util/utils";
+import {hasProperty, resolveValue, resolveValues, splitCSSCalc, stringToBoolean} from "../util/utils";
 import {NodeHandleInfo} from "../data/Node";
 import {useCallbackState} from "../hooks/useCallbackState";
 import {cx} from "@emotion/css";
@@ -39,7 +39,15 @@ export interface BaseNodeProps {
     /**
      * Whether this node should be user-resizable, as set in the {@link Node Node's} properties.
      */
-    resize?: Property.Resize
+    resize: Property.Resize
+    /**
+     * Whether to enable pointer events for this node.
+     */
+    pointerEvents: boolean
+    /**
+     * Whether to enable pointer events for this node's handles (unless they override it).
+     */
+    handlePointerEvents: boolean | null
     /**
      * Handles of this node. You should use an array of {@link SimpleNodeHandle SimpleNodeHandles} initially, and use a {@link React.ReactFragment &lt;&gt;...&lt;/&gt;}
      * (ReactFragment) containing multiple {@link NodeHandle} elements for more complex needs.
@@ -51,7 +59,7 @@ export interface BaseNodeProps {
     children: React.ReactNode
 }
 
-export type SimpleNodeHandle = Pick<NodeHandlePropsPositioned, "name" | "role" | "position">
+export type SimpleNodeHandle = Pick<NodeHandlePropsPositioned, "name" | "role" | "position" | "className" | "allowNewEdges" | "allowEdgeTarget" | "pointerEvents">
 
 const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable: boolean }>`
   position: absolute;
@@ -64,7 +72,8 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
   align-items: stretch;
 `
 
-const ContentDiv = styled.div<{ zIndex: number, grabbed: boolean, }>`
+const ContentDiv = styled.div<{ zIndex: number, grabbed: boolean, pointerEvents: boolean | undefined }>`
+  pointer-events: ${props => props.pointerEvents === false ? "none" : "initial"};
   position: relative;
   flex-grow: 1;
   z-index: ${props => props.zIndex};
@@ -73,10 +82,10 @@ const ContentDiv = styled.div<{ zIndex: number, grabbed: boolean, }>`
 type ResizeAnchor = "top-left" | "top-right" | "bottom-right" | "bottom-left" | "center"
 
 const dummyNode = {
-    width: 0, height: 0, margin: [0, 0, 0, 0]
+    width: 0, height: 0, margin: [0, 0, 0, 0], handlePointerEvents: false
 }
 
-export function BaseNode({id, classes, absolutePosition, grabbed, selected, resize, handles, children}: BaseNodeProps) {
+export function BaseNode({id, classes, absolutePosition, grabbed, selected, resize, pointerEvents, handlePointerEvents, handles, children}: BaseNodeProps) {
     const internals = useContext(InternalContext)
     const bounds = useContext(BoundsContext)
 
@@ -213,17 +222,23 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
 
         // Get handles
         const handleElems = container.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CONTAINER_CLASS)
-        // Check if handles have changed
+        // Check if handles have changed and update permissions (that we don't care if they change, no need to re-render)
         let handlesChanged = false
         if (node.handles == null || borderChanged) handlesChanged = true
         else {
             if (node.handles.length !== handleElems.length) handlesChanged = true
             else for (let i = 0; i < handleElems.length; ++i) {
-                const style = getComputedStyle(handleElems[i])
+                const handleElem = handleElems[i]  // handle element
+                const nodeHandle = node.handles[i] // node handle
+                const style = getComputedStyle(handleElem)
+
                 const [x, y] = [resolveValue(style.left, 0) + border[3] - node.width / 2, resolveValue(style.top, 0) + border[0] - node.height / 2]
-                if (Math.abs(x - node.handles[i].x) > 2 || Math.abs(y - node.handles[i].y) > 2) {
-                    handlesChanged = true
-                    break
+
+                if (handleElem.dataset.name !== nodeHandle.name || Math.abs(x - nodeHandle.x) > 2 || Math.abs(y - nodeHandle.y) > 2) handlesChanged = true
+                else {
+                    nodeHandle.allowCreatingEdges = stringToBoolean(handleElem.dataset.allowNewEdges)
+                    nodeHandle.allowCreatingEdgesTarget = stringToBoolean(handleElem.dataset.allowEdgesTarget)
+                    nodeHandle.allowGrabbing = stringToBoolean(handleElem.dataset.allowGrabbing)
                 }
             }
         }
@@ -351,11 +366,14 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                 h.style.top = y - h.offsetHeight / 2 + node.margin[0] + "px"
             }
 
-            // Get handle roles
+            // Get handle roles and config
             const roles = h.dataset.role?.split(",")
+            const allowCreatingEdges = stringToBoolean(h.dataset.allowNewEdges)
+            const allowCreatingEdgesTarget = stringToBoolean(h.dataset.allowEdgesTarget)
+            const allowGrabbing = stringToBoolean(h.dataset.allowGrabbing)
 
             // Save data and make x and y relative to the node's center
-            handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2})
+            handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2, allowCreatingEdges, allowCreatingEdgesTarget, allowGrabbing})
         }
         node.handles = handles
     }, [id, internals, node])
@@ -390,7 +408,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
     }, [internals, node, recalculateNode])
 
     // Additionally, recalculateNode() should be called any time any prop changes
-    useEffect(recalculateNode, [recalculateNode, id, classes, absolutePosition, grabbed, selected])
+    useEffect(recalculateNode, [recalculateNode, id, classes, absolutePosition, grabbed, selected, resize, handles])
 
     // Set listeners for resizable node (if needed)
     useEffect(() => {
@@ -408,17 +426,17 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
     // Z Index of this node
     const zIndex = grabbed ? Z_INDEX_GRABBED_NODE : selected ? internals.nodeZIndex + 1 : internals.nodeZIndex
 
-    // Node Context value
-    const nodeContext = useMemo<NodeContextValue>(() => ({id, zIndex, grabbed}), [id, zIndex, grabbed])
-
     // Use dummy node if node is null to avoid having to test node for nullability for top and left calculations
     const n = node ?? dummyNode
+
+    // Node Context value
+    const nodeContext = useMemo<NodeContextValue>(() => ({id, zIndex, grabbed, handlePointerEvents}), [id, zIndex, grabbed, handlePointerEvents])
 
     return <ContainerDiv className={NODE_CONTAINER_CLASS} resize={internals.isStatic ? undefined : resize} resizable={resizable} style={{
         left: absolutePosition.x - bounds.x - n.width / 2 - n.margin[3],
         top: absolutePosition.y - bounds.y - n.height / 2 - n.margin[0],
     }}>
-        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} zIndex={zIndex}
+        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} zIndex={zIndex} pointerEvents={pointerEvents}
                     grabbed={grabbed} data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"node"}>
             {children}
         </ContentDiv>

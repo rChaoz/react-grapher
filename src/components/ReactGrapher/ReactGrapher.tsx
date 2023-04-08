@@ -184,7 +184,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
         const Component = node.Component
         return <Component key={node.id} id={node.id} data={node.data} classes={node.classes} absolutePosition={node.absolutePosition} edgeMargin={node.edgeMargin}
-                          resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}/>
+                          resize={node.resize} grabbed={grabbed.type === "node" && grabbed.id === node.id} selected={node.selected} parent={parent} position={node.position}
+                          pointerEvents={node.pointerEvents} handlePointerEvents={node.handlePointerEvents}/>
     }), [nodes, selection, shouldUpdateGrabbed])
 
     // Same for Edges
@@ -225,7 +226,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} label={edge.label} labelPosition={edge.labelPosition}
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
-                          selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id}/>
+                          selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id} pointerEvents={edge.pointerEvents}/>
     }), [nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
 
     // Verify edges and compute handles for those that have them set to "auto" (undefined)
@@ -503,12 +504,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (grabbed.type != null && !grabbed.hasMoved && Math.abs(event.clientX - grabbed.startX) ** 2
                 + Math.abs(event.clientY - grabbed.startY) ** 2 < s.config.userControls.minimumPointerMovement ** 2) return
 
-            // If a handle is moved and node creation isn't allowed, grab (move) the node instead
-            if (grabbed.type === "handle" && !grabbed.node.allowCreatingEdges && !s.config.nodeDefaults.allowCreatingEdges) {
-                grabbed.type = "node"
-                grabbed.id = grabbed.node.id
-            }
-
+            // TODO Handle
             if (grabbed.type === "viewport") {
                 // User is moving the viewport (panning the graph)
                 if (!s.config.viewportControls.allowPanning) return
@@ -723,12 +719,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
             if (prevented || grabbed.type != null) return
 
-            // Check if grabbing is not allowed
-            if (r.type != "handle") {
-                if (r.obj.allowGrabbing === false || (r.obj.allowGrabbing === undefined && (
-                    (r.type === "node" && s.config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && s.config.edgeDefaults.allowGrabbing === false)
-                ))) return
-            }
             // "Grab" the object
             // And initiate timer for long-click detection
             const timeoutID = s.config.userControls.longClickDelay < 0 || s.onEvent == null ? -1 : window.setTimeout(() => {
@@ -744,7 +734,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 sendEvent(grapherEvent, s)
             }, s.config.userControls.longClickDelay)
             grabbed.type = r.type
-            if (r.type === "handle") grabbed.node = r.obj
+            if (r.type === "handle") grabbed.node = r.node
             grabbed.id = r.objID
             grabbed.clickCount = (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + s.config.userControls.multiClickDelay > Date.now())
                 ? lastClicked.times + 1

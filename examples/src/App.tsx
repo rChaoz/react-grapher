@@ -1,5 +1,5 @@
 import React from 'react';
-import {EdgeData, NodeData, ReactGrapher, Background} from "reactgrapher";
+import {GrapherConfig, EdgeData, NodeData, ReactGrapher, Background} from "reactgrapher";
 import "reactgrapher/dist/default-style.css"
 import "./App.css"
 
@@ -17,6 +17,9 @@ const edges: EdgeData[] = [
     {id: "3", source: "2", target: "3", label: "b", markerEnd: "arrow", data: {type: "round"}},
 ]
 
+const config: GrapherConfig = {
+}
+
 export default function App() {
     return <div style={{
         width: 800,
@@ -25,7 +28,7 @@ export default function App() {
         <div style={{
             height: 400,
         }}>
-            <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"}>
+            <ReactGrapher defaultNodes={nodes} defaultEdges={edges} fitView={"initial"} config={config}>
                 <Background/>
             </ReactGrapher>
         </div>

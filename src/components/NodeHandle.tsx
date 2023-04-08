@@ -4,11 +4,11 @@ import {NODE_HANDLE_BOX_CLASS, NODE_HANDLE_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z
 import styled from "@emotion/styled";
 import {convertToCSSLength} from "../util/utils";
 import {Property} from "csstype";
+import {NodeContext} from "../context/NodeContext";
+import {errorComponentOutsideContext} from "../util/log";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherConfig} from "../data/GrapherConfig";
-import {NodeContext} from "../context/NodeContext";
-import {errorComponentOutsideContext} from "../util/log";
 
 export type NodeHandleProps = NodeHandlePropsPositioned | NodeHandlePropsTopLeft
 
@@ -48,11 +48,14 @@ export interface NodeHandlePropsBase {
      */
     outerBoxHeight?: Property.Height<number>
     /**
-     * Optional content for the node
+     * Whether the user may grab this handle and drag to create a new edge. A new edge must respect source & target roles.
+     */
+    /**
+     * Optional content for this handle
      */
     children?: React.ReactNode
     /**
-     * As the handles are placed outside the `NodeContent` node, their top/left CSS properties will be relative to the  node's border-box (basically, the handle's center
+     * As the handles are placed outside the *node content div*, their top/left CSS properties will be relative to the  node's border-box (basically, the handle's center
      * point will be on the outside edge of the node's border). This doesn't look great, and this is what this prop is for. Possible values:
      * - "normal" - handle positioning will take half of the node's borders into account. For example, using `left = 0` or `left = '100%'` will place this
      * handle's center point in the middle of the border (middle on its thickness axis).
@@ -61,11 +64,25 @@ export interface NodeHandlePropsBase {
      * - "disable" - `top` and `left` props will be passed to CSS directly, unmodified. This way, the handle's center point will be on the outer edge of the
      * node's border.
      *
-     * Note: this prop also applies if you are using the `position` prop instead of `top`/`left`.
+     * *Note: this prop also applies if you are using the `position` prop instead of `top`/`left`.*
      *
      * Defaults to "normal"
      */
     useNodeBorderBox?: "normal" | "inner" | "disable"
+    /**
+     * Whether pointer events are enabled for this handle. If disabled, this handle will not have hover effects and any pointer events will go through it (to the node behind).
+     * Defaults to false
+     */
+    pointerEvents?: boolean
+    /**
+     * Allow new edges to be created by clicking this handle and dragging. Defaults to false
+     */
+    allowNewEdges?: boolean
+    /**
+     * Allows this handle to be a target for new edges, i.e. when a user starts to create a new edge, from a node/handle with {@link allowNewEdges} true,
+     * they can drag onto this handle in order to complete the edge creation. Defaults to false
+     */
+    allowEdgeTarget?: boolean
 }
 
 export interface NodeHandlePropsPositioned extends NodeHandlePropsBase {
@@ -126,12 +143,13 @@ export interface NodeHandlePropsTopLeft extends NodeHandlePropsBase {
     left: Property.Left<number>
 }
 
-interface HandleDivProps {
+interface HandleDivBoxProps {
     width: Property.Width<number> | undefined
     height: Property.Height<number> | undefined
 }
 
-const HandleContainerDiv = styled.div`
+const HandleContainerDiv = styled.div<{pointerEvents: boolean | null}>`
+  pointer-events: ${props => props.pointerEvents === true ? "initial" : "none"};
   position: absolute;
 `
 
@@ -140,7 +158,7 @@ const HandleDiv = styled.div<{ zIndex: number }>`
   z-index: ${props => props.zIndex};
 `
 
-const HandleBoxDiv = styled.div<HandleDivProps>`
+const HandleBoxDiv = styled.div<HandleDivBoxProps>`
   position: absolute;
   z-index: ${Z_INDEX_HANDLE_BOX};
   top: 50%;
@@ -167,9 +185,10 @@ export function NodeHandle(props: NodeHandleProps) {
     const useNodeBorder = props.useNodeBorderBox === "normal" || props.useNodeBorderBox === undefined ? "normal"
         : props.useNodeBorderBox === "inner" ? "inner" : undefined
 
-    // data-id is used by ReactGrapher's processDomElement
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position} data-node={context.id}
-                               data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}>
+                               data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}
+                               data-allow-new-edges={props.allowNewEdges} data-allow-edges-target={props.allowEdgeTarget}
+                               pointerEvents={props.pointerEvents == null ? context.handlePointerEvents : props.pointerEvents}>
         <HandleDiv id={`${context.id}-handle-${name}`} className={cx(NODE_HANDLE_CLASS, props.className)}
                    zIndex={context.zIndex}>
             {props.children}

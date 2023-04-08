@@ -1,5 +1,5 @@
 import {errorCustom, errorParsingDOMElement, errorUnknownEdge, errorUnknownNode} from "../../util/log";
-import {Node, Nodes, NodesImpl} from "../../data/Node";
+import {Node, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
 import {Edge, Edges, EdgesImpl} from "../../data/Edge";
 import {GrapherChange} from "../../data/GrapherChange";
 import {Controller} from "../../data/Controller";
@@ -59,8 +59,8 @@ export function parseAllowedConnections(s: string): AllowedConnections {
 /**
  * Extract DOM ID, type (node/edge) and internal ID from event target
  */
-export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>)
-    : { type: "node", objID: string, obj: Node<N> } | { type: "edge", objID: string, obj: Edge<E> } | { type: "handle", objID: string, obj: Node<N> } | null {
+export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>) :
+    { type: "node", objID: string, obj: Node<N> } | { type: "edge", objID: string, obj: Edge<E> } | { type: "handle", objID: string, obj: NodeHandleInfo,node: Node<N> } | null {
     if (element == null) {
         errorCustom("Node/Edge/Handle pointer event listener callback was called with a null event.currentTarget")
         return null
@@ -70,10 +70,11 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
 
     if (type == null || objID == null) {
         errorParsingDOMElement(elem)
+        errorCustom("Element does not have 'data-type' or 'data-id' attributes.")
         return null
     }
 
-    let obj, nodeID
+    let obj, nodeID, node
     switch (type) {
         case "node":
             obj = nodes.get(objID)
@@ -95,15 +96,22 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
             nodeID = elem.dataset.node
             if (nodeID == null) {
                 errorParsingDOMElement(elem)
+                errorCustom("Handle element does not have 'data-node' attribute.")
                 return null
             }
-            obj = nodes.get(nodeID)
-            if (obj == null) {
+            node = nodes.get(nodeID)
+            if (node == null) {
                 errorParsingDOMElement(elem)
                 errorUnknownNode(nodeID)
                 return null
             }
-            return {type: "handle", objID, obj}
+            obj = (node as NodeImpl<N>).handles.find(h => h.name === objID)
+            if (obj == null) {
+                errorParsingDOMElement(elem)
+                errorCustom(`Node '${nodeID}' does not have a handle named '${objID}'`)
+                return null
+            }
+            return {type: "handle", objID, obj, node}
     }
 
     errorParsingDOMElement(elem)

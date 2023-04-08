@@ -81,7 +81,14 @@ export interface Edge<T = SimpleEdgeData> {
      * ID of the predefined/custom SVG marker.
      */
     markerEnd: string | null
+    /**
+     * Whether pointer events are enabled for this edge. If disabled, this node will not have hover effects and any pointer events will go through it (to the viewport).
+     * Defaults to true
+     */
+    pointerEvents: boolean
+
     // Config
+
     /**
      * Whether this edge is selectable by the user. Defaults to true
      */
@@ -148,6 +155,7 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowGrabbing" | "allo
         labelRadius: 6,
         markerStart: null,
         markerEnd: null,
+        pointerEvents: true,
         // Internals
         isInitialized: true,
         verified: false,

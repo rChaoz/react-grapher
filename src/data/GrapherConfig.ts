@@ -44,6 +44,7 @@ function withDefaultsViewportControls(controls: GrapherViewportControls | boolea
 export interface GrapherUserControls {
     /**
      * Allows the user to select nodes or edges. Defaults to true
+     * // TODO Remove this, as we have nodeDefaults.allowSelection
      */
     allowSelection?: boolean
     /**
@@ -64,7 +65,7 @@ export interface GrapherUserControls {
      */
     multiClickDelay?: number
     /**
-     * How long a click must be held for it to count as a long-click, in milliseconds. A negative value long-click detection is disabled.
+     * How long a click must be held for it to count as a long-click, in milliseconds. A negative value means long-click detection is disabled.
      * Defaults to 500.
      */
     longClickDelay?: number
@@ -87,6 +88,11 @@ const noUserControls: Required<GrapherUserControls> = {
     multiClickDelay: 500,
     longClickDelay: 500,
 }
+
+/* TODO 'yesUserControls' - allow 'true' value for userControls, which would allow the user to create and delete nodes & edges.
+ This would cause nodeDefaults and edgeDefaults to be modified accordingly, and this should be documented.
+ */
+
 
 function withDefaultsUserControls(controls: GrapherUserControls | false | undefined): Required<GrapherUserControls> {
     if (controls === undefined) return defaultUserControls

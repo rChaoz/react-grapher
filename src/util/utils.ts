@@ -40,7 +40,7 @@ export function resolveCSSCalc(expr: string, length: number) {
  * @param value CSS computed value
  * @param length If the value is or contains a percentage value, the length the percentage is based on (e.g. width/height of the parent for most
  * properties, or width/height of the element itself for border-radius).
-  */
+ */
 export function resolveValue(value: string, length: number): number {
     value = value.trim()
     // Resolve a percentage or pixel value to pixel value
@@ -162,4 +162,26 @@ export function deepEquals(o1: unknown, o2: unknown) {
         else if (!deepEquals(o1[key], o2[key])) return false
     }
     return true
+}
+
+/**
+ * Converts string to boolean:
+ * - "true" -> true
+ * - "false" -> false
+ * - null/undefined -> undefined
+ * - anything else -> undefined, log error
+ */
+export function stringToBoolean(str: string | undefined) {
+    switch (str) {
+        case "true":
+            return true
+        case "false":
+            return false
+        case null:
+        case undefined:
+            return undefined
+        default:
+            warnCustom("Unable to convert string value to boolean:", str)
+            return undefined
+    }
 }

@@ -7,7 +7,6 @@ import {Node} from "../data/Node";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {Edge} from "../data/Edge";
 import {errorQueryFailed, errorUnknownEdge, warnInvalidPropValue} from "../util/log";
-import styled from "@emotion/styled";
 
 export interface BaseEdgeProps {
     /**
@@ -46,6 +45,10 @@ export interface BaseEdgeProps {
      * ID of the predefined/custom SVG marker, null means no marker.
      */
     markerEnd: string | null
+    /**
+     * Whether to enable pointer events for this edge.
+     */
+    pointerEvents: boolean
 }
 
 export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPosition"> {
@@ -83,11 +86,7 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
     targetHandle: string | null | undefined
 }
 
-const BaseG = styled.g<{ static?: boolean }>`
-  pointer-events: ${props => props.static ? "none" : "stroke"};
-`
-
-export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd}: BaseEdgeProps) {
+export function BaseEdge({id, path, classes, label, labelPosition, selected, grabbed, markerStart, markerEnd, pointerEvents}: BaseEdgeProps) {
     const internals = useContext(InternalContext)
 
     const ref = useRef<SVGGraphicsElement>(null)
@@ -149,19 +148,19 @@ export function BaseEdge({id, path, classes, label, labelPosition, selected, gra
     }, [internals, edge, id, path, grabbed, selected])
 
     const baseID = internals.id
-    return <BaseG ref={ref} id={`${baseID}-edge-${id}`} className={cx(classes, EDGE_CLASS)} static={internals.isStatic}
+    return <g ref={ref} id={`${baseID}-edge-${id}`} className={cx(classes, EDGE_CLASS)} pointerEvents={!pointerEvents || internals.isStatic ? "none" : "stroke"}
                   data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"edge"}>
         <path d={path} className={EDGE_HANDLE_CLASS} stroke={"transparent"} fill={"none"} strokeWidth={15}/>
         <path d={path} className={EDGE_PATH_CLASS}
               markerStart={markerStart != null ? `url(#${baseID}-${markerStart})` : undefined}
               markerEnd={markerEnd != null ? `url(#${baseID}-${markerEnd})` : undefined}/>
         {label != null && <>
-            <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={edge?.labelRadius} pointerEvents={internals.isStatic ? "none" : "fill"}/>
+            <rect className={EDGE_LABEL_BACKGROUND_CLASS} rx={edge?.labelRadius} pointerEvents={!pointerEvents || internals.isStatic ? "none" : "fill"}/>
             {typeof labelPosition === "number" || labelPosition == null
                 ? <text className={EDGE_LABEL_CLASS} textAnchor={"middle"}
                         dominantBaseline={"middle"} data-label-pos={String(labelPosition)}>{label}</text>
                 : <text className={EDGE_LABEL_CLASS} x={labelPosition.x} y={labelPosition.y} textAnchor={"middle"}
                         dominantBaseline={"middle"}>{label}</text>}
         </>}
-    </BaseG>
+    </g>
 }

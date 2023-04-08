@@ -10,7 +10,7 @@ import {Edge} from "./Edge";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherConfig} from "./GrapherConfig";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {NodeHandlePropsBase, SOURCE, TARGET} from "../components/NodeHandle";
+import {NodeHandle, NodeHandlePropsBase, SOURCE, TARGET} from "../components/NodeHandle";
 
 /**
  * Node of a ReactGrapher. All properties should be set to their defaults (according to the provided {@link GrapherConfig}) if the graph has rendered.
@@ -63,25 +63,31 @@ export interface Node<T> {
      */
     position: DOMPoint
     /**
-     * Whether this node should be user-resizable.
-     * If you want to set min/max width or height, you should create a CSS class and add it to {@link classes}.
+     * Whether this node should be user-resizable. If you want to set min/max width or height, you should create a CSS class and add it to {@link classes}.
+     * Defaults to "none".
      */
     resize: Property.Resize
     /**
      * Spacing between this node and the edges that connect to it. Defaults to 3
      */
     edgeMargin: number
+    /**
+     * Whether pointer events are enabled for this node. If disabled, this node will not have hover effects and any pointer events will go through it (to the viewport).
+     * Defaults to true
+     */
+    pointerEvents: boolean
+    /**
+     * Default value for this node's handles' {@link NodeHandle.pointerEvents} prop, used if they don't set it explicitly.
+     * Defaults to null (fallback to handle's individual setting).
+     */
+    handlePointerEvents: boolean | null
 
     // Config
+
     /**
      * Whether this node is selectable by the user. Defaults to true
      */
     allowSelection?: boolean
-    /**
-     * Whether this node can be "grabbed" by the user. A node is grabbed on pointerdown, and this prevents the viewport from being grabbed (as it is the second to receive
-     * the event). If false, attempting to drag this node will pan the viewport instead; the event will completely ignore this node. Defaults to true
-     */
-    allowGrabbing?: boolean
     /**
      * Whether this node can the moved by the user. Defaults to true
      */
@@ -91,9 +97,23 @@ export interface Node<T> {
      */
     allowDeletion?: boolean
     /**
-     * Allow new edges to be created by clicking a handle and dragging. Defaults to false
+     * Allow new edges to be created by long-clicking the node. Defaults to false
      */
-    allowCreatingEdges?: boolean
+    allowNewEdges?: boolean
+    /**
+     * Allows this node to be a target for new edges, i.e. when a user starts to create a new edge, from a node/handle with {@link allowNewEdges} true,
+     * they can drag onto this node in order to complete the edge creation. Note that, if {@link pointerEvents} is disabled (`false`), this property does nothing,
+     * as the `pointerup` listener will never be fired. Defaults to false
+     */
+    allowEdgeTarget?: boolean
+    /**
+     * Default value for this node's handles for {@link NodeHandle.allowNewEdges}, if they don't set it explicitly.
+     */
+    allowNewEdgesFromHandles?: boolean
+    /**
+     * Default value for this node's handles for {@link NodeHandle.allowEdgeTarget}, if they don't set it explicitly.
+     */
+    allowEdgeTargetForHandles?: boolean
     /**
      * Read-only absolute position, calculated during rendering.
      */
@@ -154,6 +174,18 @@ export interface NodeHandleInfo {
      * Y coordinate relative to node center
      */
     y: number
+    /**
+     * Same as NodeHandle prop.
+     */
+    allowCreatingEdges: boolean | undefined
+    /**
+     * Same as NodeHandle prop.
+     */
+    allowCreatingEdgesTarget: boolean | undefined
+    /**
+     * Same as NodeHandle prop.
+     */
+    allowGrabbing: boolean | undefined
 }
 
 /**
@@ -168,7 +200,8 @@ export type NodeData<T = SimpleNodeData> = Partial<Node<T>> & {id: string}
  */
 export type NodeDefaults = Omit<NodeData<any>, "id" | "data" | "parent" | "selected">
 
-function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion" | "allowCreatingEdges"> & NodeInternals {
+function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "allowMoving" | "allowDeletion"
+    | "allowNewEdges" | "allowEdgeTarget" | "allowNewEdgesFromHandles" | "allowEdgeTargetForHandles"> & NodeInternals {
     return {
         Component: SimpleNode,
         classes: [],
@@ -176,6 +209,8 @@ function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "all
         resize: "none",
         position: new DOMPoint(),
         edgeMargin: 3,
+        pointerEvents: true,
+        handlePointerEvents: null,
         absolutePosition: new DOMPoint(),
         // Internals
         isInitialized: true,
