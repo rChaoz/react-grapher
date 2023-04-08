@@ -43,11 +43,6 @@ function withDefaultsViewportControls(controls: GrapherViewportControls | boolea
 
 export interface GrapherUserControls {
     /**
-     * Allows the user to select nodes or edges. Defaults to true
-     * // TODO Remove this, as we have nodeDefaults.allowSelection
-     */
-    allowSelection?: boolean
-    /**
      * Allows selecting multiple nodes or edges. Defaults to true
      */
     multipleSelection?: boolean
@@ -74,7 +69,6 @@ export interface GrapherUserControls {
 }
 
 const defaultUserControls: Required<GrapherUserControls> = {
-    allowSelection: true,
     multipleSelection: true,
     minimumPointerMovement: 5,
     multiClickDelay: 500,
@@ -82,14 +76,13 @@ const defaultUserControls: Required<GrapherUserControls> = {
 }
 
 const noUserControls: Required<GrapherUserControls> = {
-    allowSelection: false,
     multipleSelection: false,
     minimumPointerMovement: 5,
     multiClickDelay: 500,
     longClickDelay: 500,
 }
 
-/* TODO 'yesUserControls' - allow 'true' value for userControls, which would allow the user to create and delete nodes & edges.
+/* TODO 'allUserControls' - allow 'true' value for userControls, which would allow the user to create and delete nodes & edges.
  This would cause nodeDefaults and edgeDefaults to be modified accordingly, and this should be documented.
  */
 
