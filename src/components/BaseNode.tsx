@@ -72,8 +72,8 @@ const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable
   align-items: stretch;
 `
 
-const ContentDiv = styled.div<{ zIndex: number, grabbed: boolean, pointerEvents: boolean | undefined }>`
-  pointer-events: ${props => props.pointerEvents === false ? "none" : "initial"};
+const ContentDiv = styled.div<{ zIndex: number, grabbed: boolean, enablePointerEvents: boolean | undefined }>`
+  pointer-events: ${props => props.enablePointerEvents === false ? "none" : "initial"};
   position: relative;
   flex-grow: 1;
   z-index: ${props => props.zIndex};
@@ -436,7 +436,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         left: absolutePosition.x - bounds.x - n.width / 2 - n.margin[3],
         top: absolutePosition.y - bounds.y - n.height / 2 - n.margin[0],
     }}>
-        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} zIndex={zIndex} pointerEvents={pointerEvents}
+        <ContentDiv ref={ref} id={`${internals.id}-node-${id}`} className={cx(NODE_CLASS, classes)} zIndex={zIndex} enablePointerEvents={pointerEvents}
                     grabbed={grabbed} data-grabbed={grabbed} data-selected={selected} data-id={id} data-type={"node"}>
             {children}
         </ContentDiv>

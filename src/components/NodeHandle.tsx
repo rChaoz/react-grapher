@@ -40,11 +40,11 @@ export interface NodeHandlePropsBase {
      */
     role?: null | string | string[]
     /**
-     * Width of the outer box that appears on top of edges, used to represent the click-box for this handle. Should be larger than {@link width}. Defaults to 15px
+     * Width of the outer box that appears on top of edges, used to represent the click-box for this handle. Should be larger than {@link width}. Defaults to 14px
      */
     outerBoxWidth?: Property.Width<number>
     /**
-     * Height of the outer box that appears on top of edges, used to represent the click-box for this handle. Should be larger than {@link height}. Defaults to 15px
+     * Height of the outer box that appears on top of edges, used to represent the click-box for this handle. Should be larger than {@link height}. Defaults to 14px
      */
     outerBoxHeight?: Property.Height<number>
     /**
@@ -148,8 +148,8 @@ interface HandleDivBoxProps {
     height: Property.Height<number> | undefined
 }
 
-const HandleContainerDiv = styled.div<{pointerEvents: boolean | null}>`
-  pointer-events: ${props => props.pointerEvents === true ? "initial" : "none"};
+const HandleContainerDiv = styled.div<{enablePointerEvents: boolean | null}>`
+  pointer-events: ${props => props.enablePointerEvents ? "initial" : "none"};
   position: absolute;
 `
 
@@ -164,8 +164,8 @@ const HandleBoxDiv = styled.div<HandleDivBoxProps>`
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: ${props => convertToCSSLength(props.width ?? 15)};
-  height: ${props => convertToCSSLength(props.height ?? 15)};
+  width: ${props => convertToCSSLength(props.width ?? 14)};
+  height: ${props => convertToCSSLength(props.height ?? 14)};
 `
 
 export function NodeHandle(props: NodeHandleProps) {
@@ -188,7 +188,7 @@ export function NodeHandle(props: NodeHandleProps) {
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position} data-node={context.id}
                                data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}
                                data-allow-new-edges={props.allowNewEdges} data-allow-edges-target={props.allowEdgeTarget}
-                               pointerEvents={props.pointerEvents == null ? context.handlePointerEvents : props.pointerEvents}>
+                               enablePointerEvents={props.pointerEvents == null ? context.handlePointerEvents : props.pointerEvents}>
         <HandleDiv id={`${context.id}-handle-${name}`} className={cx(NODE_HANDLE_CLASS, props.className)}
                    zIndex={context.zIndex}>
             {props.children}

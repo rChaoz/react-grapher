@@ -47,6 +47,15 @@ export interface GrapherUserControls {
      */
     multipleSelection?: boolean
     /**
+     * Maximum distance the cursor can be away from an edge's source/destination point for it grab the edge's handle: grabbing an edge close to its source point will
+     * begin
+     */
+    edgeHandleDistance?: number
+    /**
+     * "Hit-box" width of an edge (i.e. clickable stroke-width). Defaults to 15.
+     */
+    edgeBoxWidth?: number
+    /**
      * Minimum amount, in pixels, that the pointer must travel after a down event, before a move event being registered and a click event becoming impossible.
      *
      * In other words: if the user taps a node but during the tap the pointer moves by just a pixel, without this a click wouldn't be registered, and the node
@@ -69,6 +78,8 @@ export interface GrapherUserControls {
 }
 
 const defaultUserControls: Required<GrapherUserControls> = {
+    edgeHandleDistance: 40,
+    edgeBoxWidth: 15,
     multipleSelection: true,
     minimumPointerMovement: 5,
     multiClickDelay: 500,
@@ -76,6 +87,8 @@ const defaultUserControls: Required<GrapherUserControls> = {
 }
 
 const noUserControls: Required<GrapherUserControls> = {
+    edgeHandleDistance: 40,
+    edgeBoxWidth: 15,
     multipleSelection: false,
     minimumPointerMovement: 5,
     multiClickDelay: 500,

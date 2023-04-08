@@ -142,6 +142,69 @@ export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>
 }
 
 /**
+ * Calculates a vector perpendicular on segment [ab], of length `length`. If `relative` is true, its length will be `length`% of [ab]'s length.
+ *
+ * Distance can be negative to reverse direction. This new vector is relative to the origin 0,0.
+ * @return The vector x and y components
+ */
+export function pointOnPerpendicular(a: DOMPoint, b: DOMPoint, length: number, relative = false): [number, number] {
+    // Vector from a to b (delta)
+    const dx = b.x - a.x, dy = b.y - a.y
+    // Calculate point on perpendicular
+    let cx = dy * length, cy = -dx * length
+    const cLen = Math.sqrt(cx ** 2 + cy ** 2)
+    if (!relative) {
+        // Normalize c vector and set its length to 'length'
+        if (cLen == 0) cx = cy = 0
+        else {
+            cx = cx / cLen * Math.abs(length)
+            cy = cy / cLen * Math.abs(length)
+        }
+    }
+    return [cx, cy]
+}
+
+/**
+ * Calculate necessary parameters for an edge's label: text anchor, baseline, rotation angle and X and Y shift coordinates.
+ */
+export function labelHelper(sourcePos: DOMPoint, targetPos: DOMPoint, labelShift: number, labelRotationFollowEdge: boolean) {
+    const dx = targetPos.x - sourcePos.x, dy = targetPos.y - sourcePos.y
+    // Calculate edge angle
+    let labelAngle = 0, reverseShift = false
+
+    if (labelRotationFollowEdge) {
+        if (dy == 0) labelAngle = dx > 0 ? 0 : 180
+        else labelAngle = Math.atan(dx / -dy) * (180 / Math.PI) + (dy < 0 ? 270 : 90)
+        if (labelAngle > 90 && labelAngle < 270) {
+            reverseShift = true
+            labelAngle += 180
+        }
+    }
+
+    // Calculate text anchor and baseline
+    let labelAnchor: "start" | "middle" | "end" = "middle"
+    let labelBaseline: "text-after-edge" | "text-before-edge" | "middle" = "middle"
+
+    if (labelShift > 0) {
+        if (labelRotationFollowEdge) labelBaseline = labelAngle <= 90 || labelAngle >= 270 ? "text-after-edge" : "text-before-edge"
+        else if (Math.abs(dx) > Math.abs(dy)) {
+            // Edge is mostly horizontal
+            labelAnchor = "middle"
+            labelBaseline = dx > 0 ? "text-after-edge" : "text-before-edge"
+        } else {
+            // Edge is mostly vertical
+            labelBaseline = "middle"
+            labelAnchor = dy > 0 ? "start" : "end"
+        }
+    }
+
+    // Calculate label position
+    const [labelX, labelY] = pointOnPerpendicular(sourcePos, targetPos, reverseShift ? -labelShift : labelShift)
+
+    return {labelShift: new DOMPoint(labelX, labelY), labelAnchor, labelBaseline, labelAngle}
+}
+
+/**
  * Returns the EdgePath for a straight line edge
  */
 export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
@@ -152,29 +215,13 @@ export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
  * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values. This value acts like a percentage/angle, if you
  * want the edge to extend a certain distance regardless of its length, set `absoluteCurve = true`.
  */
-export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, curve: number, absoluteCurve?: boolean) {
-    // Vector from a to b (delta)
-    const dx = b.x - a.x, dy = b.y - a.y
-    // Calculate curvature
-    let cx = dy * curve, cy = -dx * curve
-    let cLen = Math.sqrt(cx ** 2 + cy ** 2)
-    if (absoluteCurve === true) {
-        // Normalize c vector and set its length to 'curve'
-        if (cLen == 0) cx = cy = 0
-        else {
-            cx = cx / cLen * Math.abs(curve)
-            cy = cy / cLen * Math.abs(curve)
-        }
-        cLen = Math.abs(curve)
-    }
-    // Mid-point for bezier curve
-    const px = (b.x + a.x) / 2 + cx, py = (b.y + a.y) / 2 + cy
-    // Set length of curvature (c) vector to 2
-    if (cLen == 0) cx = cy = 0
-    else {
-        cx = cx / cLen * 2
-        cy = cy / cLen * 2
-    }
+export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, labelShift: number, curve: number, absoluteCurve?: boolean) {
+    // Calculate mid-point for bezier curve
+    let [cx, cy] = pointOnPerpendicular(a, b, curve, !absoluteCurve)
+    const px = (b.x + a.x) / 2 + cx, py = (b.y + a.y) / 2 + cy;
+    // Calculate origin and target points shift
+    // TODO This should be done for all types, tested with handles and possibly configurable. Probably should be moved to SimpleEdge
+    [cx, cy] = pointOnPerpendicular(a, b, 2)
     // Shift start & end points by c to avoid overlapping edges when there's an edge a->b and an edge b->a
     return `M ${a.x + cx} ${a.y + cy} Q ${px} ${py} ${b.x + cx} ${b.y + cy}`
 }

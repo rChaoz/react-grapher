@@ -18,6 +18,12 @@ const edges: EdgeData[] = [
 ]
 
 const config: GrapherConfig = {
+    nodeDefaults: {
+        handlePointerEvents: true,
+    },
+    edgeDefaults: {
+        labelShift: 4,
+    }
 }
 
 export default function App() {

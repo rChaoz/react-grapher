@@ -25,7 +25,7 @@ import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
 // Child components
 import {Background, BackgroundProps} from "./components/Background";
 // Other
-import {getNodeIntersection, getStraightEdgePath, getRoundEdgePath} from "./util/edgePath";
+import {getNodeIntersection, pointOnPerpendicular, getStraightEdgePath, getRoundEdgePath} from "./util/EdgeHelper";
 
 export {
     // Data
@@ -49,5 +49,5 @@ export {
     // Child components
     Background, BackgroundProps,
     // Others
-    getNodeIntersection, getStraightEdgePath, getRoundEdgePath
+    getNodeIntersection, pointOnPerpendicular, getStraightEdgePath, getRoundEdgePath
 }

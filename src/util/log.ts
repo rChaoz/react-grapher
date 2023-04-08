@@ -55,9 +55,10 @@ export function errorComponentOutsideContext(element: string, container: string)
     error(`${element} can only be used inside a ${container}!`)
 }
 
-export function errorQueryFailed(query: string, desc: string) {
-    error(`Unable to find DOM element (${desc}) with query: ${query}`)
-}
+// TODO Maybe this will be used later? don't delete yet
+// export function errorQueryFailed(query: string, desc: string) {
+//     error(`Unable to find DOM element (${desc}) with query: ${query}`)
+// }
 
 // Warnings
 

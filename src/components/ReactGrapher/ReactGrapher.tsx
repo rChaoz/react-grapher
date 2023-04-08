@@ -24,7 +24,7 @@ import {checkErrorInvalidID, criticalCustom, errorUnknownNode, warnCustom, warnU
 import {BoundsContext} from "../../context/BoundsContext";
 import {InternalContext, InternalContextValue} from "../../context/InternalContext";
 import {SimpleEdge} from "../SimpleEdge";
-import {getNodeIntersection} from "../../util/edgePath";
+import {getNodeIntersection} from "../../util/EdgeHelper";
 import {deepEquals, expandRect, localMemo} from "../../util/utils";
 import {createEvent, GrapherEventImpl, GrapherKeyEvent, GrapherPointerEvent, GrapherWheelEvent} from "../../data/GrapherEvent";
 
@@ -223,11 +223,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 } else return new DOMPoint(target.absolutePosition.x + handle.x, target.absolutePosition.y + handle.y)
             }
         }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles], edge.targetPosMemoObject)
-        return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} label={edge.label} labelPosition={edge.labelPosition}
+        return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} boxWidth={config.userControls.edgeBoxWidth}
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
-                          selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id} pointerEvents={edge.pointerEvents}/>
-    }), [nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges])
+                          selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id} pointerEvents={edge.pointerEvents}
+                          label={edge.label} labelPosition={edge.labelPosition} labelShift={edge.labelShift} labelRotationFollowEdge={edge.labelRotationFollowEdge}/>
+    }), [nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges, config.userControls.edgeBoxWidth])
 
     // Verify edges and compute handles for those that have them set to "auto" (undefined)
     useEffect(() => {

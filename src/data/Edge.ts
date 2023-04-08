@@ -6,7 +6,7 @@ import {checkErrorInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 
 /**
- * An edge in a ReactGrapher. All properties should be set to their defaults (according to the provided {@link GrapherConfig}) if the graph has rendered.
+ * An edge in a ReactGrapher. All properties will be set to their defaults (according to the provided {@link GrapherConfig}) when the graph is rendered.
  *
  * Note that properties in this object are _always_ respected by the default implementation (i.e. {@link SimpleEdge}), however if you implement/use a custom
  * component function, it is up to that function to decide everything about the edge it is rendering: CSS classes, actual source, target points and path, label
@@ -66,6 +66,14 @@ export interface Edge<T = SimpleEdgeData> {
      */
     labelPosition: number
     /**
+     * How far away from the edge the label is displayed. Set this to 0 to display the text on top of the edge. Defaults to 5
+     */
+    labelShift: number
+    /**
+     * Whether the label rotates alongside the edge. If false, the text will always display left-to-right. Defaults to true
+     */
+    labelRotationFollowEdge: boolean
+    /**
      * Padding used by the label's background. Defaults to 2
      */
     labelPadding: number
@@ -74,11 +82,11 @@ export interface Edge<T = SimpleEdgeData> {
      */
     labelRadius: SVGProps<SVGRectElement>["rx"]
     /**
-     * ID of the predefined/custom SVG marker.
+     * ID of the predefined/custom SVG marker. Defaults to `null` (none)
      */
     markerStart: string | null
     /**
-     * ID of the predefined/custom SVG marker.
+     * ID of the predefined/custom SVG marker. Defaults to "arrow".
      */
     markerEnd: string | null
     /**
@@ -94,10 +102,23 @@ export interface Edge<T = SimpleEdgeData> {
      */
     allowSelection?: boolean
     /**
-     * Whether this edge can be "grabbed" by the user. An edge is grabbed on pointerdown, and this prevents the viewport from being grabbed (as it is the second to receive
-     * the event). If false, attempting to drag this edge will pan the viewport instead; the event will completely ignore this edge. Defaults to true
+     * Whether this edge can be deleted by the user. Defaults to false
      */
-    allowGrabbing?: boolean
+    allowDeletion?: boolean
+    /**
+     * Whether this node can be changed by the user, by dragging either end, to change source/target. Defaults to false.
+     */
+    allowEdit?: boolean
+    /**
+     * Same as {@link allowEdit}, but just for the source of this edge, used to override `allowEdit` should you want finer control over the config of this edge.
+     * If not set, `allowEdit` will be used instead.
+     */
+    allowEditSource?: boolean
+    /**
+     * Same as {@link allowEdit}, but just for the target of this edge, used to override `allowEdit` should you want finer control over the config of this edge.
+     * If not set, `allowEdit` will be used instead.
+     */
+    allowEditTarget?: boolean
 }
 
 interface EdgeInternals {
@@ -143,7 +164,7 @@ export type EdgeData<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, sourc
  */
 export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
 
-function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowGrabbing" | "allowSelection"> & EdgeInternals {
+function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowSelection" | "allowDeletion" | "allowEdit" | "allowEditSource" | "allowEditTarget"> & EdgeInternals {
     return {
         Component: SimpleEdge,
         classes: [],
@@ -151,10 +172,12 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowGrabbing" | "allo
         targetHandle: null,
         label: null,
         labelPosition: .5,
+        labelShift: 5,
+        labelRotationFollowEdge: true,
         labelPadding: 2,
         labelRadius: 6,
         markerStart: null,
-        markerEnd: null,
+        markerEnd: "arrow",
         pointerEvents: true,
         // Internals
         isInitialized: true,

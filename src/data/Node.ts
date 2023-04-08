@@ -13,7 +13,7 @@ import {GrapherConfig} from "./GrapherConfig";
 import {NodeHandle, NodeHandlePropsBase, SOURCE, TARGET} from "../components/NodeHandle";
 
 /**
- * Node of a ReactGrapher. All properties should be set to their defaults (according to the provided {@link GrapherConfig}) if the graph has rendered.
+ * Node of a ReactGrapher. All properties will be set to their defaults (according to the provided {@link GrapherConfig}) when the graph is rendered.
  *
  * Note that properties in this object are _always_ respected by the default implementation (i.e. {@link SimpleNode}), however if you implement/use a custom
  * component function, it is up to that function to decide everything about the node it is rendering: CSS classes, resizability, data displayed, even the position
