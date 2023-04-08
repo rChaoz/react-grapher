@@ -9,7 +9,7 @@
     --react-grapher-node-text-color: white;
 
     --react-grapher-handle-outer-background-hover: #fff3;
-    --react-grapher-handle-outer-background-active: #bbb3;
+    --react-grapher-handle-outer-background-active: #ddd3;
     --react-grapher-handle-border: #eee;
     --react-grapher-handle-background: #777;
 
@@ -78,7 +78,7 @@
     background-color: var(--react-grapher-handle-outer-background-hover);
 }
 
-.react-grapher-node-handle-box[data-grabbed=true] {
+.react-grapher-node-handle-box:active {
     background-color: var(--react-grapher-handle-outer-background-active);
 }
 

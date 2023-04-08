@@ -11,12 +11,12 @@ export interface GrapherBaseEvent {
     preventDefault(): void
 
     /**
-     * The currently grabbed object, if any. A node/edge/viewport is 'grabbed' after receiving a pointerdown event, until a pointerup is received.
+     * The currently grabbed object, if any. A node/edge/handle/viewport is 'grabbed' after receiving a pointerdown event, until a pointerup is received.
      * Can be null if nothing is grabbed.
      */
-    grabbed: "node" | "edge" | "viewport" | null
+    grabbed: "node" | "edge" | "viewport" | "handle" | null
     /**
-     * ID of grabbed node/edge, only valid if {@link grabbed} is 'node' or 'edge', otherwise empty string.
+     * ID of grabbed node/edge, only valid if {@link grabbed} is 'node', 'edge' or 'handle' (for a handle, its name is its ID), otherwise empty string.
      */
     grabbedID: string
     /**
@@ -33,7 +33,7 @@ export interface GrapherEventImpl {
     prevented: boolean
 }
 
-export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | "resizing" | null, id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
+export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | "handle" | "resizing" | null, id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
     return {
         prevented: false,
         preventDefault() {
@@ -47,7 +47,7 @@ export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | "
 }
 
 /**
- * This event occurs on pointerdown, pointermove or pointerup in relation to the graph's viewport, nodes or edges.
+ * This event occurs on pointerdown, pointermove or pointerup in relation to the graph's viewport, nodes (and their handles) or edges.
  */
 export interface GrapherPointerEvent extends GrapherBaseEvent {
     type: "pointer"
@@ -57,8 +57,13 @@ export interface GrapherPointerEvent extends GrapherBaseEvent {
      *
      * A long-click event is sent if there is no up/move event for a specified delay after a down event. {@link clickCount} is always 0 in this case. The
      * delay defaults to 500 milliseconds and can be changed using the `config` prop, `userControls` section.
+     *
+     * A document-up event is sent when a pointerup event is caught at the document level. If a user clicks a node normally, you will receive both 'up' and
+     * 'document-up' events. If the user clicks the node and moves the cursor far, such that the node no longer is under the cursor, you will only receive this
+     * event. Note that 'move' events are *always* captured at the document level because rapid pointer movements will cause the dragged node to 'lag' behind,
+     * and not be under the pointer.
      */
-    subType: "down" | "move" | "up" | "click" | "long-click"
+    subType: "down" | "move" | "up" | "document-up" | "click" | "long-click"
     /**
      * Useful for detecting multiple clicks. Value is always 0 for non-click events, including long-click.
      */
@@ -71,7 +76,7 @@ export interface GrapherPointerEvent extends GrapherBaseEvent {
      * Target of the event (component affected by this event). Not necessarily the element that captured the event, e.g. pointermove is captured at the
      * document level but may affect a node, edge or the viewport.
      */
-    target: "node" | "edge" | "viewport"
+    target: "node" | "edge" | "viewport" | "handle"
     /**
      * ID of targeted node/edge. Only valid if {@link target} is 'node' or 'edge'.
      */

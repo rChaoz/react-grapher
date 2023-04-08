@@ -136,7 +136,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     // Currently grabbed (being moved) node
     interface GrabbedNode {
         // When these properties are changed, a new object is created to update the state
-        type: "node" | "edge" | "viewport" | "resizing" | null
+        type: "node" | "edge" | "viewport" | "handle" | "resizing" | null
+        node: Node<N> // only makes for type "handle"
         id: string
         // These properties don't cause a state update
         clickCount: number
@@ -148,14 +149,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Information on what was last clicked and when (to detect multi-clicks)
     interface LastClicked {
-        type: "node" | "edge" | "viewport" | null
+        type: "node" | "edge" | "viewport" | "handle" | null
         id: string
         times: number
         time: number
     }
 
     // Currently grabbed node
-    const grabbed = usePersistent<GrabbedNode>({type: null, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1})
+    const grabbed = usePersistent<GrabbedNode>({type: null, node: null as any, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1})
     const [shouldUpdateGrabbed, updateGrabbed] = useUpdate()
     // Last clicked node (used to detect multi-clicks)
     const lastClicked = usePersistent<LastClicked>({type: null, id: "", times: 0, time: 0})
@@ -501,6 +502,13 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // Allow small movement (5px) without beginning the move
             if (grabbed.type != null && !grabbed.hasMoved && Math.abs(event.clientX - grabbed.startX) ** 2
                 + Math.abs(event.clientY - grabbed.startY) ** 2 < s.config.userControls.minimumPointerMovement ** 2) return
+
+            // If a handle is moved and node creation isn't allowed, grab (move) the node instead
+            if (grabbed.type === "handle" && !grabbed.node.allowCreatingEdges && !s.config.nodeDefaults.allowCreatingEdges) {
+                grabbed.type = "node"
+                grabbed.id = grabbed.node.id
+            }
+
             if (grabbed.type === "viewport") {
                 // User is moving the viewport (panning the graph)
                 if (!s.config.viewportControls.allowPanning) return
@@ -611,7 +619,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
                     ...createEvent(grabbed, s.selection),
                     type: "pointer",
-                    subType: "up",
+                    subType: "document-up",
                     clickCount: 0,
                     pointerEvent: event,
                     target: grabbed.type,
@@ -713,36 +721,39 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 sendEvent(grapherEvent, s)
                 prevented = grapherEvent.prevented
             }
-            // Check if grabbing is allowed
-            if (r.obj.allowGrabbing === false || (r.obj.allowGrabbing === undefined && (
-                (r.type === "node" && s.config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && s.config.edgeDefaults.allowGrabbing === false)
-            ))) return
-            // "Grab" the object
-            if (!prevented && grabbed.type == null) {
-                // And initiate timer for long-click detection
-                const timeoutID = s.config.userControls.longClickDelay < 0 || s.onEvent == null ? -1 : window.setTimeout(() => {
-                    const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
-                        ...createEvent(grabbed, s.selection),
-                        type: "pointer",
-                        subType: "long-click",
-                        clickCount: 0,
-                        pointerEvent: event,
-                        target: r.type,
-                        targetID: r.objID,
-                    }
-                    sendEvent(grapherEvent, s)
-                }, s.config.userControls.longClickDelay)
-                grabbed.type = r.type
-                grabbed.id = r.objID
-                grabbed.clickCount = (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + s.config.userControls.multiClickDelay > Date.now())
-                    ? lastClicked.times + 1
-                    : 1
-                grabbed.hasMoved = false
-                grabbed.startX = event.clientX
-                grabbed.startY = event.clientY
-                grabbed.timeoutID = timeoutID
-                updateGrabbed()
+            if (prevented || grabbed.type != null) return
+
+            // Check if grabbing is not allowed
+            if (r.type != "handle") {
+                if (r.obj.allowGrabbing === false || (r.obj.allowGrabbing === undefined && (
+                    (r.type === "node" && s.config.nodeDefaults.allowGrabbing === false) || (r.type === "edge" && s.config.edgeDefaults.allowGrabbing === false)
+                ))) return
             }
+            // "Grab" the object
+            // And initiate timer for long-click detection
+            const timeoutID = s.config.userControls.longClickDelay < 0 || s.onEvent == null ? -1 : window.setTimeout(() => {
+                const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
+                    ...createEvent(grabbed, s.selection),
+                    type: "pointer",
+                    subType: "long-click",
+                    clickCount: 0,
+                    pointerEvent: event,
+                    target: r!.type,
+                    targetID: r!.objID,
+                }
+                sendEvent(grapherEvent, s)
+            }, s.config.userControls.longClickDelay)
+            grabbed.type = r.type
+            if (r.type === "handle") grabbed.node = r.obj
+            grabbed.id = r.objID
+            grabbed.clickCount = (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + s.config.userControls.multiClickDelay > Date.now())
+                ? lastClicked.times + 1
+                : 1
+            grabbed.hasMoved = false
+            grabbed.startX = event.clientX
+            grabbed.startY = event.clientY
+            grabbed.timeoutID = timeoutID
+            updateGrabbed()
         },
         onObjectPointerUp(event: PointerEvent) {
             const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
@@ -781,6 +792,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     sendEvent(upEvent, s)
                     prevented = upEvent.prevented
                 }
+                // Stop if it's a handle
+                if (r.type === "handle") return
                 // Check if selection is allowed
                 if (r.obj.allowSelection === false || (r.obj.allowSelection === undefined && (
                     (r.type === "node" && s.config.nodeDefaults.allowSelection === false) || (r.type === "edge" && s.config.edgeDefaults.allowSelection === false)
@@ -792,7 +805,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 }
             }
         },
-        // Doesn't matter because it's set below
+        // Doesn't matter because they're set below
         nodeBeingResized: false,
         getNode: null as any,
         getEdge: null as any,

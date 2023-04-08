@@ -1,6 +1,6 @@
 import React, {useCallback, useContext, useEffect, useMemo, useRef} from "react";
 import {BoundsContext} from "../context/BoundsContext";
-import {NODE_CLASS, NODE_CONTAINER_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
+import {NODE_CLASS, NODE_CONTAINER_CLASS, NODE_HANDLE_BOX_CLASS, NODE_HANDLE_CONTAINER_CLASS, Z_INDEX_GRABBED_NODE} from "../util/constants";
 import {Property} from "csstype";
 import styled from "@emotion/styled";
 import {InternalContext} from "../context/InternalContext";
@@ -358,17 +358,28 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
     // Set listeners
     useEffect(() => {
         const elem = ref.current
-        if (elem == null || node == null || internals.isStatic) return
+        const container = elem?.parentElement
+        if (elem == null || container == null || node == null || internals.isStatic) return
 
         // Destruct to ensure callbacks don't change until onEffect cleanup runs
         const {onObjectPointerDown, onObjectPointerUp} = internals
         elem.addEventListener("pointerdown", onObjectPointerDown)
         elem.addEventListener("pointerup", onObjectPointerUp)
+        const handles = container.querySelectorAll("." + NODE_HANDLE_BOX_CLASS)
+        for (const handle of handles) {
+            (handle as HTMLElement).addEventListener("pointerdown", onObjectPointerDown);
+            (handle as HTMLElement).addEventListener("pointerup", onObjectPointerUp)
+        }
+
         const observer = new ResizeObserver(recalculateNode)
         observer.observe(elem)
         return () => {
             elem.removeEventListener("pointerdown", onObjectPointerDown)
             elem.removeEventListener("pointerup", onObjectPointerUp)
+            for (const handle of handles) {
+                (handle as HTMLElement).removeEventListener("pointerdown", onObjectPointerDown);
+                (handle as HTMLElement).removeEventListener("pointerup", onObjectPointerUp)
+            }
             observer.disconnect()
         }
     }, [internals, node, recalculateNode])

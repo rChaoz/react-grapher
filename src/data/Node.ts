@@ -91,6 +91,10 @@ export interface Node<T> {
      */
     allowDeletion?: boolean
     /**
+     * Allow new edges to be created by clicking a handle and dragging. Defaults to false
+     */
+    allowCreatingEdges?: boolean
+    /**
      * Read-only absolute position, calculated during rendering.
      */
     absolutePosition: DOMPoint
@@ -164,7 +168,7 @@ export type NodeData<T = SimpleNodeData> = Partial<Node<T>> & {id: string}
  */
 export type NodeDefaults = Omit<NodeData<any>, "id" | "data" | "parent" | "selected">
 
-function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion"> & NodeInternals {
+function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "allowGrabbing" | "allowMoving" | "allowDeletion" | "allowCreatingEdges"> & NodeInternals {
     return {
         Component: SimpleNode,
         classes: [],

@@ -58,10 +58,9 @@ export function parseAllowedConnections(s: string): AllowedConnections {
 
 /**
  * Extract DOM ID, type (node/edge) and internal ID from event target
- * TODO Implement required changes for this to work with handles
  */
 export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>)
-    : { type: "node"; objID: string; obj: Node<N> } | { type: "edge"; objID: string; obj: Edge<E> } | null {
+    : { type: "node", objID: string, obj: Node<N> } | { type: "edge", objID: string, obj: Edge<E> } | { type: "handle", objID: string, obj: Node<N> } | null {
     if (element == null) {
         errorCustom("Node/Edge/Handle pointer event listener callback was called with a null event.currentTarget")
         return null
@@ -74,7 +73,7 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
         return null
     }
 
-    let obj
+    let obj, nodeID
     switch (type) {
         case "node":
             obj = nodes.get(objID)
@@ -83,7 +82,7 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
                 errorUnknownNode(objID)
                 return null
             }
-            return {type: "node", objID, obj: obj}
+            return {type: "node", objID, obj}
         case "edge":
             obj = edges.get(objID)
             if (obj == null) {
@@ -91,10 +90,20 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
                 errorUnknownEdge(objID)
                 return null
             }
-            return {type: "edge", objID, obj: obj}
+            return {type: "edge", objID, obj}
         case "handle":
-            // @ts-ignore
-            return {type: "handle", objID, obj: null}
+            nodeID = elem.dataset.node
+            if (nodeID == null) {
+                errorParsingDOMElement(elem)
+                return null
+            }
+            obj = nodes.get(nodeID)
+            if (obj == null) {
+                errorParsingDOMElement(elem)
+                errorUnknownNode(nodeID)
+                return null
+            }
+            return {type: "handle", objID, obj}
     }
 
     errorParsingDOMElement(elem)

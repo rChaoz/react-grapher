@@ -38,7 +38,8 @@ export function checkErrorInvalidID(target: string, id: string) {
 }
 
 export function errorParsingDOMElement(node: HTMLElement | null) {
-    error("Unable to parse DOM element's dataset (type, id). Usually this means that your custom Node or Edge component doesn't use BaseNode or BaseEdge as its root element.")
+    error("Unable to parse DOM element's dataset (type, id). Usually this means that your custom Node or Edge component doesn't use " +
+        "BaseNode or BaseEdge as its root element, or that you created a NodeHandle outside of a BaseNode's 'handles' prop.")
     console.error("Element: ", node)
 }
 
