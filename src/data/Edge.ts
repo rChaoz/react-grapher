@@ -164,12 +164,11 @@ export type EdgeData<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, sourc
  */
 export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
 
-function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "allowSelection" | "allowDeletion" | "allowEdit" | "allowEditSource" | "allowEditTarget"> & EdgeInternals {
+function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targetHandle"
+    | "allowSelection" | "allowDeletion"| "allowEdit" | "allowEditSource" | "allowEditTarget"> & EdgeInternals {
     return {
         Component: SimpleEdge,
         classes: [],
-        sourceHandle: null,
-        targetHandle: null,
         label: null,
         labelPosition: .5,
         labelShift: 5,

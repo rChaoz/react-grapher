@@ -253,6 +253,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             return false
         }
 
+        let mustUpdateEdges = false
         const newEdges: Edge<E>[] = []
         for (const edge of edges) {
             // Skip already checked edges
@@ -289,19 +290,25 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     for (const possibleSourceHandle of source.handles) {
                         if (checkConnection(source, target, possibleSourceHandle, targetHandle)) {
                             edge.sourceHandle = possibleSourceHandle.name
-                            updateEdges()
-                            ok = true
+                            mustUpdateEdges = ok = true
                             break
                         }
+                    }
+                    if (!ok) if (checkConnection(source, target, null, targetHandle)) {
+                        edge.sourceHandle = null
+                        mustUpdateEdges = ok = true
                     }
                 } else if (sourceHandle != null && targetHandle == null) { // only target handle unset
                     for (const possibleTargetHandle of target.handles) {
                         if (checkConnection(source, target, sourceHandle, possibleTargetHandle)) {
                             edge.targetHandle = possibleTargetHandle.name
-                            updateEdges()
-                            ok = true
+                            mustUpdateEdges = ok = true
                             break
                         }
+                    }
+                    if (!ok) if (checkConnection(source, target, sourceHandle, null)) {
+                        edge.targetHandle = null
+                        mustUpdateEdges = ok = true
                     }
                 } else { // both handles unset
                     for (const possibleSourceHandle of source.handles) {
@@ -309,11 +316,30 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                             if (checkConnection(source, target, possibleSourceHandle, possibleTargetHandle)) {
                                 edge.sourceHandle = possibleSourceHandle.name
                                 edge.targetHandle = possibleTargetHandle.name
-                                updateEdges()
-                                ok = true
+                                mustUpdateEdges = ok = true
                                 break
                             }
                         }
+                    }
+                    if (!ok) for (const possibleSourceHandle of source.handles) {
+                        if (checkConnection(source, target, possibleSourceHandle, null)) {
+                            edge.sourceHandle = possibleSourceHandle.name
+                            edge.targetHandle = null
+                            mustUpdateEdges = ok = true
+                            break
+                        }
+                    }
+                    if (!ok) for (const possibleTargetHandle of target.handles) {
+                        if (checkConnection(source, target, null, possibleTargetHandle)) {
+                            edge.sourceHandle = null
+                            edge.targetHandle = possibleTargetHandle.name
+                            mustUpdateEdges = ok = true
+                            break
+                        }
+                    }
+                    if (!ok) if (checkConnection(source, target, null, null)) {
+                        edge.sourceHandle = edge.targetHandle = null
+                        mustUpdateEdges = ok = true
                     }
                 }
                 if (!ok && !config.allowIllegalEdges) continue
@@ -323,6 +349,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             edge.verified = true
             newEdges.push(edge)
         }
+        if (mustUpdateEdges) updateEdges()
         if (newEdges.length < edges.length) edges.set(newEdges)
     }, [edges, config.allowIllegalEdges, allowedConnections])
 

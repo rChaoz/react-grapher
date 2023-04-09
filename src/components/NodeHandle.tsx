@@ -161,9 +161,6 @@ const HandleDiv = styled.div<{ zIndex: number }>`
 const HandleBoxDiv = styled.div<HandleDivBoxProps>`
   position: absolute;
   z-index: ${Z_INDEX_HANDLE_BOX};
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   width: ${props => convertToCSSLength(props.width ?? 14)};
   height: ${props => convertToCSSLength(props.height ?? 14)};
 `

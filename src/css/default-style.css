@@ -15,12 +15,13 @@
 
     --react-grapher-edge-stroke-width: 3px;
     --react-grapher-edge-stroke-width-selected: 4px;
-    --react-grapher-edge-color: #777777;
+    --react-grapher-edge-color: #777;
+    --react-grapher-edge-marker-color: #444;
     --react-grapher-edge-color-selected: #8c8c8c;
     --react-grapher-edge-color-hover: #a2a2a2;
     --react-grapher-edge-color-active: #5e5e5e;
     --react-grapher-edge-shadow-color: #EEECC0;
-    --react-grapher-edge-label-color: #000000;
+    --react-grapher-edge-label-color: black;
     --react-grapher-edge-label-color-hover: #676767;
     --react-grapher-edge-label-color-active: #3b3b3b;
 
@@ -63,8 +64,8 @@
 
 /* Node Handle */
 .react-grapher-node-handle {
-    width: 4px;
-    height: 4px;
+    width: 7px;
+    height: 7px;
     border-radius: 50%;
     background-color: var(--react-grapher-handle-background);
     border: 1px solid var(--react-grapher-handle-border);
@@ -134,12 +135,12 @@
 /* Markers */
 .react-grapher-marker-arrow {
     fill: none;
-    stroke: var(--react-grapher-edge-color);
+    stroke: var(--react-grapher-edge-marker-color);
     stroke-width: var(--react-grapher-edge-stroke-width);
     stroke-linecap: round;
 }
 
 .react-grapher-marker-arrow-filled {
-    fill: var(--react-grapher-edge-color);
+    fill: var(--react-grapher-edge-marker-color);
     stroke: none;
 }

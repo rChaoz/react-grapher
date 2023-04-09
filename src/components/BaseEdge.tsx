@@ -160,7 +160,7 @@ export function BaseEdge({id, path, classes, boxWidth, label, labelPosition, lab
         const labelElem = labelRef.current
         const labelBg = labelBgRef.current
         const path = pathRef.current
-        
+
         if (labelElem != null && labelBg != null && path != null && label != null) {
             // Set label position
             let x, y

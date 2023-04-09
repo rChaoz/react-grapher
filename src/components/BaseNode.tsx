@@ -267,18 +267,18 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                         break
                     case "top-right":
                         left = -bRadius[1][0] * .3
-                        leftP = 100
+                        leftP = 1
                         top = bRadius[1][1] * .3
                         break
                     case "bottom-right":
                         left = -bRadius[2][0] * .3
                         top = -bRadius[2][1] * .3
-                        leftP = topP = 100
+                        leftP = topP = 1
                         break
                     case "bottom-left":
                         left = bRadius[3][0] * .3
                         top = -bRadius[3][1] * .3
-                        topP = -100
+                        topP = -1
                         break
                     // On-side cases
                     default:
@@ -339,6 +339,12 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
                 [leftP, left] = splitCSSCalc(style.left)
                 topP /= 100
                 leftP /= 100
+            }
+            // Set handle box's position
+            const handleBox = h.lastElementChild as HTMLElement | null
+            if (handleBox != null) {
+                handleBox.style.left = h.offsetWidth / 2 - handleBox.offsetWidth / 2 + "px"
+                handleBox.style.top = h.offsetHeight / 2 - handleBox.offsetHeight / 2 + "px"
             }
 
             // Position of handle relative to node center
