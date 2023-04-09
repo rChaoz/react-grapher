@@ -3,10 +3,10 @@ import {InternalContext} from "../context/InternalContext";
 import {cx} from "@emotion/css";
 import {EDGE_CLASS, EDGE_HANDLE_CLASS, EDGE_LABEL_BACKGROUND_CLASS, EDGE_LABEL_CLASS, EDGE_PATH_CLASS} from "../util/constants";
 import {Node} from "../data/Node";
+import {errorUnknownEdge, warnInvalidPropValue} from "../util/log";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {Edge} from "../data/Edge";
-import {errorUnknownEdge, warnInvalidPropValue} from "../util/log";
 
 export interface BaseEdgeProps {
     /**

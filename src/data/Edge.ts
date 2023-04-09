@@ -137,7 +137,7 @@ interface EdgeInternals {
     /**
      * Source position, used for memoization
      */
-    sourcePos?: DOMPoint
+    sourcePos: DOMPoint
     /**
      * SourcePos memoization is done by source node position, width, height & border radius
      */
@@ -145,7 +145,7 @@ interface EdgeInternals {
     /**
      * Target position, used for memoization
      */
-    targetPos?: DOMPoint
+    targetPos: DOMPoint
     /**
      * TargetPos memoization is done by source node position, width, height & border radius
      */
@@ -182,7 +182,9 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targe
         isInitialized: true,
         verified: false,
         bounds: new DOMRect(),
+        sourcePos: new DOMPoint(),
         sourcePosMemoObject: {},
+        targetPos: new DOMPoint(),
         targetPosMemoObject: {},
     }
 }

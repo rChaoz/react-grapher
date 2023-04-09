@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {applyNodeDefaults, Node, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node"
-import {applyEdgeDefaults, Edge, Edges, EdgesImpl} from "../../data/Edge";
+import {applyEdgeDefaults, Edge, EdgeImpl, Edges, EdgesImpl} from "../../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../../hooks/useController";
 import {useGraphState} from "../../hooks/useGraphState";
@@ -120,8 +120,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     } else id = ownID
 
     // We want callbacks to be able to use new state/prop values but without re-creating the callbacks
+    const [bounds, setBounds] = useState(new DOMRect()) // bounds has to be declared up here to be included into s
     const s = useCallbackState({
-        nodes, edges, selection, controller,
+        nodes, edges, selection, controller, bounds,
         config, onEvent: props.onEvent, onChange: props.onChange,
     })
 
@@ -137,6 +138,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     interface GrabbedNode {
         // When these properties are changed, a new object is created to update the state
         type: "node" | "edge" | "viewport" | "handle" | "resizing" | null
+        section: "source" | "target" | undefined // only makes sense for type "edge"
         node: Node<N> // only makes for type "handle"
         id: string
         // These properties don't cause a state update
@@ -156,7 +158,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
     }
 
     // Currently grabbed node
-    const grabbed = usePersistent<GrabbedNode>({type: null, node: null as any, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1})
+    const grabbed = usePersistent<GrabbedNode>(
+        {type: null, section: undefined, node: null as any, id: "", clickCount: 0, startX: 0, startY: 0, hasMoved: false, timeoutID: -1}
+    )
     const [shouldUpdateGrabbed, updateGrabbed] = useUpdate()
     // Last clicked node (used to detect multi-clicks)
     const lastClicked = usePersistent<LastClicked>({type: null, id: "", times: 0, time: 0})
@@ -355,9 +359,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
+    // And to the content div
+    const contentRef = useRef<HTMLDivElement>(null)
 
     // Calculate bounds
-    const [bounds, setBounds] = useState(new DOMRect())
+    //const [bounds, setBounds] = useState(new DOMRect()) - declared way higher up to be included into 's' callback state object
     const fitViewBounds = useRef(new DOMRect())
     const [shouldRecalculateBounds, recalculateBounds] = useUpdate()
     useEffect(() => {
@@ -610,6 +616,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                             errorUnknownNode(sel)
                             continue
                         }
+                        // Check if moving is allowed
+                        if (n.allowMoving === false || (n.allowMoving === undefined && s.config.nodeDefaults.allowMoving === false)) continue
+                        // Add node change
                         changes.push({
                             type: "node-move",
                             event: "selected",
@@ -731,11 +740,28 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         onObjectPointerDown(event: PointerEvent) {
             const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
             if (r == null) return
+            // If an edge is the target, check if pointer position is close to source/target points
+            let edgeSection: undefined | "source" | "target"
+            if (r.type === "edge" && contentRef.current != null) {
+                const edge = r.obj as EdgeImpl<E>
+                // Convert client coordinates to Grapher coordinates
+                const contentRect = contentRef.current.getBoundingClientRect()
+                const zoom = s.controller.viewport.zoom
+                const x = (event.clientX - contentRect.x) / zoom + s.bounds.x, y = (event.clientY - contentRect.y) / zoom + s.bounds.y
+                const sourceDistance2 = (x - edge.sourcePos.x) ** 2 + (y - edge.sourcePos.y) ** 2
+                const targetDistance2 = (x - edge.targetPos.x) ** 2 + (y - edge.targetPos.y) ** 2
+                const threshold2 = s.config.userControls.edgeHandleThreshold ** 2
+                // Check if event point is close to source/target points
+                if (sourceDistance2 < threshold2) edgeSection = "source"
+                else if (targetDistance2 < threshold2) edgeSection = "target"
+            }
+
             let prevented = false
             if (s.onEvent != null) {
                 const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
                     ...createEvent(grabbed, s.selection),
                     type: "pointer",
+                    edgeSection,
                     subType: "down",
                     clickCount: 0,
                     pointerEvent: event,
@@ -762,6 +788,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 sendEvent(grapherEvent, s)
             }, s.config.userControls.longClickDelay)
             grabbed.type = r.type
+            grabbed.section = edgeSection
             if (r.type === "handle") grabbed.node = r.node
             grabbed.id = r.objID
             grabbed.clickCount = (lastClicked.type === r.type && lastClicked.id === r.objID && lastClicked.time + s.config.userControls.multiClickDelay > Date.now())
@@ -841,7 +868,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     return <BoundsContext.Provider value={bounds}><InternalContext.Provider value={internalContext}><GrapherContext.Provider value={grapherContext}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
-            <GrapherViewport controller={controller}>
+            <GrapherViewport contentRef={contentRef} controller={controller}>
                 <Nodes className={NODES_CLASS} nodesOverEdges={config.nodesOverEdges}>
                     {nodeElements}
                 </Nodes>

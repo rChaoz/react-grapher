@@ -7,6 +7,7 @@ import {BoundsContext} from "../context/BoundsContext";
 export interface GrapherViewportProps {
     children: React.ReactNode
     controller: Controller
+    contentRef: React.RefObject<HTMLDivElement>
 }
 
 const BaseDiv = styled.div`
@@ -23,19 +24,19 @@ const ContentDiv = styled.div`
   left: 50%;
 `
 
-export function GrapherViewport(props: GrapherViewportProps) {
+export function GrapherViewport({children, controller, contentRef}: GrapherViewportProps) {
     const bounds = useContext(BoundsContext)
-    const viewport = props.controller.getViewport()
+    const viewport = controller.getViewport()
     const dx = bounds.x - viewport.centerX, dy = bounds.y - viewport.centerY
 
     return <BaseDiv className={VIEWPORT_CLASS} tabIndex={0}>
-        <ContentDiv className={CONTENT_CLASS} style={{
+        <ContentDiv ref={contentRef} className={CONTENT_CLASS} style={{
             width: bounds.width,
             height: bounds.height,
             transformOrigin: `${-dx}px ${-dy}px`,
             transform: `translate(${dx}px, ${dy}px) scale(${viewport.zoom})`,
         }}>
-            {props.children}
+            {children}
         </ContentDiv>
     </BaseDiv>
 }

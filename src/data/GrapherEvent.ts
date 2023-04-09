@@ -1,4 +1,7 @@
 import {Selection} from "./Selection";
+// Used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {GrapherUserControls} from "./GrapherConfig";
 
 export type GrapherEvent = GrapherPointerEvent | GrapherWheelEvent | GrapherKeyEvent
 
@@ -77,6 +80,11 @@ export interface GrapherPointerEvent extends GrapherBaseEvent {
      * document level but may affect a node, edge or the viewport.
      */
     target: "node" | "edge" | "viewport" | "handle"
+    /**
+     * If the {@link target} is "edge", this will indicate what part of the edge received the event (close to the source point, close to the target point or
+     * close to neither - `undefined`). "Close" is defined by {@link GrapherUserControls.edgeHandleThreshold GrapherConfig.userControls.edgeHandleDistance}.
+     */
+    edgeSection?: "source" | "target"
     /**
      * ID of targeted node/edge. Only valid if {@link target} is 'node' or 'edge'.
      */

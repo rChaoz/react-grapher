@@ -47,12 +47,13 @@ export interface GrapherUserControls {
      */
     multipleSelection?: boolean
     /**
-     * Maximum distance the cursor can be away from an edge's source/destination point for it grab the edge's handle: grabbing an edge close to its source point will
-     * begin
+     * Maximum distance the cursor can be away from an edge's source/destination point for it grab the edge's handle. For example, grabbing an edge close to its source point
+     * (i.e. pointer position is within this property, in pixels, away from the source point), will grab the edge's source handle, and begin moving it (for example, to
+     * change the edge's source to a different node/node handle). Defaults to 15.
      */
-    edgeHandleDistance?: number
+    edgeHandleThreshold?: number
     /**
-     * "Hit-box" width of an edge (i.e. clickable stroke-width). Defaults to 15.
+     * "Hit-box" width of an edge (i.e. clickable stroke-width). Defaults to 13.
      */
     edgeBoxWidth?: number
     /**
@@ -78,8 +79,8 @@ export interface GrapherUserControls {
 }
 
 const defaultUserControls: Required<GrapherUserControls> = {
-    edgeHandleDistance: 40,
-    edgeBoxWidth: 15,
+    edgeHandleThreshold: 15,
+    edgeBoxWidth: 13,
     multipleSelection: true,
     minimumPointerMovement: 5,
     multiClickDelay: 500,
@@ -87,8 +88,8 @@ const defaultUserControls: Required<GrapherUserControls> = {
 }
 
 const noUserControls: Required<GrapherUserControls> = {
-    edgeHandleDistance: 40,
-    edgeBoxWidth: 15,
+    edgeHandleThreshold: 15,
+    edgeBoxWidth: 13,
     multipleSelection: false,
     minimumPointerMovement: 5,
     multiClickDelay: 500,
