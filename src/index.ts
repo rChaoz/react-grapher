@@ -8,7 +8,7 @@ import {Selection} from "./data/Selection";
 import {GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange} from "./data/GrapherChange";
 import {GrapherEvent, GrapherBaseEvent, GrapherPointerEvent, GrapherWheelEvent, GrapherKeyEvent} from './data/GrapherEvent'
 // Hooks
-import {useGraphState} from "./hooks/useGraphState";
+import {useGraphState, useNodes, useEdges} from "./hooks/useGraphState";
 import {useSelection} from "./hooks/useSelection";
 import {useController} from "./hooks/useController";
 import {useControlledGrapher} from "./hooks/useControlledGrapher";
@@ -37,7 +37,7 @@ export {
     GrapherChange, NodeChange, NodeMoveChange, isNodeChange, isEdgeChange,
     GrapherEvent, GrapherBaseEvent, GrapherPointerEvent, GrapherWheelEvent, GrapherKeyEvent,
     // Hooks
-    useGraphState, useSelection, useController, useControlledGrapher,
+    useGraphState, useNodes, useEdges, useSelection, useController, useControlledGrapher,
     // React Grapher
     ReactGrapher, ControlledGraphProps, UncontrolledGraphProps, GrapherViewport, Marker,
     // Sub-components

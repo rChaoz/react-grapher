@@ -1,12 +1,18 @@
-import {Node, NodeData, NodeImpl, NodesFunctionsImpl, NodesImpl} from "../../data/Node";
-import {useMemo} from "react";
 import {GrapherChange, isNodeChange} from "../../data/GrapherChange";
 import {errorUnknownNode} from "../../util/log";
-import {BaseFunctionsImpl, useBase} from "./useBase";
+import {useBase} from "./useBase";
+// 'Nodes' is used by documentation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import {Node, NodeData, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
 
+/**
+ * Returns a stateful array object representing the nodes of a ReactGrapher. This function does not also return a setter for the state; to modify it,
+ * use the functions attached to the returned object, such as `.set()`, `.add()`, `.clear()`.
+ * @see Nodes
+ */
 export default function useNodes<T>(initialNodes: NodeImpl<T>[]): NodesImpl<T> {
     const base = useBase<NodeImpl<T>, NodeData<T>>(initialNodes)
-    const extra = useMemo<Omit<NodesFunctionsImpl<T>, keyof BaseFunctionsImpl<NodeImpl<T>, NodeData<T>>>>(() => ({
+    return Object.assign(base, {
         absolute(node: Node<any> | string): DOMPoint {
             if (typeof node === "string") {
                 const n = base.internalMap.get(node)
@@ -31,6 +37,5 @@ export default function useNodes<T>(initialNodes: NodeImpl<T>[]): NodesImpl<T> {
             }
             if (changed) base.set(n)
         },
-    }), [base])
-    return Object.assign(base, extra)
+    })
 }

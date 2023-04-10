@@ -294,7 +294,7 @@ export interface NodesFunctionsImpl<T> extends NodesFunctions<T> {
  * be registered. If you need complex array manipulation, use `.slice()` on this object to obtain a copy, modify it as you please,
  * then use `.set()` to update the Graph.
  *
- * Note that the custom functions' implementation uses `this`, so you should bind `this` value to the Nodes object should you use them as callback.
+ * Note that the custom functions' implementation uses `this`, so you should bind `this` value to the Nodes object, should you use them as callback.
  */
 export type Nodes<T> = NodesFunctions<T> & Node<T>[]
 
