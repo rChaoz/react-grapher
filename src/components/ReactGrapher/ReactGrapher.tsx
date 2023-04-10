@@ -389,8 +389,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             fitViewBounds.current.y = rect.y
             fitViewBounds.current.width = rect.width
             fitViewBounds.current.height = rect.height
-            // When bounds change during a fitView, the fitView should repeat after the re-rendering is complete
-            if (needFitView.current + 1 === s.controller.fitViewValue) s.controller.fitView()
+            // When bounds change during a fitView or fitView is set to "always", the fitView should repeat after the re-rendering is complete
+            if (needFitView.current + 1 === s.controller.fitViewValue || props.fitView === "always") s.controller.fitView()
         }
         // Enlarge bounds by decent amount to make sure everything fits (this is for container div size)
         rect.x -= 200
@@ -403,7 +403,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             || Math.abs(rect.right - bounds.right) > 100 || Math.abs(rect.bottom - bounds.bottom) > 100) {
             setBounds(rect)
         }
-    }, [shouldRecalculateBounds, bounds, nodes, edges])
+    }, [shouldRecalculateBounds, bounds, nodes, edges, props.fitView])
 
     // Add listeners to viewport & document
     useEffect(() => {
@@ -697,11 +697,6 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             document.removeEventListener("pointerup", onPointerUp)
         }
     }, [props.static])
-
-    // Fit view
-    useEffect(() => {
-        if (props.fitView === "always") s.controller.fitView()
-    }, [nodes, edges, props.fitView])
 
     useEffect(() => {
         if (s.controller.fitViewValue > needFitView.current) {

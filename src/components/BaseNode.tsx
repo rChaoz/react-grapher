@@ -64,7 +64,7 @@ export type SimpleNodeHandle = Pick<NodeHandlePropsPositioned, "name" | "role" |
 const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable: boolean }>`
   position: absolute;
   resize: ${props => props.resize ?? "initial"};
-  overflow: ${props => props.resizable ? "auto" : "initial"};
+  overflow: ${props => props.resizable ? "hidden" : "initial"};
   width: max-content;
   height: max-content;
   display: flex;
@@ -224,7 +224,7 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         const handleElems = container.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CONTAINER_CLASS)
         // Check if handles have changed and update permissions (that we don't care if they change, no need to re-render)
         let handlesChanged = false
-        if (node.handles == null || borderChanged) handlesChanged = true
+        if (node.handles == null || borderChanged || sizeChanged) handlesChanged = true
         else {
             if (node.handles.length !== handleElems.length) handlesChanged = true
             else for (let i = 0; i < handleElems.length; ++i) {
