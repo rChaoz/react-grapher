@@ -2,7 +2,6 @@ import React, {useContext, useEffect, useRef} from "react";
 import {InternalContext} from "../context/InternalContext";
 import {cx} from "@emotion/css";
 import {EDGE_CLASS, EDGE_HANDLE_CLASS, EDGE_LABEL_BACKGROUND_CLASS, EDGE_LABEL_CLASS, EDGE_PATH_CLASS} from "../util/constants";
-import {Node} from "../data/Node";
 import {errorUnknownEdge, warnInvalidPropValue} from "../util/log";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -34,9 +33,10 @@ export interface BaseEdgeProps {
      */
     labelPosition: DOMPoint | number
     /**
-     * Additional x/y label position shift amount. Generally this should be used if you want, for example, the label to be above the center of the node.
+     * Additional x/y label position offset amount.
+     * @see Edge.labelOffset
      */
-    labelShift: DOMPoint
+    labelOffset: DOMPoint
     /**
      * Label text anchor position.
      */
@@ -71,51 +71,7 @@ export interface BaseEdgeProps {
     pointerEvents: boolean
 }
 
-export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPosition" | "labelShift" | "labelAnchor" | "labelBaseline" | "labelAngle"> {
-    /**
-     * Custom Edge data
-     */
-    data: T | undefined
-    /**
-     * Label center position. A number 0..1, as a position on the SVG path (as specified by {@link Edge.labelPosition}).
-     */
-    labelPosition: number
-    /**
-     * Shifting of the label, perpendicular to the edge's direction, in pixels. As specified by {@link Edge.labelShift}.
-     */
-    labelShift: number
-    /**
-     * If true, the label's text anchor should rotate so that it flows in the same direction as the edge.
-     * As specified by {@link Edge.labelRotationFollowEdge}.
-     */
-    labelRotationFollowEdge: boolean
-    /**
-     * Source Node object
-     */
-    source: Node<any>
-    /**
-     * Absolute position
-     */
-    sourcePos: DOMPoint
-    /**
-     * Handle of source Node this edge originates from (null/undefined for floating edge)
-     */
-    sourceHandle: string | null | undefined
-    /**
-     * Target Node object
-     */
-    target: Node<any>
-    /**
-     * Absolute position
-     */
-    targetPos: DOMPoint
-    /**
-     * Handle of target Node this edge connects to (null/undefined for floating edge)
-     */
-    targetHandle: string | null | undefined
-}
-
-export function BaseEdge({id, path, classes, boxWidth, label, labelPosition, labelShift, labelAnchor, labelBaseline, labelAngle,
+export function BaseEdge({id, path, classes, boxWidth, label, labelPosition, labelOffset, labelAnchor, labelBaseline, labelAngle,
                              selected, grabbed, markerStart, markerEnd, pointerEvents} : BaseEdgeProps) {
     const internals = useContext(InternalContext)
 
@@ -179,7 +135,7 @@ export function BaseEdge({id, path, classes, boxWidth, label, labelPosition, lab
                 y = labelPosition.y
             }
             // And transform
-            const transform = `translate(${labelShift.x} ${labelShift.y}) rotate(${labelAngle} ${x} ${y})`
+            const transform = `translate(${labelOffset.x} ${labelOffset.y}) rotate(${labelAngle} ${x} ${y})`
             labelElem.setAttribute("transform", transform)
             labelBg.setAttribute("transform", transform)
 
@@ -192,7 +148,7 @@ export function BaseEdge({id, path, classes, boxWidth, label, labelPosition, lab
             labelBg.setAttribute("height", String(labelBounds.height + p * 2))
         } else console.log({labelElem, labelBg, path, label})
 
-    }, [internals, edge, id, path, grabbed, selected, label, labelPosition, labelShift, labelAngle])
+    }, [internals, edge, id, path, grabbed, selected, label, labelPosition, labelOffset, labelAngle])
 
     const baseID = internals.id
     return <g ref={ref} id={`${baseID}-edge-${id}`} className={cx(classes, EDGE_CLASS)} pointerEvents={!pointerEvents || internals.isStatic ? "none" : "stroke"}

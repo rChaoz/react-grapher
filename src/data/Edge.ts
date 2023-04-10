@@ -1,7 +1,6 @@
 import {GrapherChange} from "./GrapherChange";
 import React, {SVGProps} from "react";
-import {EdgeProps} from "../components/BaseEdge";
-import {SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
+import {EdgeProps, SimpleEdge, SimpleEdgeData} from "../components/SimpleEdge";
 import {checkErrorInvalidID} from "../util/log";
 import {MemoObject} from "../util/utils";
 
@@ -68,11 +67,13 @@ export interface Edge<T = SimpleEdgeData> {
     /**
      * How far away from the edge the label is displayed. Set this to 0 to display the text on top of the edge. Defaults to 5
      */
-    labelShift: number
+    labelOffset: number
     /**
-     * Whether the label rotates alongside the edge. If false, the text will always display left-to-right. Defaults to true
+     * Whether the label rotates alongside the edge. This will cause the label to always appear above the edge, regardless of the edge's direction, which may be an issue
+     * for some edge types, if 2 opposing direction edges overlap. If false, the text will always display left-to-right, and will display under an edge when the edge's
+     * direction is right-to-left. Defaults to true
      */
-    labelRotationFollowEdge: boolean
+    labelRotateWithEdge: boolean
     /**
      * Padding used by the label's background. Defaults to 2
      */
@@ -97,6 +98,11 @@ export interface Edge<T = SimpleEdgeData> {
 
     // Config
 
+    /**
+     * Whether to allow the edge's source/target points to shift slightly, to prevent 2 edges that run
+     * between the same 2 points but opposing directions, from overlapping. Defaults to true
+     */
+    allowOverlapSeparation?: boolean
     /**
      * Whether this edge is selectable by the user. Defaults to true
      */
@@ -126,6 +132,11 @@ interface EdgeInternals {
      * Used internally to check if a node was initialized (all fields set).
      */
     isInitialized: boolean
+    /**
+     * If true, it means that there is another edge, between the same 2 source points, in opposite direction,
+     * and to avoid overlap, they should be separated by a few pixels.
+     */
+    separate: boolean
     /**
      * Used to check that the handles are set correctly
      */
@@ -164,15 +175,15 @@ export type EdgeData<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, sourc
  */
 export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
 
-function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targetHandle"
+function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targetHandle" | "allowOverlapSeparation"
     | "allowSelection" | "allowDeletion"| "allowEdit" | "allowEditSource" | "allowEditTarget"> & EdgeInternals {
     return {
         Component: SimpleEdge,
         classes: [],
         label: null,
         labelPosition: .5,
-        labelShift: 5,
-        labelRotationFollowEdge: true,
+        labelOffset: 5,
+        labelRotateWithEdge: true,
         labelPadding: 2,
         labelRadius: 6,
         markerStart: null,
@@ -180,6 +191,7 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targe
         pointerEvents: true,
         // Internals
         isInitialized: true,
+        separate: false,
         verified: false,
         bounds: new DOMRect(),
         sourcePos: new DOMPoint(),

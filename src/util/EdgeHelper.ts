@@ -165,14 +165,24 @@ export function pointOnPerpendicular(a: DOMPoint, b: DOMPoint, length: number, r
 }
 
 /**
+ * Move the given source & target points slightly, perpendicular to the direction source->target, if argument is true.
+ * Otherwise, return the two points as is.
+ */
+export function applySeparation(sourcePos: DOMPoint, targetPos: DOMPoint, separation: boolean) {
+    if (!separation) return [sourcePos, targetPos]
+    const [dx, dy] = pointOnPerpendicular(sourcePos, targetPos, 2)
+    return [new DOMPoint(sourcePos.x + dx, sourcePos.y + dy), new DOMPoint(targetPos.x + dx, targetPos.y + dy)]
+}
+
+/**
  * Calculate necessary parameters for an edge's label: text anchor, baseline, rotation angle and X and Y shift coordinates.
  */
-export function labelHelper(sourcePos: DOMPoint, targetPos: DOMPoint, labelShift: number, labelRotationFollowEdge: boolean) {
+export function labelHelper(sourcePos: DOMPoint, targetPos: DOMPoint, labelOffset: number, labelRotateWithEdge: boolean) {
     const dx = targetPos.x - sourcePos.x, dy = targetPos.y - sourcePos.y
     // Calculate edge angle
     let labelAngle = 0, reverseShift = false
 
-    if (labelRotationFollowEdge) {
+    if (labelRotateWithEdge) {
         if (dy == 0) labelAngle = dx > 0 ? 0 : 180
         else labelAngle = Math.atan(dx / -dy) * (180 / Math.PI) + (dy < 0 ? 270 : 90)
         if (labelAngle > 90 && labelAngle < 270) {
@@ -185,8 +195,8 @@ export function labelHelper(sourcePos: DOMPoint, targetPos: DOMPoint, labelShift
     let labelAnchor: "start" | "middle" | "end" = "middle"
     let labelBaseline: "text-after-edge" | "text-before-edge" | "middle" = "middle"
 
-    if (labelShift > 0) {
-        if (labelRotationFollowEdge) labelBaseline = labelAngle <= 90 || labelAngle >= 270 ? "text-after-edge" : "text-before-edge"
+    if (labelOffset > 0) {
+        if (labelRotateWithEdge) labelBaseline = labelAngle <= 90 || labelAngle >= 270 ? "text-after-edge" : "text-before-edge"
         else if (Math.abs(dx) > Math.abs(dy)) {
             // Edge is mostly horizontal
             labelAnchor = "middle"
@@ -199,9 +209,9 @@ export function labelHelper(sourcePos: DOMPoint, targetPos: DOMPoint, labelShift
     }
 
     // Calculate label position
-    const [labelX, labelY] = pointOnPerpendicular(sourcePos, targetPos, reverseShift ? -labelShift : labelShift)
+    const [labelX, labelY] = pointOnPerpendicular(sourcePos, targetPos, reverseShift ? -labelOffset : labelOffset)
 
-    return {labelShift: new DOMPoint(labelX, labelY), labelAnchor, labelBaseline, labelAngle}
+    return {labelOffset: new DOMPoint(labelX, labelY), labelAnchor, labelBaseline, labelAngle}
 }
 
 /**
@@ -212,16 +222,12 @@ export function getStraightEdgePath(a: DOMPoint, b: DOMPoint) {
 }
 
 /**
- * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values. This value acts like a percentage/angle, if you
- * want the edge to extend a certain distance regardless of its length, set `absoluteCurve = true`.
+ * Returns a round path. Path is curved clockwise for `curve` > 0, and anti-clockwise for negative `curve` values. The edge will extend sideways `curve` pixels,
+ * unless `relativeCurve` is true, in which case it will extend a percentage of its length, making `curve` act more like an angle, not a distance.
  */
-export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, labelShift: number, curve: number, absoluteCurve?: boolean) {
+export function getRoundEdgePath(a: DOMPoint, b: DOMPoint, curve: number, relativeCurve?: boolean) {
     // Calculate mid-point for bezier curve
-    let [cx, cy] = pointOnPerpendicular(a, b, curve, !absoluteCurve)
+    const [cx, cy] = pointOnPerpendicular(a, b, curve, relativeCurve)
     const px = (b.x + a.x) / 2 + cx, py = (b.y + a.y) / 2 + cy;
-    // Calculate origin and target points shift
-    // TODO This should be done for all types, tested with handles and possibly configurable. Probably should be moved to SimpleEdge
-    [cx, cy] = pointOnPerpendicular(a, b, 2)
-    // Shift start & end points by c to avoid overlapping edges when there's an edge a->b and an edge b->a
-    return `M ${a.x + cx} ${a.y + cy} Q ${px} ${py} ${b.x + cx} ${b.y + cy}`
+    return `M ${a.x} ${a.y} Q ${px} ${py} ${b.x} ${b.y}`
 }

@@ -13,8 +13,8 @@ const nodes: NodeData[] = [
 const edges: EdgeData[] = [
     {id: "0", source: "1", target: "0", label: "hehe", markerStart: "arrow", markerEnd: "arrow-filled"},
     {id: "1", source: "0", target: "2", label: "hihi", markerEnd: "arrow", targetHandle: null},
-    {id: "2", source: "3", target: "2", label: "a", markerEnd: "arrow", data: {type: "round"}},
-    {id: "3", source: "2", target: "3", label: "b", markerEnd: "arrow", data: {type: "round"}},
+    {id: "2", source: "3", target: "2", label: "a", markerEnd: "arrow"},
+    {id: "3", source: "2", target: "3", label: "b", markerEnd: "arrow"},
 ]
 
 const config: GrapherConfig = {
@@ -22,7 +22,6 @@ const config: GrapherConfig = {
         handlePointerEvents: true,
     },
     edgeDefaults: {
-        labelShift: 4,
     }
 }
 

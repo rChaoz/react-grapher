@@ -192,8 +192,22 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                           pointerEvents={node.pointerEvents} handlePointerEvents={node.handlePointerEvents}/>
     }), [nodes, selection, shouldUpdateGrabbed])
 
-    // Same for Edges
     const [shouldUpdateEdges, updateEdges] = useUpdate()
+    // Mark the pairs of edges that are between the same 2 points, different directions, to slightly separate them when drawn
+    useMemo(() => {
+        if (shouldUpdateEdges) {
+            // for eslint warning
+        }
+        // TODO Improve this to less than O(n^2), maybe add adjacency lists?
+        for (const e of edges) e.separate = false
+        for (const e1 of edges) for (const e2 of edges) {
+            if (e1.source === e2.target && e1.target === e2.source
+                && e1.sourceHandle === e2.targetHandle && e1.targetHandle === e2.sourceHandle)
+                e1.separate = e2.separate = true
+        }
+    }, [edges, shouldUpdateEdges])
+
+    // Same for Edges
     const edgeElements = useMemo(() => edges.map(edge => {
         if (shouldUpdateGrabbed || shouldUpdateEdges || selection) {
             // for eslint warning
@@ -216,7 +230,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 if (handle == null) return source.absolutePosition
                 else return new DOMPoint(source.absolutePosition.x + handle.x, source.absolutePosition.y + handle.y)
             }
-        }, [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius, source.handles], edge.sourcePosMemoObject)
+        }, [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius, source.handles, edge.sourceHandle], edge.sourcePosMemoObject)
         edge.targetPos = localMemo(() => {
             if (edge.targetHandle == null || target.handles == null) return getNodeIntersection(target, source)
             else {
@@ -226,12 +240,13 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     return target.absolutePosition
                 } else return new DOMPoint(target.absolutePosition.x + handle.x, target.absolutePosition.y + handle.y)
             }
-        }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles], edge.targetPosMemoObject)
+        }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles, edge.targetHandle], edge.targetPosMemoObject)
         return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} boxWidth={config.userControls.edgeBoxWidth}
+                          separate={(edge.allowOverlapSeparation ?? s.config.edgeDefaults.allowOverlapSeparation !== false) && edge.separate}
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
                           selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id} pointerEvents={edge.pointerEvents}
-                          label={edge.label} labelPosition={edge.labelPosition} labelShift={edge.labelShift} labelRotationFollowEdge={edge.labelRotationFollowEdge}/>
+                          label={edge.label} labelPosition={edge.labelPosition} labelOffset={edge.labelOffset} labelRotateWithEdge={edge.labelRotateWithEdge}/>
     }), [nodes, edges, selection, shouldUpdateGrabbed, shouldUpdateEdges, config.userControls.edgeBoxWidth])
 
     // Verify edges and compute handles for those that have them set to "auto" (undefined)

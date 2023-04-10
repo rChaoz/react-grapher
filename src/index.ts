@@ -17,15 +17,15 @@ import {ReactGrapher, ControlledGraphProps, UncontrolledGraphProps} from "./comp
 import {GrapherViewport} from "./components/GrapherViewport";
 import {Marker} from "./components/Marker";
 // Sub-components
-import {BaseNode, BaseNodeProps} from "./components/BaseNode";
+import {BaseNode, BaseNodeProps, SimpleNodeHandle} from "./components/BaseNode";
 import {NodeHandle, NodeHandleProps, SOURCE, TARGET} from "./components/NodeHandle"
 import {SimpleNode, NodeProps} from "./components/SimpleNode";
-import {BaseEdge, BaseEdgeProps, EdgeProps} from "./components/BaseEdge";
-import {SimpleEdge, SimpleEdgeData} from "./components/SimpleEdge";
+import {BaseEdge, BaseEdgeProps} from "./components/BaseEdge";
+import {SimpleEdge, EdgeProps, SimpleEdgeData} from "./components/SimpleEdge";
 // Child components
 import {Background, BackgroundProps} from "./components/Background";
 // Other
-import {getNodeIntersection, pointOnPerpendicular, getStraightEdgePath, getRoundEdgePath} from "./util/EdgeHelper";
+import {getNodeIntersection, pointOnPerpendicular, applySeparation, labelHelper, getStraightEdgePath, getRoundEdgePath} from "./util/EdgeHelper";
 
 export {
     // Data
@@ -41,7 +41,7 @@ export {
     // React Grapher
     ReactGrapher, ControlledGraphProps, UncontrolledGraphProps, GrapherViewport, Marker,
     // Sub-components
-    BaseNode, BaseNodeProps,
+    BaseNode, BaseNodeProps, SimpleNodeHandle,
     NodeHandle, NodeHandleProps, SOURCE, TARGET,
     SimpleNode, NodeProps,
     BaseEdge, BaseEdgeProps, EdgeProps,
@@ -49,5 +49,5 @@ export {
     // Child components
     Background, BackgroundProps,
     // Others
-    getNodeIntersection, pointOnPerpendicular, getStraightEdgePath, getRoundEdgePath
+    getNodeIntersection, pointOnPerpendicular, applySeparation, labelHelper, getStraightEdgePath, getRoundEdgePath,
 }

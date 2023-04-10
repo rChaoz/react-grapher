@@ -49,7 +49,7 @@ export function useBase<T extends BaseObject, TData extends BaseObject>(initialO
                 map.set(newObject.id, newObject)
             }
         },
-        update(mapFunc: (node: T) => (T | null | undefined)) {
+        update(mapFunc: (obj: T) => (T | null | undefined)) {
             setState(state => {
                 const newState: T[] = []
                 for (const obj of state) {
