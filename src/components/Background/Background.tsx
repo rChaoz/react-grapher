@@ -5,7 +5,7 @@ import {errorGrapherContext, warnInvalidPropValue} from "../../util/log";
 import {BACKGROUND_CLASS, Z_INDEX_BACKGROUND} from "../../util/constants";
 import {DataType} from "csstype";
 import {cx} from "@emotion/css";
-import {patternDots, patternGrid, patternLines} from "./patterns";
+import {Pattern, patternDots, patternGrid, patternHexagons, patternLines, patternTriangles} from "./patterns";
 import {useCallbackState} from "../../hooks/useCallbackState";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -23,7 +23,7 @@ export interface BackgroundProps {
     /**
      * Background pattern. Defaults to "grid".
      */
-    pattern?: "grid" | "lines" | "dots"
+    pattern?: "grid" | "lines" | "dots" | "hexagons" | "triangles"
     /**
      * Color used for background {@link pattern}. If not provided, the chosen pattern's default will be used.
      */
@@ -54,11 +54,6 @@ export interface BackgroundProps {
     patternTransform?: string
 }
 
-/**
- * <pattern> contents, viewBox size and base size (to be used for width)
- */
-export type Pattern = [JSX.Element, number, number]
-
 const BackgroundDiv = styled.div`
   position: absolute;
   z-index: ${Z_INDEX_BACKGROUND};
@@ -84,7 +79,6 @@ const defaultContext = {
     }
 }
 
-// TODO More background patterns
 export function Background({id, className, pattern, color, size, strokeWidth, angle, patternTransform}: BackgroundProps) {
     let grapherContext: typeof defaultContext = useContext(GrapherContext)
     if (grapherContext == null) {
@@ -96,25 +90,37 @@ export function Background({id, className, pattern, color, size, strokeWidth, an
     const pID = id + "-pattern"
 
     // Get pattern element
-    const [pElem, pVBSize, pSize] = useMemo(() => {
-        const sizeMul = typeof size === "number" ? size : patternSizeMap[size ?? "md"]
-        const strokeWidthMul = strokeWidth ?? 1
+    const [patternElem, vbWidth, vbHeight, width, height] = useMemo(() => {
+        let patternFunc: (color: string | undefined, strokeWidthMul: number) => Pattern
         switch (pattern) {
             case null:
             case undefined:
             case "grid":
-                return patternGrid(color, strokeWidthMul, sizeMul)
+                patternFunc = patternGrid
+                break
             case "lines":
-                return patternLines(color, strokeWidthMul, sizeMul)
+                patternFunc = patternLines
+                break
             case "dots":
-                return patternDots(color, strokeWidthMul, sizeMul)
+                patternFunc = patternDots
+                break
+            case "hexagons":
+                patternFunc = patternHexagons
+                break
+            case "triangles":
+                patternFunc = patternTriangles
+                break
             default:
-                warnInvalidPropValue("Background", "pattern", pattern, ["grid", "lines", "dots"]);
-                return patternGrid(color, strokeWidthMul, sizeMul)
+                warnInvalidPropValue("Background", "pattern", pattern, ["grid", "lines", "dots", "hexagons", "triangles"]);
+                patternFunc = patternGrid
+                break
         }
+        const [elem, vbWidth, vbHeight] = patternFunc(color, strokeWidth ?? 1)
+        const sizeMul = typeof size === "number" ? size : patternSizeMap[size ?? "md"]
+        return [elem, vbWidth, vbHeight, vbWidth * sizeMul, vbHeight * sizeMul]
     }, [pattern, color, strokeWidth, size])
 
-
+    // Refs for effect
     const patternRef = useRef<SVGPatternElement>(null)
     const svgRef = useRef<SVGSVGElement>(null)
 
@@ -143,9 +149,9 @@ export function Background({id, className, pattern, color, size, strokeWidth, an
     return <BackgroundDiv id={id} className={cx(BACKGROUND_CLASS, className)}>
         <svg ref={svgRef} width={"100%"} height={"100%"}>
             <defs>
-                <pattern ref={patternRef} id={pID} width={pSize * viewport.zoom} height={pSize * viewport.zoom}
-                         viewBox={`0 0 ${pVBSize} ${pVBSize}`} patternUnits={"userSpaceOnUse"}>
-                    {pElem}
+                <pattern ref={patternRef} id={pID} width={width * viewport.zoom} height={height * viewport.zoom}
+                         viewBox={`0 0 ${vbWidth} ${vbHeight}`} patternUnits={"userSpaceOnUse"}>
+                    {patternElem}
                 </pattern>
             </defs>
             <rect x={0} y={0} width={"100%"} height={"100%"} stroke={"none"} fill={`url(#${pID})`}/>

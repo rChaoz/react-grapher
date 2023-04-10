@@ -1,12 +1,16 @@
 import React from "react";
-import {Pattern} from "./Background";
 
-export function patternGrid(color: string | undefined, strokeWidthMul: number, sizeMul: number): Pattern {
+/**
+ * SVG <pattern> element contents, viewBox width, height and base size multiplier (to be multiplied with view box sizes to get real width/height)
+ */
+export type Pattern = [JSX.Element, number, number, number]
+
+export function patternGrid(color: string | undefined, strokeWidthMul: number): Pattern {
     if (color == null) color = "#E4E4EA"
-    return [<rect key="pattern" x="0" y="0" width="100%" height="100%" fill="none" stroke={color} strokeWidth={3 * strokeWidthMul}/>, 20, 20 * sizeMul]
+    return [<rect key="pattern" x="0" y="0" width="100%" height="100%" fill="none" stroke={color} strokeWidth={3 * strokeWidthMul}/>, 20, 20, 1]
 }
 
-export function patternLines(color: string | undefined, strokeWidthMul: number, sizeMul: number): Pattern {
+export function patternLines(color: string | undefined, strokeWidthMul: number): Pattern {
     if (color == null) color = "#DFDFE8"
     return [<>
         <line x1="49" y1="51" x2="51" y2="49" strokeWidth={strokeWidthMul} fill="none" stroke={color}/>
@@ -32,10 +36,10 @@ export function patternLines(color: string | undefined, strokeWidthMul: number, 
         <line x1="-1" y1="11" x2="11" y2="-1" strokeWidth={strokeWidthMul} fill="none" stroke={color}/>
         <line x1="-1" y1="06" x2="06" y2="-1" strokeWidth={strokeWidthMul} fill="none" stroke={color}/>
         <line x1="-1" y1="01" x2="01" y2="-1" strokeWidth={strokeWidthMul} fill="none" stroke={color}/>
-    </>, 50, 80 * sizeMul]
+    </>, 50, 50, 1.6]
 }
 
-export function patternDots(color: string | undefined, strokeWidthMul: number, sizeMul: number): Pattern {
+export function patternDots(color: string | undefined, strokeWidthMul: number): Pattern {
     if (color == null) color = "#E8E8EF"
     return [<React.Fragment key="pattern">
         <circle cx="05" cy="05" r={strokeWidthMul * 2} fill={color} stroke="none"/>
@@ -67,5 +71,23 @@ export function patternDots(color: string | undefined, strokeWidthMul: number, s
         <circle cx="25" cy="45" r={strokeWidthMul * 2} fill={color} stroke="none"/>
         <circle cx="35" cy="45" r={strokeWidthMul * 2} fill={color} stroke="none"/>
         <circle cx="45" cy="45" r={strokeWidthMul * 2} fill={color} stroke="none"/>
-    </React.Fragment>, 50, 50 * sizeMul]
+    </React.Fragment>, 50, 50, 1]
+}
+
+export function patternHexagons(color: string | undefined, strokeWidthMul: number): Pattern {
+    if (color == null) color = "#E4E4EA"
+    return [<React.Fragment key="pattern">,
+        <line x1="0" y1="25" x2="27" y2="25" strokeWidth={strokeWidthMul * 2} stroke={color}/>
+        <path d="M72 0 l-31 0 l-14 25 l14 25 l31 0 l14 -25 z" strokeWidth={strokeWidthMul * 2} stroke={color} fill="none"/>
+        <line x1="86" y1="25" x2="87" y2="25" strokeWidth={strokeWidthMul * 2} stroke={color}/>
+    </React.Fragment>, 87, 50, .6]
+}
+
+export function patternTriangles(color: string | undefined): Pattern {
+    if (color == null) color = "#ECECF0"
+    return [<React.Fragment key="pattern">,
+        <path d="M25 0 l-25 43 l50 0 z" stroke="none" fill={color}/>
+        <path d="M0 43 l25 43 l-25 0 z" stroke="none" fill={color}/>
+        <path d="M50 43 l-25 43 l25 0 z" stroke="none" fill={color}/>
+    </React.Fragment>, 50, 86, .6]
 }
