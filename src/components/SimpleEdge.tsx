@@ -1,7 +1,6 @@
 import {BaseEdge, BaseEdgeProps} from "./BaseEdge";
 import React from "react";
-import {labelHelper, getRoundEdgePath, getStraightEdgePath, applySeparation} from "../util/EdgeHelper";
-import {warnInvalidPropValue} from "../util/log";
+import {applySeparation, getRoundEdgePath, getStraightEdgePath, labelHelper} from "../util/EdgeHelper";
 import {Node} from "../data/Node";
 
 export type SimpleEdgeData = {
@@ -30,7 +29,7 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
     /**
      * Custom Edge data
      */
-    data: T | undefined
+    data: T
     /**
      * Label center position. A number 0..1, as a position on the SVG path (as specified by {@link Edge.labelPosition}).
      */
@@ -75,27 +74,23 @@ export interface EdgeProps<T> extends Omit<BaseEdgeProps, "path" | "labelPositio
     targetHandle: string | null | undefined
 }
 
+const edgePathsMap = {
+    straight: getStraightEdgePath,
+    round: getRoundEdgePath,
+}
+
 /**
  * Simple edge implementation.
  */
 export const SimpleEdge = React.memo<EdgeProps<SimpleEdgeData>>(
     function SimpleEdge(props) {
+        // In case data is null/undefined
+        const data = props.data ?? {}
+
         const [source, target] = applySeparation(props.sourcePos, props.targetPos, props.separate)
-        let type = props.data?.type
-        if (type == null || type === "auto-straight-round") type = props.separate ? "round" : "straight"
-        let path: string
-        switch (type) {
-            case "straight":
-                path = getStraightEdgePath(source, target)
-                break
-            case "round":
-                path = getRoundEdgePath(source, target, props.data?.curve ?? (props.data?.relativeCurve ? .2 : 25), props.data?.relativeCurve)
-                break
-            default:
-                path = getStraightEdgePath(source, target)
-                warnInvalidPropValue("SimpleEdge", "type", type, ["straight", "round"])
-                break
-        }
+
+        const type = data.type == null || data.type == "auto-straight-round" ? (props.separate ? "round" : "straight") : data.type
+        const path = edgePathsMap[type](source, target, data.curve ?? (data.relativeCurve ? .2 : 25), data.relativeCurve)
         return <BaseEdge {...props} path={path} {...labelHelper(source, target, props.labelOffset, props.labelRotateWithEdge)}/>
     }
 )

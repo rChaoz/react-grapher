@@ -1,11 +1,11 @@
 import React, {useCallback, useContext, useEffect, useMemo, useRef} from "react";
 import styled from "@emotion/styled";
 import {GrapherContext} from "../../context/GrapherContext";
-import {errorGrapherContext, warnInvalidPropValue} from "../../util/log";
+import {errorGrapherContext} from "../../util/log";
 import {BACKGROUND_CLASS, Z_INDEX_BACKGROUND} from "../../util/constants";
 import {DataType} from "csstype";
 import {cx} from "@emotion/css";
-import {Pattern, patternDots, patternGrid, patternHexagons, patternLines, patternTriangles} from "./patterns";
+import {patternDots, patternGrid, patternHexagons, patternLines, patternTriangles} from "./patterns";
 import {useCallbackState} from "../../hooks/useCallbackState";
 
 // eslint-disable-next-line @typescript-eslint/ban-types
@@ -69,7 +69,7 @@ const patternSizeMap = {
 }
 
 // Defaults values to be used if GrapherContext is null to allow component to still render
-const defaultViewport = { centerX: 0, centerY: 0, zoom: 1 }
+const defaultViewport = {centerX: 0, centerY: 0, zoom: 1}
 const defaultContext = {
     id: "context-error",
     controller: {
@@ -77,6 +77,14 @@ const defaultContext = {
             return defaultViewport
         },
     }
+}
+
+const patternFuncMap = {
+    grid: patternGrid,
+    lines: patternLines,
+    dots: patternDots,
+    hexagons: patternHexagons,
+    triangles: patternTriangles,
 }
 
 export function Background({id, className, pattern, color, size, strokeWidth, angle, patternTransform}: BackgroundProps) {
@@ -91,31 +99,7 @@ export function Background({id, className, pattern, color, size, strokeWidth, an
 
     // Get pattern element
     const [patternElem, vbWidth, vbHeight, width, height] = useMemo(() => {
-        let patternFunc: (color: string | undefined, strokeWidthMul: number) => Pattern
-        switch (pattern) {
-            case null:
-            case undefined:
-            case "grid":
-                patternFunc = patternGrid
-                break
-            case "lines":
-                patternFunc = patternLines
-                break
-            case "dots":
-                patternFunc = patternDots
-                break
-            case "hexagons":
-                patternFunc = patternHexagons
-                break
-            case "triangles":
-                patternFunc = patternTriangles
-                break
-            default:
-                warnInvalidPropValue("Background", "pattern", pattern, ["grid", "lines", "dots", "hexagons", "triangles"]);
-                patternFunc = patternGrid
-                break
-        }
-        const [elem, vbWidth, vbHeight] = patternFunc(color, strokeWidth ?? 1)
+        const [elem, vbWidth, vbHeight] = patternFuncMap[pattern ?? "grid"](color, strokeWidth ?? 1)
         const sizeMul = typeof size === "number" ? size : patternSizeMap[size ?? "md"]
         return [elem, vbWidth, vbHeight, vbWidth * sizeMul, vbHeight * sizeMul]
     }, [pattern, color, strokeWidth, size])

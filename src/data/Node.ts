@@ -22,7 +22,7 @@ import {NodeHandle, NodeHandlePropsBase, SOURCE, TARGET} from "../components/Nod
 export interface Node<T> {
     id: string
     /**
-     * Custom data for this node. The default node implementation displays this value as a string.
+     * Custom data for this node. See {@link SimpleNodeData} for the default implementation's required data.
      */
     data: T
     /**

@@ -14,9 +14,9 @@ import {MemoObject} from "../util/utils";
 export interface Edge<T = SimpleEdgeData> {
     id: string
     /**
-     * Custom data this edge can hold
+     * Custom data for this edge. See {@link SimpleEdgeData} for the default implementation's required data.
      */
-    data?: T
+    data: T
     /**
      * Whether this edge has been selected by the user (read-only). You can access all selected edges using `Edges.selection`.
      * You can modify the current selection using selection related functions on the Edges object.

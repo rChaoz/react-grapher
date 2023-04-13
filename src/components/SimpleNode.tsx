@@ -27,6 +27,7 @@ export type SimpleNodeData = string | {
 }
 
 export const SimpleNode = React.memo<NodeProps<SimpleNodeData>>(function SimpleNode(props) {
+    // This function takes into account that data may be null/undefined
     return <BaseNode {...props} handles={typeof props.data === "object" ? props.data.handles : undefined}>
         {typeof props.data === "string" ? props.data : String(props.data?.label)}
     </BaseNode>
