@@ -59,7 +59,7 @@ export interface BaseNodeProps {
     children: React.ReactNode
 }
 
-export type SimpleNodeHandle = Pick<NodeHandlePropsPositioned, "name" | "role" | "position" | "className" | "allowNewEdges" | "allowEdgeTarget" | "pointerEvents">
+export type SimpleNodeHandle = Pick<NodeHandlePropsPositioned, "name" | "role" | "position" | "className" | "allowNewEdges" | "allowNewEdgeTarget" | "pointerEvents">
 
 const ContainerDiv = styled.div<{ resize: Property.Resize | undefined, resizable: boolean }>`
   position: absolute;
@@ -236,8 +236,8 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
 
                 if (handleElem.dataset.name !== nodeHandle.name || Math.abs(x - nodeHandle.x) > 2 || Math.abs(y - nodeHandle.y) > 2) handlesChanged = true
                 else {
-                    nodeHandle.allowCreatingEdges = stringToBoolean(handleElem.dataset.allowNewEdges)
-                    nodeHandle.allowCreatingEdgesTarget = stringToBoolean(handleElem.dataset.allowEdgesTarget)
+                    nodeHandle.allowNewEdges = stringToBoolean(handleElem.dataset.allowNewEdges)
+                    nodeHandle.allowNewEdgeTarget = stringToBoolean(handleElem.dataset.allowNewEdgesTarget)
                     nodeHandle.allowGrabbing = stringToBoolean(handleElem.dataset.allowGrabbing)
                 }
             }
@@ -375,11 +375,11 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
             // Get handle roles and config
             const roles = h.dataset.role?.split(",")
             const allowCreatingEdges = stringToBoolean(h.dataset.allowNewEdges)
-            const allowCreatingEdgesTarget = stringToBoolean(h.dataset.allowEdgesTarget)
+            const allowCreatingEdgesTarget = stringToBoolean(h.dataset.allowNewEdgesTarget)
             const allowGrabbing = stringToBoolean(h.dataset.allowGrabbing)
 
             // Save data and make x and y relative to the node's center
-            handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2, allowCreatingEdges, allowCreatingEdgesTarget, allowGrabbing})
+            handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2, allowNewEdges: allowCreatingEdges, allowNewEdgeTarget: allowCreatingEdgesTarget, allowGrabbing})
         }
         node.handles = handles
     }, [id, internals, node])

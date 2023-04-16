@@ -11,7 +11,7 @@ import {MemoObject} from "../util/utils";
  * component function, it is up to that function to decide everything about the edge it is rendering: CSS classes, actual source, target points and path, label
  * text, position, markers etc.
  */
-export interface Edge<T = SimpleEdgeData> {
+interface EdgeData<T> {
     id: string
     /**
      * Custom data for this edge. See {@link SimpleEdgeData} for the default implementation's required data.
@@ -42,19 +42,19 @@ export interface Edge<T = SimpleEdgeData> {
      */
     source: string
     /**
-     * Name of the handle of the source node (null for floating edge). Leaving this undefined (not null) will attempt to automatically connect this edge
+     * Name of the handle of the source node (null for floating edge). An undefined (not null) value will attempt to automatically connect this edge
      * to the first (in DOM order) available handle in both nodes. The node itself will be considered as well (to create floating edges).
      */
-    sourceHandle?: string | null
+    sourceHandle: string | null | undefined
     /**
      * ID of target node
      */
     target: string
     /**
-     * Name of the handle of the target node (null for floating edge). Leaving this undefined (not null) will attempt to automatically connect this edge
+     * Name of the handle of the target node (null for floating edge). An undefined (not null) value will attempt to automatically connect this edge
      * to the first (in DOM order) available handle in both nodes. The node itself will be considered as well (to create floating edges).
      */
-    targetHandle?: string | null
+    targetHandle: string | null | undefined
     /**
      * Label for this edge (can be null, in which case the text element won't be rendered at all)
      */
@@ -95,9 +95,16 @@ export interface Edge<T = SimpleEdgeData> {
      * Defaults to true
      */
     pointerEvents: boolean
+}
 
-    // Config
-
+export interface EdgeConfig {
+    /**
+     * Whether this edge is grabbed on pointerdown. A grabbed edge can be deleted / have its source/target points changed, if {@link allowEdit} is true;
+     * regardless, the viewport underneath will not be grabbed in this case.
+     *
+     * If false, the viewport will be grabbed instead, which allows the user to pan the viewport by tapping and dragging on the node. Defaults to true
+     */
+    allowGrabbing?: boolean
     /**
      * Whether to allow the edge's source/target points to shift slightly, to prevent 2 edges that run
      * between the same 2 points but opposing directions, from overlapping. Defaults to true
@@ -133,8 +140,8 @@ interface EdgeInternals {
      */
     isInitialized: boolean
     /**
-     * If true, it means that there is another edge, between the same 2 source points, in opposite direction,
-     * and to avoid overlap, they should be separated by a few pixels.
+     * If true, it means that there is another edge, between the same 2 source points, in opposite direction.
+     * To avoid overlap, these edges should be separated by a few pixels.
      */
     separate: boolean
     /**
@@ -163,20 +170,20 @@ interface EdgeInternals {
     targetPosMemoObject: MemoObject<DOMPoint>
 }
 
+export type Edge<T> = EdgeData<T> & EdgeConfig
 export type EdgeImpl<T> = Edge<T> & EdgeInternals
 
 /**
  * Edge with all properties made optional except ID, source and target. Upon rendering, all properties will be set to their default values.
  */
-export type EdgeData<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, source: string, target: string}
+export type NewEdge<T = SimpleEdgeData> = Partial<Edge<T>> & {id: string, source: string, target: string}
 
 /**
  * Default values for edges.
  */
-export type EdgeDefaults = Omit<EdgeData<any>, "id" | "source" | "target" | "data" | "selected">
+export type EdgeDefaults = Omit<NewEdge<any>, "id" | "source" | "sourceHandle" | "target" | "targetHandle" | "data" | "selected">
 
-function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targetHandle" | "allowOverlapSeparation"
-    | "allowSelection" | "allowDeletion"| "allowEdit" | "allowEditSource" | "allowEditTarget"> & EdgeInternals {
+function getDefaultEdgeData(): Omit<EdgeData<any>, "id" | "source" | "sourceHandle" | "target" | "targetHandle" | "data" | "selected"> & EdgeInternals {
     return {
         Component: SimpleEdge,
         classes: [],
@@ -201,12 +208,12 @@ function getEdgeDefaults(): Omit<Required<EdgeDefaults>, "sourceHandle" | "targe
     }
 }
 
-export function applyEdgeDefaults(target: EdgeData<any>, defaults: EdgeDefaults) {
+export function applyEdgeDefaults(target: NewEdge<any>, defaults: EdgeDefaults) {
     const i = target as EdgeImpl<any>
     if (i.isInitialized) return
     checkErrorInvalidID("edge", i.id)
     // Set undefined values to their defaults
-    const edgeDefaults = getEdgeDefaults()
+    const edgeDefaults = getDefaultEdgeData()
     // @ts-ignore
     for (const prop in edgeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? edgeDefaults[prop]
     i.selected = false
@@ -226,24 +233,24 @@ export interface EdgesFunctions<T> {
     /**
      * Replace all existing edges
      */
-    set(newEdges: Edge<T>[] | EdgeData<T>[]): void
+    set(newEdges: Edge<T>[] | NewEdge<T>[]): void
 
     /**
      * Add one or more edges to the Graph
      */
-    add(newEdge: Edge<T> | Edge<T>[] | EdgeData<T> | EdgeData<T>[]): void
+    add(newEdge: Edge<T> | Edge<T>[] | NewEdge<T> | NewEdge<T>[]): void
 
     /**
      * Map in-place, return null/undefined to remove an edge
      */
-    update(mapFunc: (node: Edge<T>) => Edge<T> | EdgeData<T> | null | undefined): void
+    update(mapFunc: (node: Edge<T>) => Edge<T> | NewEdge<T> | null | undefined): void
 
     /**
      * Replace or remove an edge by ID
      * @param targetID ID of the edge you want to remove
      * @param replacement New edge or function that returns a new edge and receives the old edge (null to remove)
      */
-    replace(targetID: string, replacement?: Edge<T> | EdgeData<T> | null | ((edge: Edge<T>) => Edge<T> | EdgeData<T> | null | undefined)): void
+    replace(targetID: string, replacement?: Edge<T> | NewEdge<T> | null | ((edge: Edge<T>) => Edge<T> | NewEdge<T> | null | undefined)): void
 
     /**
      * Process given changes, updating this Edges list (ignores non-Edge changes)

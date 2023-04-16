@@ -2,6 +2,10 @@ import {NodeDefaults} from "./Node";
 import {EdgeDefaults} from "./Edge";
 import {Property} from "csstype";
 
+// =====================================================================================================================
+// VIEWPORT
+// =====================================================================================================================
+
 export interface GrapherViewportControls {
     /**
      * Minimum zoom allowed by user input. Defaults to .4
@@ -40,6 +44,10 @@ function withDefaultsViewportControls(controls: GrapherViewportControls | boolea
     else if (controls === false) return noViewportControls
     else return {...defaultViewportControls, ...controls}
 }
+
+// =====================================================================================================================
+// USER CONTROLS
+// =====================================================================================================================
 
 export interface GrapherUserControls {
     /**
@@ -107,6 +115,10 @@ function withDefaultsUserControls(controls: GrapherUserControls | false | undefi
     else return {...defaultUserControls, ...controls}
 }
 
+// =====================================================================================================================
+// FIT VIEW CONFIG
+// =====================================================================================================================
+
 export interface GrapherFitViewConfig {
     /**
      * Any CSS string applicable to the "padding" CSS property (including multiple, eg. for top/right/bottom/left).
@@ -130,6 +142,10 @@ export function withDefaultsFitViewConfig(config: GrapherFitViewConfig | undefin
     if (config === undefined) return defaultFitViewConfig
     else return {...defaultFitViewConfig, ...config}
 }
+
+// =====================================================================================================================
+// GRAPHER CONFIG
+// =====================================================================================================================
 
 export interface GrapherConfig {
     /**
@@ -194,10 +210,14 @@ export interface GrapherConfig {
     hideControls?: boolean
     /**
      * Default config for a Node. When a new node is created, undefined fields will be set from this object.
+     * Config options (that begin with "allow") are not copied, instead, they are checked when needed.
+     * That means that if nodes do not have a configuration property set, and you change it for this object, it will affect existing nodes.
      */
     nodeDefaults?: NodeDefaults
     /**
      * Default config for an Edge. When a new edge is created, undefined fields will be set from this object.
+     * Config options (that begin with "allow") are not copied, instead, they are checked when needed.
+     * That means that if nodes do not have a configuration property set, and you change it for this object, it will affect existing nodes.
      */
     edgeDefaults?: EdgeDefaults
 }

@@ -19,7 +19,7 @@ import {NodeHandle, NodeHandlePropsBase, SOURCE, TARGET} from "../components/Nod
  * component function, it is up to that function to decide everything about the node it is rendering: CSS classes, resizability, data displayed, even the position
  * can be adjusted.
  */
-export interface Node<T> {
+interface NodeData<T> {
     id: string
     /**
      * Custom data for this node. See {@link SimpleNodeData} for the default implementation's required data.
@@ -28,7 +28,7 @@ export interface Node<T> {
     /**
      * Parent of this node. If non-null, its position will be relative to the center of this node.
      */
-    parent?: string | null
+    parent: string | null
     /**
      * Whether this node has been selected by the user (read-only). You can access all selected nodes using `Nodes.selection`.
      * You can modify the current selection using selection related functions on the Nodes object.
@@ -63,6 +63,10 @@ export interface Node<T> {
      */
     position: DOMPoint
     /**
+     * Read-only absolute position, calculated during rendering.
+     */
+    absolutePosition: DOMPoint
+    /**
      * Whether this node should be user-resizable. If you want to set min/max width or height, you should create a CSS class and add it to {@link classes}.
      * Defaults to "none".
      */
@@ -81,9 +85,18 @@ export interface Node<T> {
      * Defaults to null (fallback to handle's individual setting).
      */
     handlePointerEvents: boolean | null
+}
 
-    // Config
+export interface NodeConfig {
+    // Node config
 
+    /**
+     * Whether this node is grabbed on pointerdown. A grabbed node can be moved by the user, if {@link allowMoving} is true; regardless, the viewport
+     * underneath will not be grabbed in this case.
+     *
+     * If false, the viewport will be grabbed instead, which allows the user to pan the viewport by tapping and dragging on the node. Defaults to true
+     */
+    allowGrabbing?: boolean
     /**
      * Whether this node is selectable by the user. Defaults to true
      */
@@ -105,19 +118,22 @@ export interface Node<T> {
      * they can drag onto this node in order to complete the edge creation. Note that, if {@link pointerEvents} is disabled (`false`), this property does nothing,
      * as the `pointerup` listener will never be fired. Defaults to false
      */
-    allowEdgeTarget?: boolean
+    allowNewEdgeTarget?: boolean
+
+    // Handles config
+
     /**
-     * Default value for this node's handles for {@link NodeHandle.allowNewEdges}, if they don't set it explicitly.
+     * Default value for this node's handles' {@link NodeHandle.allowGrabbing} prop, used if they don't set it explicitly. Defaults to false
+     */
+    allowGrabbingHandles?: boolean
+    /**
+     * Default value for this node's handles for {@link NodeHandle.allowNewEdges} prop, used if they don't set it explicitly. Defaults to false
      */
     allowNewEdgesFromHandles?: boolean
     /**
-     * Default value for this node's handles for {@link NodeHandle.allowEdgeTarget}, if they don't set it explicitly.
+     * Default value for this node's handles for {@link NodeHandle.allowNewEdgeTarget} prop, used if they don't set it explicitly. Defaults to false
      */
-    allowEdgeTargetForHandles?: boolean
-    /**
-     * Read-only absolute position, calculated during rendering.
-     */
-    absolutePosition: DOMPoint
+    allowNewEdgeTargetForHandles?: boolean
 }
 
 interface NodeInternals {
@@ -155,9 +171,7 @@ interface NodeInternals {
     handles: NodeHandleInfo[]
 }
 
-export type NodeImpl<T> = Node<T> & NodeInternals
-
-export interface NodeHandleInfo {
+export interface NodeHandleInfo extends NodeHandleConfig {
     /**
      * Name of this handle, used for {@link Edge.sourceHandle} and {@link Edge.targetHandle}
      */
@@ -174,34 +188,40 @@ export interface NodeHandleInfo {
      * Y coordinate relative to node center
      */
     y: number
-    /**
-     * Same as NodeHandle prop.
-     */
-    allowCreatingEdges: boolean | undefined
-    /**
-     * Same as NodeHandle prop.
-     */
-    allowCreatingEdgesTarget: boolean | undefined
+}
+
+// WHEN CHANGING THIS: Also update components/ReactGrapher/utils.ts -> getHandleConfig
+export interface NodeHandleConfig {
     /**
      * Same as NodeHandle prop.
      */
     allowGrabbing: boolean | undefined
+    /**
+     * Same as NodeHandle prop.
+     */
+    allowNewEdges: boolean | undefined
+    /**
+     * Same as NodeHandle prop.
+     */
+    allowNewEdgeTarget: boolean | undefined
 }
 
+export type Node<T> = NodeData<T> & NodeConfig
+export type NodeImpl<T> = Node<T> & NodeInternals
+
 /**
- * Node with all properties made optional except ID. Upon rendering, all properties will be set to their default values.
+ * Node with all properties made optional except ID. Upon rendering, all properties will be set to their default values. Use this to create new nodes.
  *
  * See {@link Node} for more information.
  */
-export type NodeData<T = SimpleNodeData> = Partial<Node<T>> & {id: string}
+export type NewNode<T = SimpleNodeData> = Partial<Node<T>> & { id: string }
 
 /**
  * Default values for nodes.
  */
-export type NodeDefaults = Omit<NodeData<any>, "id" | "data" | "parent" | "selected">
+export type NodeDefaults = Omit<NewNode<any>, "id" | "data" | "parent" | "selected">
 
-function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "allowMoving" | "allowDeletion"
-    | "allowNewEdges" | "allowEdgeTarget" | "allowNewEdgesFromHandles" | "allowEdgeTargetForHandles"> & NodeInternals {
+function getDefaultNodeData(): Omit<NodeData<any>, "id" | "data" | "parent" | "selected"> & NodeInternals {
     return {
         Component: SimpleNode,
         classes: [],
@@ -224,14 +244,14 @@ function getNodeDefaults(): Omit<Required<NodeDefaults>, "allowSelection" | "all
     }
 }
 
-export function applyNodeDefaults(target: NodeData<any>, defaults: NodeDefaults) {
+export function applyNodeDefaults(target: NewNode<any>, defaults: NodeDefaults) {
     const i = target as NodeImpl<any>
     if (i.isInitialized) return
     checkErrorInvalidID("node", i.id)
     // Set undefined values to their defaults
-    const nodeDefaults = getNodeDefaults()
+    const defaultNodeData = getDefaultNodeData()
     // @ts-ignore
-    for (const prop in nodeDefaults) if (i[prop] === undefined) i[prop] = defaults[prop] ?? nodeDefaults[prop]
+    for (const prop in defaultNodeData) if (i[prop] === undefined) i[prop] = defaults[prop] ?? defaultNodeData[prop]
     i.selected = false
 }
 
@@ -255,25 +275,25 @@ export interface NodesFunctions<T> {
     /**
      * Replaces all existing nodes
      */
-    set(newNodes: Node<T>[] | NodeData<T>[]): void
+    set(newNodes: Node<T>[] | NewNode<T>[]): void
 
     /**
      * Add one or more nodes to the Graph
      */
-    add(newNode: Node<T> | Node<T>[] | NodeData<T> | NodeData<T>[]): void
+    add(newNode: Node<T> | Node<T>[] | NewNode<T> | NewNode<T>[]): void
 
     /**
      * Map in-place, return null/undefined to remove a node. If you return a node but modified, make sure to set its "hasChanged" property to true to
      * trigger internal re-calculations for the node.
      */
-    update(mapFunc: (node: Node<T>) => Node<T> | NodeData<T> | null | undefined): void
+    update(mapFunc: (node: Node<T>) => Node<T> | NewNode<T> | null | undefined): void
 
     /**
      * Replace or remove a node by ID
      * @param targetID ID of the node that should be replaced
      * @param replacement New node or function that returns a new node and receives the old node (null to remove)
      */
-    replace(targetID: string, replacement?: Node<T> | NodeData<T> | null | ((node: Node<T>) => Node<T> | NodeData<T> | null | undefined)): void
+    replace(targetID: string, replacement?: Node<T> | NewNode<T> | null | ((node: Node<T>) => Node<T> | NewNode<T> | null | undefined)): void
 
     /**
      * Process given changes, updating this Nodes list (ignores non-Node changes)

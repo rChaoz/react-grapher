@@ -3,7 +3,7 @@ import {errorUnknownNode} from "../../util/log";
 import {useBase} from "./useBase";
 // 'Nodes' is used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {Node, NodeData, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
+import {Node, NewNode, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
 
 /**
  * Returns a stateful array object representing the nodes of a ReactGrapher. This function does not also return a setter for the state; to modify it,
@@ -11,7 +11,7 @@ import {Node, NodeData, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
  * @see Nodes
  */
 export default function useNodes<T>(initialNodes: NodeImpl<T>[]): NodesImpl<T> {
-    const base = useBase<NodeImpl<T>, NodeData<T>>(initialNodes)
+    const base = useBase<NodeImpl<T>, NewNode<T>>(initialNodes)
     return Object.assign(base, {
         absolute(node: Node<any> | string): DOMPoint {
             if (typeof node === "string") {

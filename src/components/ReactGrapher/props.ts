@@ -3,8 +3,8 @@ import React from "react";
 import {GrapherConfig} from "../../data/GrapherConfig";
 import {GrapherEvent} from "../../data/GrapherEvent";
 import {GrapherChange} from "../../data/GrapherChange";
-import {NodeData, Nodes} from "../../data/Node";
-import {EdgeData, Edges} from "../../data/Edge";
+import {NewNode, Nodes} from "../../data/Node";
+import {NewEdge, Edges} from "../../data/Edge";
 import {Selection} from "../../data/Selection";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -128,10 +128,10 @@ export interface UncontrolledGraphProps<N, E> extends CommonGraphProps {
      * For uncontrolled graph. The graph will manage its own state, and state can be changed via user interactions.
      * This represents the starting nodes of the graph.
      */
-    defaultNodes?: NodeData<N>[]
+    defaultNodes?: NewNode<N>[]
     /**
      * For uncontrolled graph. The graph will manage its own state, and state can be changed via user interactions.
      * This represents the starting edges of the graph.
      */
-    defaultEdges?: EdgeData<E>[]
+    defaultEdges?: NewEdge<E>[]
 }

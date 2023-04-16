@@ -75,14 +75,24 @@ export interface NodeHandlePropsBase {
      */
     pointerEvents?: boolean
     /**
-     * Allow new edges to be created by clicking this handle and dragging. Defaults to false
+     * Whether this handle is grabbed on pointerdown. By "grabbing" a handle and dragging, the user can create a new Edge, if {@link allowNewEdges} is true; regardless,
+     * the node that this handle belongs to, or the viewport, will not be grabbed.
+     *
+     * If false, the node will be grabbed instead (or the viewport, if the node also has `allowGrabbing` false), which will move the node or pan the viewport, respectively.
+     * By default, the owner node's `allowGrabbingHandles` property values will be used; this prop can override that.
+     */
+    allowGrabbing?: boolean
+    /**
+     * Allow new edges to be created by clicking this handle and dragging.
+     * By default, the owner node's `allowNewEdgesFromHandles` property values will be used; this prop can override that.
      */
     allowNewEdges?: boolean
     /**
      * Allows this handle to be a target for new edges, i.e. when a user starts to create a new edge, from a node/handle with {@link allowNewEdges} true,
-     * they can drag onto this handle in order to complete the edge creation. Defaults to false
+     * they can drag onto this handle in order to complete the edge creation.
+     * By default, the owner node's `allowNewEdgesForHandles` property values will be used; this prop can override that.
      */
-    allowEdgeTarget?: boolean
+    allowNewEdgeTarget?: boolean
 }
 
 export interface NodeHandlePropsPositioned extends NodeHandlePropsBase {
@@ -184,7 +194,7 @@ export function NodeHandle(props: NodeHandleProps) {
 
     return <HandleContainerDiv className={NODE_HANDLE_CONTAINER_CLASS} style={customPosition} data-position={position} data-node={context.id}
                                data-name={name} data-role={Array.isArray(props.role) ? props.role.join() : props.role} data-use-node-border={useNodeBorder}
-                               data-allow-new-edges={props.allowNewEdges} data-allow-edges-target={props.allowEdgeTarget}
+                               data-allow-new-edges={props.allowNewEdges} data-allow-new-edges-target={props.allowNewEdgeTarget}
                                enablePointerEvents={props.pointerEvents == null ? context.handlePointerEvents : props.pointerEvents}>
         <HandleDiv id={`${context.id}-handle-${name}`} className={cx(NODE_HANDLE_CLASS, props.className)}
                    zIndex={context.zIndex}>

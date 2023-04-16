@@ -2,7 +2,7 @@ import {GrapherChange, isEdgeChange} from "../../data/GrapherChange";
 import {useBase} from "./useBase";
 // 'Edges' is used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import {EdgeData, EdgeImpl, Edges, EdgesImpl} from "../../data/Edge";
+import {NewEdge, EdgeImpl, Edges, EdgesImpl} from "../../data/Edge";
 
 /**
  * Returns a stateful array object representing the edges of a ReactGrapher. This function does not also return a setter for the state; to modify it,
@@ -10,7 +10,7 @@ import {EdgeData, EdgeImpl, Edges, EdgesImpl} from "../../data/Edge";
  * @see Edges
  */
 export default function useEdges<T>(initialEdges: EdgeImpl<T>[]): EdgesImpl<T> {
-    const base = useBase<EdgeImpl<T>, EdgeData<T>>(initialEdges)
+    const base = useBase<EdgeImpl<T>, NewEdge<T>>(initialEdges)
     return Object.assign(base, {
         processChanges(changes: GrapherChange[]) {
             const e = base.slice()

@@ -1,6 +1,6 @@
 import {errorCustom, errorParsingDOMElement, errorUnknownEdge, errorUnknownNode} from "../../util/log";
-import {Node, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
-import {Edge, Edges, EdgesImpl} from "../../data/Edge";
+import {Node, NodeConfig, NodeHandleConfig, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
+import {Edge, EdgeConfig, Edges, EdgesImpl} from "../../data/Edge";
 import {GrapherChange} from "../../data/GrapherChange";
 import {Controller} from "../../data/Controller";
 import {GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet} from "../../data/GrapherConfig";
@@ -59,8 +59,8 @@ export function parseAllowedConnections(s: string): AllowedConnections {
 /**
  * Extract DOM ID, type (node/edge) and internal ID from event target
  */
-export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>) :
-    { type: "node", objID: string, obj: Node<N> } | { type: "edge", objID: string, obj: Edge<E> } | { type: "handle", objID: string, obj: NodeHandleInfo,node: Node<N> } | null {
+export function processDomElement<N, E>(element: EventTarget | null, nodes: Nodes<N>, edges: Edges<E>):
+    { type: "node", objID: string, obj: Node<N> } | { type: "edge", objID: string, obj: Edge<E> } | { type: "handle", objID: string, obj: NodeHandleInfo, node: Node<N> } | null {
     if (element == null) {
         errorCustom("Node/Edge/Handle pointer event listener callback was called with a null event.currentTarget")
         return null
@@ -180,4 +180,64 @@ export function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: Gr
     controller.setViewport({
         centerX: (rect.left + rect.right) / 2, centerY: (rect.top + rect.bottom) / 2, zoom
     })
+}
+
+const globalNodeDefaults: Required<NodeConfig> = {
+    // Node
+    allowGrabbing: true,
+    allowSelection: true,
+    allowMoving: true,
+    allowDeletion: false,
+    allowNewEdges: false,
+    allowNewEdgeTarget: false,
+    // Handles
+    allowGrabbingHandles: false,
+    allowNewEdgesFromHandles: false,
+    allowNewEdgeTargetForHandles: false,
+}
+
+const globalEdgeDefaults: Required<EdgeConfig> = {
+    allowGrabbing: true,
+    allowOverlapSeparation: true,
+    allowSelection: true,
+    allowDeletion: false,
+    allowEdit: false,
+    // These should never be used and are set just to make Typescript happy
+    allowEditSource: false,
+    allowEditTarget: false,
+}
+
+/**
+ * Get the config property for a node. If the node does not have the property, this falls back to the user node defaults, then the global node defaults.
+ */
+export function getNodeConfig<Prop extends keyof NodeConfig>(prop: Prop, node: NodeConfig, config: GrapherConfigSet): boolean {
+    return node[prop] ?? config.nodeDefaults[prop] ?? globalNodeDefaults[prop]
+}
+
+/**
+ * Get the config property for an edge. If the edge does not have the property, this falls back to the user edge defaults, then the global edge defaults.
+ */
+export function getEdgeConfig<Prop extends keyof EdgeConfig>(prop: Prop, edge: EdgeConfig, config: GrapherConfigSet): boolean {
+    if (prop === "allowEditSource") return edge[prop] ?? config.edgeDefaults[prop] ?? getEdgeConfig("allowEdit", edge, config)
+    if (prop === "allowEditTarget") return edge[prop] ?? config.edgeDefaults[prop] ?? getEdgeConfig("allowEdit", edge, config)
+    return edge[prop] ?? config.edgeDefaults[prop] ?? globalEdgeDefaults[prop]
+}
+
+/**
+ * Get the config property for a handle. If the handle does not have the property, this falls back to the corresponding node property, using
+ * {@link getNodeConfig}. If the node does not have the property, this falls back to the user node defaults, then the global node defaults.
+ */
+export function getHandleConfig<Prop extends keyof NodeHandleConfig>(prop: Prop, handle: NodeHandleInfo, node: NodeConfig, config: GrapherConfigSet): boolean {
+    if (handle[prop] != null) return handle[prop]!
+    switch (prop) {
+        case "allowGrabbing":
+            return getNodeConfig("allowGrabbingHandles", node, config)
+        case "allowNewEdges":
+            return getNodeConfig("allowNewEdgesFromHandles", node, config)
+        case "allowNewEdgeTarget":
+            return getNodeConfig("allowNewEdgesFromHandles", node, config)
+        default:
+            errorCustom(`Internal error: unknown handle configuration property "${prop}"`)
+            return false
+    }
 }

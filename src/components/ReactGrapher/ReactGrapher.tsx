@@ -32,7 +32,7 @@ import {SelectionImpl} from "../../data/Selection";
 import {usePersistent} from "../../hooks/usePersistent";
 
 import {CommonGraphProps, ControlledGraphProps, UncontrolledGraphProps} from "./props";
-import {changeZoom, fitView, parseAllowedConnections, processDomElement, sendChanges, sendEvent} from "./utils";
+import {changeZoom, fitView, getEdgeConfig, getHandleConfig, getNodeConfig, parseAllowedConnections, processDomElement, sendChanges, sendEvent} from "./utils";
 import {useCallbackState} from "../../hooks/useCallbackState";
 import {useUpdate} from "../../hooks/useUpdate";
 import {useSelection} from "../../hooks/useSelection";
@@ -67,9 +67,15 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         // If config changed, deep compare the config object
         if (deepEquals(props.config, inputRef.oldConfig) && inputRef.config != null) return inputRef.config
         const c = withDefaultsConfig(props.config)
+        // Check static prop
         if (props.static) {
             if (props.config?.hideControls === undefined) c.hideControls = true
             if (props.config?.fitViewConfig?.abideMinMaxZoom === undefined) c.fitViewConfig.abideMinMaxZoom = false
+        }
+        // And check zoom levels
+        if (c.viewportControls.minZoom > c.viewportControls.maxZoom) {
+            warnCustom("GrapherConfig.viewportControls - minZoom is greater than maxZoom. Swapping values.");
+            [c.viewportControls.minZoom, c.viewportControls.maxZoom] = [c.viewportControls.maxZoom, c.viewportControls.minZoom]
         }
         inputRef.oldConfig = props.config
         inputRef.config = c
@@ -242,7 +248,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles, edge.targetHandle], edge.targetPosMemoObject)
         return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} boxWidth={config.userControls.edgeBoxWidth}
-                          separate={(edge.allowOverlapSeparation ?? s.config.edgeDefaults.allowOverlapSeparation !== false) && edge.separate}
+                          separate={getEdgeConfig("allowOverlapSeparation", edge, s.config) && edge.separate}
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
                           selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id} pointerEvents={edge.pointerEvents}
@@ -374,7 +380,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Ref to the ReactGrapher root div
     const ref = useRef<HTMLDivElement>(null)
-    // And to the content div
+    // Ref to the content div
     const contentRef = useRef<HTMLDivElement>(null)
 
     // Calculate bounds
@@ -590,7 +596,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     errorUnknownNode(grabbed.id)
                     return
                 }
-                if (node.allowMoving === false || (node.allowMoving === undefined && s.config.nodeDefaults.allowMoving === false)) return
+                if (!getNodeConfig("allowMoving", node, s.config)) return
                 // Send event
                 let prevented = false
                 if (s.onEvent != null) {
@@ -632,7 +638,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                             continue
                         }
                         // Check if moving is allowed
-                        if (n.allowMoving === false || (n.allowMoving === undefined && s.config.nodeDefaults.allowMoving === false)) continue
+                        if (!getNodeConfig("allowMoving", n, s.config)) continue
                         // Add node change
                         changes.push({
                             type: "node-move",
@@ -748,7 +754,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         },
         onObjectPointerDown(event: PointerEvent) {
-            const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
+            let r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
             if (r == null) return
             // If an edge is the target, check if pointer position is close to source/target points
             let edgeSection: undefined | "source" | "target"
@@ -784,6 +790,25 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (prevented || grabbed.type != null) return
 
             // "Grab" the object
+            // But first, check if grabbing is allowed
+            switch (r.type) {
+                // For node & edge, the viewport is right behind and will receive the pointerdown event next, no need to do anything
+                case "node":
+                    if (!getNodeConfig("allowGrabbing", r.obj, s.config)) return
+                    break
+                case "edge":
+                    if (!getEdgeConfig("allowGrabbing", r.obj, s.config)) return
+                    break
+                case "handle":
+                    // For a handle, the node is not behind (they are siblings), so we need to redirect the event explicitly
+                    if (!getHandleConfig("allowGrabbing", r.obj, r.node, s.config)) r = {
+                        type: "node",
+                        objID: r.node.id,
+                        obj: r.node,
+                    }
+                    break
+            }
+
             // And initiate timer for long-click detection
             const timeoutID = s.config.userControls.longClickDelay < 0 || s.onEvent == null ? -1 : window.setTimeout(() => {
                 const grapherEvent: GrapherPointerEvent & GrapherEventImpl = {
@@ -847,12 +872,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     sendEvent(upEvent, s)
                     prevented = upEvent.prevented
                 }
-                // Stop if it's a handle
-                if (r.type === "handle") return
-                // Check if selection is allowed
-                if (r.obj.allowSelection === false || (r.obj.allowSelection === undefined && (
-                    (r.type === "node" && s.config.nodeDefaults.allowSelection === false) || (r.type === "edge" && s.config.edgeDefaults.allowSelection === false)
-                ))) return
+                // Stop if it's a handle or selection is not allowed
+                if (r.type === "handle"
+                    || r.type === "node" && !getNodeConfig("allowSelection", r.obj, s.config)
+                    || r.type === "edge" && !getEdgeConfig("allowSelection", r.obj, s.config))
+                    return
                 // Select the object
                 if (!prevented) {
                     if (r.type === "node") s.selection.setNodeSelected(r.objID, event.shiftKey ? !r.obj.selected : true, !event.shiftKey)
