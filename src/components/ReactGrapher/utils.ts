@@ -7,11 +7,46 @@ import {GrapherConfigSet, GrapherFitViewConfigSet, GrapherViewportControlsSet} f
 import {convertToCSSLength, resolveValue} from "../../util/utils";
 import {CommonGraphProps} from "./props";
 import {GrapherEvent} from "../../data/GrapherEvent";
+import {Selection} from "../../data/Selection";
 
 const whitespaceRegex = /^\s+$/
 const allowedConnectionsRegex = /^([a-zA-Z0-9_-]+)\s*(<->|->|<-)\s*([a-zA-Z0-9_-]+)/
 
 type AllowedConnections = Map<string, string[]> & { sources: Set<string>, targets: Set<string> }
+
+// Currently grabbed (being moved) node
+export interface GrabbedNode<N> {
+    // When these properties are changed, a new object is created to update the state
+    type: "node" | "edge" | "viewport" | "handle" | "resizing" | null
+    section: "source" | "target" | undefined // only makes sense for type "edge"
+    node: Node<N> // only makes for type "handle"
+    id: string
+    // These properties don't cause a state update
+    clickCount: number
+    startX: number
+    startY: number
+    hasMoved: boolean
+    timeoutID: number
+}
+
+// Information on what was last clicked and when (to detect multi-clicks)
+export interface LastClicked {
+    type: "node" | "edge" | "viewport" | "handle" | null
+    id: string
+    times: number
+    time: number
+}
+
+// State required by callbacks. When this state is updated, no components re-render, as callbacks have acces to it using a ref object
+export interface GrapherCallbackState<N, E> {
+    onEvent: CommonGraphProps["onEvent"],
+    onChange: CommonGraphProps["onChange"],
+    nodes: NodesImpl<N>,
+    edges: EdgesImpl<E>,
+    selection: Selection
+    controller: Controller
+    config: GrapherConfigSet
+}
 
 /**
  * Parse allowed connections config option
@@ -121,22 +156,22 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
 /**
  * Send a change to the graph
  */
-export function sendChanges<N, E>(changes: GrapherChange[], d: { onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E> }) {
+export function sendChanges<N, E>(changes: GrapherChange[], callbackState: GrapherCallbackState<N, E>) {
     let c: GrapherChange[] | undefined | void = changes
-    if (d.onChange != null) c = d.onChange(changes)
+    if (callbackState.onChange != null) c = callbackState.onChange(changes)
     if (c != null) {
-        d.nodes.processChanges(c)
-        d.edges.processChanges(c)
+        callbackState.nodes.processChanges(c)
+        callbackState.edges.processChanges(c)
     }
 }
 
 /**
  * Send an event to the graph
  */
-export function sendEvent<N, E>(event: GrapherEvent, d: { onEvent: CommonGraphProps["onEvent"], onChange: CommonGraphProps["onChange"], nodes: NodesImpl<N>, edges: EdgesImpl<E> }) {
-    if (d.onEvent == null) return
-    const c = d.onEvent(event)
-    if (c != null) sendChanges(c, d)
+export function sendEvent<N, E>(event: GrapherEvent, callbackState: GrapherCallbackState<N, E>) {
+    if (callbackState.onEvent == null) return
+    const c = callbackState.onEvent(event)
+    if (c != null) sendChanges(c, callbackState)
 }
 
 /**
