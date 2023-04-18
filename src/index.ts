@@ -1,6 +1,6 @@
 // Data
 import {GrapherConfig, GrapherUserControls, GrapherViewportControls, GrapherFitViewConfig} from "./data/GrapherConfig";
-import {Controller} from "./data/Controller";
+import {Controller, InProgressEdge} from "./data/Controller";
 import {Viewport} from "./data/Viewport";
 import {Node, NewNode, NodeDefaults, Nodes, NodeHandleInfo} from "./data/Node";
 import {Edge, NewEdge, EdgeDefaults, Edges} from "./data/Edge";
@@ -22,15 +22,16 @@ import {NodeHandle, NodeHandleProps, SOURCE, TARGET} from "./components/NodeHand
 import {SimpleNode, NodeProps} from "./components/SimpleNode";
 import {BaseEdge, BaseEdgeProps} from "./components/BaseEdge";
 import {SimpleEdge, EdgeProps, SimpleEdgeData} from "./components/SimpleEdge";
+import {SimpleInProgressEdge, InProgressEdgeProps} from "./components/SimpleInProgressEdge";
 // Child components
 import {Background, BackgroundProps} from "./components/Background";
 // Other
-import {getNodeIntersection, pointOnPerpendicular, applySeparation, labelHelper, getStraightEdgePath, getRoundEdgePath} from "./util/EdgeHelper";
+import {getNodeBorderPoint, pointOnPerpendicular, applySeparation, labelHelper, getStraightEdgePath, getRoundEdgePath} from "./util/EdgeHelper";
 
 export {
     // Data
     GrapherConfig, GrapherUserControls, GrapherViewportControls, GrapherFitViewConfig,
-    Controller, Viewport,
+    Controller, Viewport, InProgressEdge,
     Node, NewNode, NodeDefaults, Nodes, NodeHandleInfo,
     Edge, NewEdge, EdgeDefaults, Edges,
     Selection,
@@ -46,8 +47,9 @@ export {
     SimpleNode, NodeProps,
     BaseEdge, BaseEdgeProps, EdgeProps,
     SimpleEdge, SimpleEdgeData,
+    SimpleInProgressEdge, InProgressEdgeProps,
     // Child components
     Background, BackgroundProps,
     // Others
-    getNodeIntersection, pointOnPerpendicular, applySeparation, labelHelper, getStraightEdgePath, getRoundEdgePath,
+    getNodeBorderPoint, pointOnPerpendicular, applySeparation, labelHelper, getStraightEdgePath, getRoundEdgePath,
 }

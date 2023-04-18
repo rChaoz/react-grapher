@@ -33,7 +33,14 @@ export default function useNodes<T>(initialNodes: NodeImpl<T>[]): NodesImpl<T> {
             for (const change of changes) {
                 if (!isNodeChange(change)) continue
                 changed = true
-                if (change.type == "node-move") change.node.position = change.position
+                switch (change.subType) {
+                    case "new":
+                        n.push(change.node as NodeImpl<T>)
+                        break
+                    case "move":
+                        change.node.position = change.position
+                        break
+                }
             }
             if (changed) base.set(n)
         },

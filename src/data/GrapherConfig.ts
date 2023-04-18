@@ -200,7 +200,7 @@ export interface GrapherConfig {
      * {@link allowedConnections} is used: "source->target", and the user attempts to create an edge from a 'target' handle to a 'source' handle, an edge
      * will be created, but flipped (so its source is still the 'source' handle, and its target the 'target' handle).
      *
-     * Defaults to true
+     * Defaults to false
      */
     allowReverseConnections?: boolean
     /**
@@ -239,7 +239,7 @@ export function withDefaultsConfig(config: GrapherConfig | undefined): GrapherCo
         nodesOverEdges: config?.nodesOverEdges ?? false,
         allowIllegalEdges: false,
         allowedConnections: "source->target",
-        allowReverseConnections: true,
+        allowReverseConnections: false,
         hideControls: config?.hideControls ?? false,
         nodeDefaults: config?.nodeDefaults ?? {},
         edgeDefaults: config?.edgeDefaults ?? {},

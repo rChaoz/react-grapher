@@ -1,4 +1,4 @@
-import {errorCustom, errorParsingDOMElement, errorUnknownEdge, errorUnknownNode} from "../../util/log";
+import {errorCustom, errorParsingDOMElement, errorUnknownEdge, errorUnknownHandle, errorUnknownNode} from "../../util/log";
 import {Node, NodeConfig, NodeHandleConfig, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node";
 import {Edge, EdgeConfig, Edges, EdgesImpl} from "../../data/Edge";
 import {GrapherChange} from "../../data/GrapherChange";
@@ -143,7 +143,7 @@ export function processDomElement<N, E>(element: EventTarget | null, nodes: Node
             obj = (node as NodeImpl<N>).handles.find(h => h.name === objID)
             if (obj == null) {
                 errorParsingDOMElement(elem)
-                errorCustom(`Node '${nodeID}' does not have a handle named '${objID}'`)
+                errorUnknownHandle(nodeID, objID)
                 return null
             }
             return {type: "handle", objID, obj, node}
@@ -193,7 +193,7 @@ export function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: Gr
     const w = element.offsetWidth, h = element.offsetHeight
 
     // Calculate zoom value for paddings
-    const rect = new DOMRect(boundingRect.x, boundingRect.y, boundingRect.width, boundingRect.height)
+    const rect = DOMRect.fromRect(boundingRect)
     let zoom = Math.min(w / rect.width, h / rect.height)
     if (fitConfig.abideMinMaxZoom) zoom = Math.min(Math.max(zoom, viewportControls.minZoom), viewportControls.maxZoom)
 
@@ -215,6 +215,21 @@ export function fitView(fitConfig: GrapherFitViewConfigSet, viewportControls: Gr
     controller.setViewport({
         centerX: (rect.left + rect.right) / 2, centerY: (rect.top + rect.bottom) / 2, zoom
     })
+}
+
+/**
+ * Gets grapher coordinates for pointer event
+ */
+export function toGrapherCoordinates(event: PointerEvent, bounds: DOMRect, contentRect: DOMRect, zoom: number): DOMPoint {
+    return new DOMPoint((event.clientX - contentRect.x) / zoom + bounds.x, (event.clientY - contentRect.y) / zoom + bounds.y)
+}
+
+/**
+ * Finds a free node/edge ID
+ */
+export function findNewID(start: number, map: Map<string, unknown>) {
+    while (map.has(String(start))) ++start
+    return start
 }
 
 const globalNodeDefaults: Required<NodeConfig> = {
@@ -275,4 +290,30 @@ export function getHandleConfig<Prop extends keyof NodeHandleConfig>(prop: Prop,
             errorCustom(`Internal error: unknown handle configuration property "${prop}"`)
             return false
     }
+}
+
+
+/**
+ * Function to check if edges connection is valid.
+ * TODO Add unit tests
+ */
+export function checkConnection(sourceNode: Node<any>, targetNode: Node<any>, sourceHandle: NodeHandleInfo | null, targetHandle: NodeHandleInfo | null,
+                         allowedConnections: AllowedConnections) {
+    const sourceRoles = (sourceHandle ?? sourceNode).roles
+    const targetRoles = (targetHandle ?? targetNode).roles
+    if (sourceRoles == null) {
+        if (targetRoles == null) return true
+        for (const role of targetRoles) if (allowedConnections.targets.has(role)) return true
+        return false
+    }
+    if (targetRoles == null) {
+        for (const role of sourceRoles) if (allowedConnections.sources.has(role)) return true
+        return false
+    }
+    for (const sourceRole of sourceRoles) {
+        const allowedTargetRoles = allowedConnections.get(sourceRole)
+        if (allowedTargetRoles == null) continue
+        for (const possibleTargetRole of allowedTargetRoles) if (targetRoles.includes(possibleTargetRole)) return true
+    }
+    return false
 }

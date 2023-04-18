@@ -1,5 +1,5 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
-import {applyNodeDefaults, Node, NodeHandleInfo, NodeImpl, Nodes, NodesImpl} from "../../data/Node"
+import {applyNodeDefaults, Node, NodeImpl, Nodes, NodesImpl} from "../../data/Node"
 import {applyEdgeDefaults, Edge, EdgeImpl, Edges, EdgesImpl} from "../../data/Edge";
 import styled from "@emotion/styled";
 import {useController} from "../../hooks/useController";
@@ -19,11 +19,11 @@ import {
 } from "../../util/constants";
 import {GrapherConfig, GrapherConfigSet, withDefaultsConfig} from "../../data/GrapherConfig";
 import {GrapherChange} from "../../data/GrapherChange";
-import {checkErrorInvalidID, errorUnknownNode, warnCustom, warnUnknownHandle} from "../../util/log";
+import {checkErrorInvalidID, errorCustom, errorUnknownNode, warnCustom, warnUnknownHandle} from "../../util/log";
 import {BoundsContext} from "../../context/BoundsContext";
 import {InternalContext, InternalContextValue} from "../../context/InternalContext";
 import {SimpleEdge} from "../SimpleEdge";
-import {getNodeIntersection} from "../../util/EdgeHelper";
+import {getNodeBorderPoint} from "../../util/EdgeHelper";
 import {deepEquals, expandRect, localMemo} from "../../util/utils";
 import {createEvent, GrapherEventImpl, GrapherPointerEvent} from "../../data/GrapherEvent";
 
@@ -31,11 +31,26 @@ import {SelectionImpl} from "../../data/Selection";
 import {usePersistent} from "../../hooks/usePersistent";
 
 import {CommonGraphProps, ControlledGraphProps, UncontrolledGraphProps} from "./props";
-import {fitView, getEdgeConfig, getHandleConfig, getNodeConfig, GrabbedNode, LastClicked, parseAllowedConnections, processDomElement, sendChanges, sendEvent} from "./utils";
+import {
+    checkConnection,
+    findNewID,
+    fitView,
+    getEdgeConfig,
+    getHandleConfig,
+    getNodeConfig,
+    GrabbedNode,
+    LastClicked,
+    parseAllowedConnections,
+    processDomElement,
+    sendChanges,
+    sendEvent,
+    toGrapherCoordinates
+} from "./utils";
 import {useCallbackState} from "../../hooks/useCallbackState";
 import {useUpdate} from "../../hooks/useUpdate";
 import {useSelection} from "../../hooks/useSelection";
 import {GrapherContext, GrapherContextValue} from "../../context/GrapherContext";
+import {SimpleInProgressEdge} from "../SimpleInProgressEdge";
 
 
 const GraphDiv = styled.div<Pick<CommonGraphProps, "width" | "height">>`
@@ -109,6 +124,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // 'Notify' selection if multiple selection is allowed
     selection.multipleSelection = config.userControls.multipleSelection
+    // Same for controller and node.edge defaults
+    controller.nodeDefaults = config.nodeDefaults
+    controller.edgeDefaults = config.edgeDefaults
 
     // Check react version before using useID - react 18 introduced it, but peerDependencies specifies a lower version
     const useID = React.useId
@@ -131,6 +149,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         config, onEvent: props.onEvent, onChange: props.onChange,
     })
 
+    // Calling this function causes the ReactGrapher to re-render
+    const updateGrapher = useUpdate()[1]
+
     // Parse allowed edges from config
     const allowedConnections = useMemo(() => {
         // Also de-verify all edges when this changes
@@ -151,6 +172,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
      When this happens, controller.fitViewValue != needFitView.current, the view will be fitted and needFitView.current will be incremented.
      */
     const needFitView = useRef(props.fitView === "initial" ? -1 : 0)
+    // Node & edge ID counters, used to generate new IDs for nodes & edges
+    const idCounters = usePersistent({node: 1, edge: 1})
 
     // Render the Nodes
     const nodeElements = useMemo(() => nodes.map(node => {
@@ -181,11 +204,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             // for eslint warning
         }
         // TODO Improve this to less than O(n^2), maybe add adjacency lists?
-        for (const e of edges) e.separate = false
+        for (const e of edges) e.separate = e.duplicate = false
         for (const e1 of edges) for (const e2 of edges) {
             if (e1.source === e2.target && e1.target === e2.source
                 && e1.sourceHandle === e2.targetHandle && e1.targetHandle === e2.sourceHandle)
                 e1.separate = e2.separate = true
+            if (e1 !== e2 && !e1.duplicate && e1.source === e2.source && e1.target === e2.target
+                && e1.sourceHandle === e2.sourceHandle && e1.targetHandle === e2.targetHandle)
+                e2.duplicate = true
         }
     }, [edges, shouldUpdateEdges])
 
@@ -206,7 +232,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         }
         const Component = edge.Component ?? SimpleEdge
         edge.sourcePos = localMemo(() => {
-            if (edge.sourceHandle == null || source.handles == null) return getNodeIntersection(source, target)
+            if (edge.sourceHandle == null) return getNodeBorderPoint(source, target)
             else {
                 const handle = source.handles.find(handle => handle.name === edge.sourceHandle)
                 if (handle == null) return source.absolutePosition
@@ -214,7 +240,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         }, [source.absolutePosition, target.absolutePosition, source.width, source.height, source.borderRadius, source.handles, edge.sourceHandle], edge.sourcePosMemoObject)
         edge.targetPos = localMemo(() => {
-            if (edge.targetHandle == null || target.handles == null) return getNodeIntersection(target, source)
+            if (edge.targetHandle == null) return getNodeBorderPoint(target, source)
             else {
                 const handle = target.handles.find(handle => handle.name === edge.targetHandle)
                 if (handle == null) {
@@ -224,7 +250,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         }, [source.absolutePosition, target.absolutePosition, target.width, target.height, target.borderRadius, target.handles, edge.targetHandle], edge.targetPosMemoObject)
         return <Component key={edge.id} id={edge.id} data={edge.data} classes={edge.classes} boxWidth={config.userControls.edgeBoxWidth}
-                          separate={getEdgeConfig("allowOverlapSeparation", edge, s.config) && edge.separate}
+                          separate={getEdgeConfig("allowOverlapSeparation", edge, s.config) && edge.separate} labelBackgroundRadius={edge.labelBackgroundRadius}
                           source={source} sourcePos={edge.sourcePos} sourceHandle={edge.sourceHandle} markerStart={edge.markerStart}
                           target={target} targetPos={edge.targetPos} targetHandle={edge.targetHandle} markerEnd={edge.markerEnd}
                           selected={edge.selected} grabbed={grabbed.type === "edge" && grabbed.id === edge.id} pointerEvents={edge.pointerEvents}
@@ -233,30 +259,11 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
     // Verify edges and compute handles for those that have them set to "auto" (undefined)
     useEffect(() => {
-        // Function to check if connection is valid
-        function checkConnection(sourceNode: Node<any>, targetNode: Node<any>, sourceHandle: NodeHandleInfo | null, targetHandle: NodeHandleInfo | null) {
-            const sourceRoles = (sourceHandle ?? sourceNode).roles
-            const targetRoles = (targetHandle ?? targetNode).roles
-            if (sourceRoles == null) {
-                if (targetRoles == null) return true
-                for (const role of targetRoles) if (allowedConnections.targets.has(role)) return true
-                return false
-            }
-            if (targetRoles == null) {
-                for (const role of sourceRoles) if (allowedConnections.sources.has(role)) return true
-                return false
-            }
-            for (const sourceRole of sourceRoles) {
-                const allowedTargetRoles = allowedConnections.get(sourceRole)
-                if (allowedTargetRoles == null) continue
-                for (const possibleTargetRole of allowedTargetRoles) if (targetRoles.includes(possibleTargetRole)) return true
-            }
-            return false
-        }
-
         let mustUpdateEdges = false
         const newEdges: Edge<E>[] = []
         for (const edge of edges) {
+            // Remove duplicate edges
+            if (edge.duplicate) continue
             // Skip already checked edges
             if (edge.verified) {
                 newEdges.push(edge)
@@ -278,7 +285,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
             // If both are set, just check if connection is allowed
             if (sourceHandle !== undefined && targetHandle !== undefined) {
-                if (!checkConnection(source, target, sourceHandle, targetHandle) && !config.allowIllegalEdges) {
+                if (!checkConnection(source, target, sourceHandle, targetHandle, allowedConnections) && !config.allowIllegalEdges) {
                     warnCustom(`Invalid edge with ID "${edge.id}" between ${sourceHandle ? `source handle ${sourceHandle}, ` : ""}source node ${source.id} ` +
                         `(with roles ${(sourceHandle ?? source).roles ?? "<all edges allowed>"}) and ${targetHandle ? `source handle ${targetHandle}, ` : ""}target node ` +
                         `${target.id} (with roles ${(targetHandle ?? target).roles ?? "<all edges allowed>"}) has been removed.`)
@@ -289,32 +296,32 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 let ok = false
                 if (sourceHandle === undefined && targetHandle !== undefined) { // only source handle unset
                     for (const possibleSourceHandle of source.handles) {
-                        if (checkConnection(source, target, possibleSourceHandle, targetHandle)) {
+                        if (checkConnection(source, target, possibleSourceHandle, targetHandle, allowedConnections)) {
                             edge.sourceHandle = possibleSourceHandle.name
                             mustUpdateEdges = ok = true
                             break
                         }
                     }
-                    if (!ok) if (checkConnection(source, target, null, targetHandle)) {
+                    if (!ok) if (checkConnection(source, target, null, targetHandle, allowedConnections)) {
                         edge.sourceHandle = null
                         mustUpdateEdges = ok = true
                     }
                 } else if (sourceHandle != null && targetHandle == null) { // only target handle unset
                     for (const possibleTargetHandle of target.handles) {
-                        if (checkConnection(source, target, sourceHandle, possibleTargetHandle)) {
+                        if (checkConnection(source, target, sourceHandle, possibleTargetHandle, allowedConnections)) {
                             edge.targetHandle = possibleTargetHandle.name
                             mustUpdateEdges = ok = true
                             break
                         }
                     }
-                    if (!ok) if (checkConnection(source, target, sourceHandle, null)) {
+                    if (!ok) if (checkConnection(source, target, sourceHandle, null, allowedConnections)) {
                         edge.targetHandle = null
                         mustUpdateEdges = ok = true
                     }
                 } else { // both handles unset
                     for (const possibleSourceHandle of source.handles) {
                         for (const possibleTargetHandle of target.handles) {
-                            if (checkConnection(source, target, possibleSourceHandle, possibleTargetHandle)) {
+                            if (checkConnection(source, target, possibleSourceHandle, possibleTargetHandle, allowedConnections)) {
                                 edge.sourceHandle = possibleSourceHandle.name
                                 edge.targetHandle = possibleTargetHandle.name
                                 mustUpdateEdges = ok = true
@@ -323,7 +330,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         }
                     }
                     if (!ok) for (const possibleSourceHandle of source.handles) {
-                        if (checkConnection(source, target, possibleSourceHandle, null)) {
+                        if (checkConnection(source, target, possibleSourceHandle, null, allowedConnections)) {
                             edge.sourceHandle = possibleSourceHandle.name
                             edge.targetHandle = null
                             mustUpdateEdges = ok = true
@@ -331,14 +338,14 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         }
                     }
                     if (!ok) for (const possibleTargetHandle of target.handles) {
-                        if (checkConnection(source, target, null, possibleTargetHandle)) {
+                        if (checkConnection(source, target, null, possibleTargetHandle, allowedConnections)) {
                             edge.sourceHandle = null
                             edge.targetHandle = possibleTargetHandle.name
                             mustUpdateEdges = ok = true
                             break
                         }
                     }
-                    if (!ok) if (checkConnection(source, target, null, null)) {
+                    if (!ok) if (checkConnection(source, target, null, null, allowedConnections)) {
                         edge.sourceHandle = edge.targetHandle = null
                         mustUpdateEdges = ok = true
                     }
@@ -414,7 +421,16 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (grabbed.type != null && !grabbed.hasMoved && Math.abs(event.clientX - grabbed.startX) ** 2
                 + Math.abs(event.clientY - grabbed.startY) ** 2 < s.config.userControls.minimumPointerMovement ** 2) return
 
-            // TODO Handle
+            // If there is a node/edge being created, update size/positions
+            if (s.controller.inProgressEdge != null) {
+                if (contentRef.current != null) {
+                    (s.controller.inProgressEdge as any as EdgeImpl<any>).targetPos =
+                        toGrapherCoordinates(event, s.bounds, contentRef.current.getBoundingClientRect(), s.controller.viewport.zoom)
+                    updateGrapher()
+                    return
+                }
+            }
+
             if (grabbed.type === "viewport") {
                 // User is moving the viewport (panning the graph)
                 if (!s.config.viewportControls.allowPanning) return
@@ -445,6 +461,7 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     centerY: viewport.centerY - deltaY,
                 })
             } else if (grabbed.type === "node") {
+                // TODO Allow creating new edges from nodes
                 // User is currently moving a node
                 const node = s.nodes.get(grabbed.id)
                 if (node == null) {
@@ -475,7 +492,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
 
                 // Move grabbed node
                 const changes: GrapherChange[] = [{
-                    type: "node-move",
+                    type: "node",
+                    subType: "move",
                     event: "move-pointer",
                     oldPosition: node.position,
                     position: newPosition,
@@ -496,7 +514,8 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         if (!getNodeConfig("allowMoving", n, s.config)) continue
                         // Add node change
                         changes.push({
-                            type: "node-move",
+                            type: "node",
+                            subType: "move",
                             event: "selected",
                             oldPosition: n.position,
                             position: new DOMPoint(n.position.x + deltaX, n.position.y + deltaY),
@@ -509,6 +528,15 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 s.selection.deselectAllEdges()
 
                 sendChanges(changes, s)
+            } else if (grabbed.type === "handle") {
+                const handle = (grabbed.node as NodeImpl<N>).handles.find(h => h.name === grabbed.id)
+                if (handle == null || !getHandleConfig("allowNewEdges", handle, grabbed.node, s.config)) return
+                const newID = findNewID(idCounters.edge, s.edges.internalMap)
+                s.controller.setInProgressEdge({
+                    id: String(newID),
+                    source: grabbed.node.id,
+                    sourceHandle: grabbed.id
+                })
             }
         }
 
@@ -518,10 +546,12 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                 clearTimeout(grabbed.timeoutID)
                 grabbed.timeoutID = -1
             }
-            if (grabbed.type == "resizing") {
+            if (grabbed.type == null) return
+            else if (grabbed.type == "resizing") {
                 grabbed.type = null
                 return
-            } else if (grabbed.type == null) return
+            }
+            if (s.controller.inProgressEdge != null) s.controller.setInProgressEdge(null)
 
             let prevented = false;
             if (s.onEvent != null) {
@@ -543,19 +573,16 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             }
         }
 
-        // Document-level listeners
         if (!props.static) {
             document.addEventListener("pointermove", onPointerMove)
             document.addEventListener("pointerup", onPointerUp)
         }
-
-        // Cleanup
         if (!props.static) return () => {
             // Remove document listeners
             document.removeEventListener("pointermove", onPointerMove)
             document.removeEventListener("pointerup", onPointerUp)
         }
-    }, [props.static])
+    }, [props.static, updateGrapher])
 
     useEffect(() => {
         if (s.controller.fitViewValue > needFitView.current) {
@@ -599,11 +626,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
             if (r.type === "edge" && contentRef.current != null) {
                 const edge = r.obj as EdgeImpl<E>
                 // Convert client coordinates to Grapher coordinates
-                const contentRect = contentRef.current.getBoundingClientRect()
-                const zoom = s.controller.viewport.zoom
-                const x = (event.clientX - contentRect.x) / zoom + s.bounds.x, y = (event.clientY - contentRect.y) / zoom + s.bounds.y
-                const sourceDistance2 = (x - edge.sourcePos.x) ** 2 + (y - edge.sourcePos.y) ** 2
-                const targetDistance2 = (x - edge.targetPos.x) ** 2 + (y - edge.targetPos.y) ** 2
+                const p = toGrapherCoordinates(event, s.bounds, contentRef.current.getBoundingClientRect(), s.controller.viewport.zoom)
+                const sourceDistance2 = (p.x - edge.sourcePos.x) ** 2 + (p.y - edge.sourcePos.y) ** 2
+                const targetDistance2 = (p.x - edge.targetPos.x) ** 2 + (p.y - edge.targetPos.y) ** 2
                 const threshold2 = s.config.userControls.edgeHandleThreshold ** 2
                 // Check if event point is close to source/target points
                 if (sourceDistance2 < threshold2) edgeSection = "source"
@@ -676,8 +701,9 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         onObjectPointerUp(event: PointerEvent) {
             const r = processDomElement<N, E>(event.currentTarget, s.nodes, s.edges)
             if (r == null) return
+            let prevented = false
             if (s.onEvent != null) {
-                const upEvent: GrapherPointerEvent = {
+                const upEvent: GrapherPointerEvent & GrapherEventImpl = {
                     ...createEvent(grabbed, s.selection),
                     type: "pointer",
                     subType: "up",
@@ -687,6 +713,37 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                     targetID: r.objID,
                 }
                 sendEvent(upEvent, s)
+                prevented = upEvent.prevented
+            }
+
+            // Finish edge creation, if there is any
+            const wipEdge = s.controller.getInProgressEdge() as Edge<E> | null
+            if (wipEdge != null && !prevented) {
+                // TODO Respect GrapherConfig.allowReverseConnections
+                if (r.type === "handle") {
+                    const handle = (r.node as NodeImpl<N>).handles.find(h => h.name === r.objID)
+                    if (handle == null || !getHandleConfig("allowNewEdgeTarget", handle, r.node, s.config)) return
+                    // TODO Add config option to disallow edges from one node to the same node - "allowSelfEdges"
+                    wipEdge.target = r.node.id
+                    wipEdge.targetHandle = r.objID
+                    ++idCounters.edge
+                    sendChanges([{
+                        type: "edge",
+                        subType: "new",
+                        edge: wipEdge,
+                    }], s)
+                } else if (r.type === "node") {
+                    if (!getNodeConfig("allowNewEdgeTarget", r.obj, s.config)) return
+                    wipEdge.target = r.objID
+                    wipEdge.targetHandle = null
+                    ++idCounters.edge
+                    sendChanges([{
+                        type: "edge",
+                        subType: "new",
+                        edge: wipEdge,
+                    }], s)
+                }
+                return
             }
 
             if (grabbed.type === r.type && grabbed.id === r.objID && !grabbed.hasMoved) {
@@ -738,6 +795,26 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
         id, nodes: nodes as any, edges: edges as any, selection, controller
     }), [id, nodes, edges, selection, controller])
 
+    // In-progress edge
+    const wipEdge = controller.inProgressEdge as EdgeImpl<any> | null
+    const WipEdgeComponent = controller.inProgressEdge?.InProgressComponent ?? SimpleInProgressEdge
+    let wipEdgeSource: NodeImpl<N> | undefined
+    if (wipEdge != null) {
+        wipEdgeSource = nodes.get(wipEdge.source) as NodeImpl<N> | undefined
+        if (wipEdgeSource == null) errorCustom("In-progress edge has unknown source node: " + wipEdge.source)
+        else {
+            wipEdge.sourcePos = localMemo(() => {
+                if (wipEdge.sourceHandle == null) return getNodeBorderPoint(wipEdgeSource!, wipEdge.targetPos)
+                else {
+                    const handle = wipEdgeSource!.handles.find(handle => handle.name === wipEdge.sourceHandle)
+                    if (handle == null) return wipEdgeSource!.absolutePosition
+                    else return new DOMPoint(wipEdgeSource!.absolutePosition.x + handle.x, wipEdgeSource!.absolutePosition.y + handle.y)
+                }
+            }, [wipEdgeSource.absolutePosition, wipEdgeSource.width, wipEdgeSource.height, wipEdge.targetPos,
+                wipEdgeSource.borderRadius, wipEdgeSource.handles, wipEdge.sourceHandle], wipEdge.sourcePosMemoObject)
+        }
+    }
+
     return <BoundsContext.Provider value={bounds}><InternalContext.Provider value={internalContext}><GrapherContext.Provider value={grapherContext}>
         <GraphDiv id={id} ref={ref} width={props.width} height={props.height} className={REACT_GRAPHER_CLASS}>
             <GrapherViewport contentRef={contentRef} isStatic={props.static} controller={controller} lastClicked={lastClicked}
@@ -755,7 +832,16 @@ export function ReactGrapher<N, E>(props: ControlledGraphProps<N, E> | Uncontrol
                         </marker>
                         {props.customMarkers}
                     </defs>
-                    <g>{edgeElements}</g>
+                    <g>
+                        {edgeElements}
+                        {wipEdge && wipEdgeSource &&
+                            <WipEdgeComponent id={wipEdge.id} data={wipEdge.data} classes={wipEdge.classes} boxWidth={config.userControls.edgeBoxWidth} separate={false}
+                                              source={wipEdgeSource} sourcePos={wipEdge.sourcePos} sourceHandle={wipEdge.sourceHandle} markerStart={wipEdge.markerStart}
+                                              targetPos={wipEdge.targetPos} markerEnd={wipEdge.markerEnd}
+                                              selected={wipEdge.selected} grabbed={grabbed.type === "edge" && grabbed.id === wipEdge.id} pointerEvents={wipEdge.pointerEvents}
+                                              label={wipEdge.label} labelPosition={wipEdge.labelPosition} labelOffset={wipEdge.labelOffset}
+                                              labelRotateWithEdge={wipEdge.labelRotateWithEdge} labelBackgroundRadius={wipEdge.labelBackgroundRadius}/>}
+                    </g>
                 </Edges>
             </GrapherViewport>
             {props.children}

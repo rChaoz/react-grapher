@@ -18,7 +18,11 @@ export default function useEdges<T>(initialEdges: EdgeImpl<T>[]): EdgesImpl<T> {
             for (const change of changes) {
                 if (!isEdgeChange(change)) continue
                 changed = true
-                // TODO
+                switch (change.subType) {
+                    case "new":
+                        e.push(change.edge as EdgeImpl<T>)
+                        break
+                }
             }
             if (changed) base.set(e)
         },

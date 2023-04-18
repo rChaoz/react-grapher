@@ -13,22 +13,24 @@ function getSlopeIntercept(p1: DOMPoint, p2: DOMPoint): [number, number] {
 }
 
 /**
- * Find the point closest to `targetNode` on the border of `sourceNode`. Used for floating edges.
+ * Find the point closest to `target` on the border of `sourceNode`. Used for floating edges.
  */
-export function getNodeIntersection(sourceNode: Node<any>, targetNode: Node<any>): DOMPoint {
+export function getNodeBorderPoint(sourceNode: Node<any>, target: Node<any> | DOMPoint): DOMPoint {
     const sourceNodeImpl = sourceNode as NodeImpl<any>
-    const targetNodeImpl = targetNode as NodeImpl<any>
     const sourcePos = sourceNodeImpl.absolutePosition
-    const targetPos = (targetNode as NodeImpl<any>).absolutePosition;
     const border = sourceNodeImpl.borderRadius
-
     const w = sourceNodeImpl.width! + sourceNode.edgeMargin;
     const h = sourceNodeImpl.height! + sourceNode.edgeMargin;
     const x1 = sourcePos.x - w / 2, x2 = sourcePos.x + w / 2, y1 = sourcePos.y - h / 2, y2 = sourcePos.y + h / 2
 
-    // If nodes overlap, draw the line between their centers
-    const tw = targetNodeImpl.width!, th = targetNodeImpl.height!
-    if (targetPos.x + tw / 2 > x1 && targetPos.x - tw / 2 < x2 && targetPos.y + th / 2 > y1 && targetPos.y - th / 2 < y2) return sourcePos
+    let targetPos: DOMPoint
+    // If 'target' is a node and overlaps with sourceNode, draw the line between their centers
+    if (!(target instanceof DOMPointReadOnly)) {
+        const targetNodeImpl = target as NodeImpl<any>
+        targetPos = (target as NodeImpl<any>).absolutePosition;
+        const tw = targetNodeImpl.width!, th = targetNodeImpl.height!
+        if (targetPos.x + tw / 2 > x1 && targetPos.x - tw / 2 < x2 && targetPos.y + th / 2 > y1 && targetPos.y - th / 2 < y2) return sourcePos
+    } else targetPos = target
 
     // Get line equation
     const [m, b] = getSlopeIntercept(sourcePos, targetPos)

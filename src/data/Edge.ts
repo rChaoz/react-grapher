@@ -12,6 +12,9 @@ import {MemoObject} from "../util/utils";
  * text, position, markers etc.
  */
 interface EdgeData<T> {
+    /**
+     * ID of this edge. You can get a edge by its ID using the `Edges` object's `get` method.
+     */
     id: string
     /**
      * Custom data for this edge. See {@link SimpleEdgeData} for the default implementation's required data.
@@ -81,11 +84,12 @@ interface EdgeData<T> {
     /**
      * Label background border radius, which will be passed to the `rx` prop of `<rect>`. Defaults to 6
      */
-    labelRadius: SVGProps<SVGRectElement>["rx"]
+    labelBackgroundRadius: NonNullable<SVGProps<SVGRectElement>["rx"]>
     /**
      * ID of the predefined/custom SVG marker. Defaults to `null` (none)
      */
-    markerStart: string | null
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    markerStart: "arrow" | "arrow-filled" | string & {} | null
     /**
      * ID of the predefined/custom SVG marker. Defaults to "arrow".
      */
@@ -145,6 +149,10 @@ interface EdgeInternals {
      */
     separate: boolean
     /**
+     * True if this edge is a duplicate (same source & target as another), and should be removed.
+     */
+    duplicate: boolean
+    /**
      * Used to check that the handles are set correctly
      */
     verified: boolean
@@ -192,13 +200,14 @@ function getDefaultEdgeData(): Omit<EdgeData<any>, "id" | "source" | "sourceHand
         labelOffset: 5,
         labelRotateWithEdge: true,
         labelPadding: 2,
-        labelRadius: 6,
+        labelBackgroundRadius: 6,
         markerStart: null,
         markerEnd: "arrow",
         pointerEvents: true,
         // Internals
         isInitialized: true,
         separate: false,
+        duplicate: false,
         verified: false,
         bounds: new DOMRect(),
         sourcePos: new DOMPoint(),

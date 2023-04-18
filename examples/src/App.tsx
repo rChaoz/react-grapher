@@ -11,15 +11,19 @@ const nodes: NewNode[] = [
 ]
 
 const edges: NewEdge[] = [
-    {id: "0", source: "1", target: "0", label: "hehe", markerStart: "arrow", markerEnd: "arrow-filled"},
-    {id: "1", source: "0", target: "2", label: "hihi", markerEnd: "arrow", targetHandle: null},
-    {id: "2", source: "3", target: "2", label: "a", markerEnd: "arrow"},
-    {id: "3", source: "2", target: "3", label: "b", markerEnd: "arrow"},
+    {id: "0", source: "1", target: "0", label: "hehe", markerStart: "arrow-filled", markerEnd: "arrow-filled"},
+    {id: "1", source: "0", target: "2", label: "hihi", targetHandle: null},
+    {id: "2", source: "3", target: "2", label: "a"},
+    {id: "3", source: "2", target: "3", label: "b"},
 ]
 
 const config: GrapherConfig = {
     nodeDefaults: {
         handlePointerEvents: true,
+        allowGrabbingHandles: true,
+        allowNewEdgesFromHandles: true,
+        allowNewEdgeTarget: true,
+        allowNewEdgeTargetForHandles: true,
     },
     edgeDefaults: {
     }

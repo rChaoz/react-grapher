@@ -224,22 +224,19 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
         const handleElems = container.querySelectorAll<HTMLElement>("." + NODE_HANDLE_CONTAINER_CLASS)
         // Check if handles have changed and update permissions (that we don't care if they change, no need to re-render)
         let handlesChanged = false
-        if (node.handles == null || borderChanged || sizeChanged) handlesChanged = true
-        else {
-            if (node.handles.length !== handleElems.length) handlesChanged = true
-            else for (let i = 0; i < handleElems.length; ++i) {
-                const handleElem = handleElems[i]  // handle element
-                const nodeHandle = node.handles[i] // node handle
-                const style = getComputedStyle(handleElem)
+        if (borderChanged || sizeChanged || node.handles.length !== handleElems.length) handlesChanged = true
+        else for (let i = 0; i < handleElems.length; ++i) {
+            const handleElem = handleElems[i]  // handle element
+            const nodeHandle = node.handles[i] // node handle
+            const style = getComputedStyle(handleElem)
 
-                const [x, y] = [resolveValue(style.left, 0) + border[3] - node.width / 2, resolveValue(style.top, 0) + border[0] - node.height / 2]
+            const [x, y] = [resolveValue(style.left, 0) + border[3] - node.width / 2, resolveValue(style.top, 0) + border[0] - node.height / 2]
 
-                if (handleElem.dataset.name !== nodeHandle.name || Math.abs(x - nodeHandle.x) > 2 || Math.abs(y - nodeHandle.y) > 2) handlesChanged = true
-                else {
-                    nodeHandle.allowNewEdges = stringToBoolean(handleElem.dataset.allowNewEdges)
-                    nodeHandle.allowNewEdgeTarget = stringToBoolean(handleElem.dataset.allowNewEdgesTarget)
-                    nodeHandle.allowGrabbing = stringToBoolean(handleElem.dataset.allowGrabbing)
-                }
+            if (handleElem.dataset.name !== nodeHandle.name || Math.abs(x - nodeHandle.x) > 2 || Math.abs(y - nodeHandle.y) > 2) handlesChanged = true
+            else {
+                nodeHandle.allowNewEdges = stringToBoolean(handleElem.dataset.allowNewEdges)
+                nodeHandle.allowNewEdgeTarget = stringToBoolean(handleElem.dataset.allowNewEdgesTarget)
+                nodeHandle.allowGrabbing = stringToBoolean(handleElem.dataset.allowGrabbing)
             }
         }
         if (!handlesChanged) return
@@ -379,7 +376,15 @@ export function BaseNode({id, classes, absolutePosition, grabbed, selected, resi
             const allowGrabbing = stringToBoolean(h.dataset.allowGrabbing)
 
             // Save data and make x and y relative to the node's center
-            handles.push({name, roles, x: x - node.width / 2, y: y - node.height / 2, allowNewEdges: allowCreatingEdges, allowNewEdgeTarget: allowCreatingEdgesTarget, allowGrabbing})
+            handles.push({
+                name,
+                roles,
+                x: x - node.width / 2,
+                y: y - node.height / 2,
+                allowNewEdges: allowCreatingEdges,
+                allowNewEdgeTarget: allowCreatingEdgesTarget,
+                allowGrabbing
+            })
         }
         node.handles = handles
     }, [id, internals, node])

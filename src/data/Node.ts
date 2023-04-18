@@ -20,6 +20,9 @@ import {NodeHandle, NodeHandlePropsBase, SOURCE, TARGET} from "../components/Nod
  * can be adjusted.
  */
 interface NodeData<T> {
+    /**
+     * ID of this node. You can get a node by its ID using the `Nodes` object's `get` method.
+     */
     id: string
     /**
      * Custom data for this node. See {@link SimpleNodeData} for the default implementation's required data.

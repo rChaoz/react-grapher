@@ -1,29 +1,29 @@
 import {useState} from "react";
 import {usePersistentComplex} from "../usePersistent";
 
-export interface BaseObject {
+interface BaseObject {
     id: string
 }
 
-export interface BaseFunctions<T, TData> {
+interface BaseFunctions<T, NewT> {
     clear(): void
 
     get(id: string): T | undefined
 
-    set(newObjects: T[] | TData[]): void
+    set(newObjects: T[] | NewT[]): void
 
-    add(newObject: T | T[] | TData | TData[]): void
+    add(newObject: T | T[] | NewT | NewT[]): void
 
-    update(mapFunc: (obj: T) => T | TData | null | undefined): void
+    update(mapFunc: (obj: T) => T | NewT | null | undefined): void
 
-    replace(targetID: string, replacement?: T | TData | null | ((obj: T) => T | TData | null | undefined)): void
+    replace(targetID: string, replacement?: T | NewT | null | ((obj: T) => T | NewT | null | undefined)): void
 }
 
-export interface BaseFunctionsImpl<T, TData> extends BaseFunctions<T, TData> {
+interface BaseFunctionsImpl<T, NewT> extends BaseFunctions<T, NewT> {
     internalMap: Map<string, T>
 }
 
-export function useBase<T extends BaseObject, TData extends BaseObject>(initialObjects: T[]): T[] & BaseFunctionsImpl<T, TData> {
+export function useBase<T extends BaseObject, NewT extends BaseObject>(initialObjects: T[]): T[] & BaseFunctionsImpl<T, NewT> {
     const [state, setState] = useState(initialObjects ?? [])
     const map = usePersistentComplex(() => new Map(state.map(obj => [obj.id, obj])))
     return Object.assign(state, {

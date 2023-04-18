@@ -2,6 +2,7 @@ import {Selection} from "./Selection";
 // Used by documentation
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import {GrapherUserControls} from "./GrapherConfig";
+import {GrabbedNode} from "../components/ReactGrapher/utils";
 
 export type GrapherEvent = GrapherPointerEvent | GrapherWheelEvent | GrapherKeyEvent
 
@@ -15,9 +16,9 @@ export interface GrapherBaseEvent {
 
     /**
      * The currently grabbed object, if any. A node/edge/handle/viewport is 'grabbed' after receiving a pointerdown event, until a pointerup is received.
-     * Can be null if nothing is grabbed.
+     * If a new node/edge is being created by the user, it will be considered 'grabbed'. Can be `null` if nothing is grabbed.
      */
-    grabbed: "node" | "edge" | "viewport" | "handle" | null
+    grabbed: Omit<GrabbedNode<any>["type"], "resizing"> | null
     /**
      * ID of grabbed node/edge, only valid if {@link grabbed} is 'node', 'edge' or 'handle' (for a handle, its name is its ID), otherwise empty string.
      */
@@ -36,7 +37,7 @@ export interface GrapherEventImpl {
     prevented: boolean
 }
 
-export function createEvent({type, id}: { type: "node" | "edge" | "viewport" | "handle" | "resizing" | null, id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
+export function createEvent({type, id}: { type: GrabbedNode<any>["type"], id: string }, selection: Selection): GrapherBaseEvent & GrapherEventImpl {
     return {
         prevented: false,
         preventDefault() {

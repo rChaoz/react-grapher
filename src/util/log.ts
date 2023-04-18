@@ -44,11 +44,15 @@ export function errorParsingDOMElement(node: HTMLElement | null) {
 }
 
 export function errorUnknownNode(id: string) {
-    error(`Error: unable to find node with ID ${id}`)
+    error(`Unable to find node with ID ${id}`)
 }
 
 export function errorUnknownEdge(id: string) {
-    error(`Error: unable to find edge with ID ${id}`)
+    error(`Unable to find edge with ID ${id}`)
+}
+
+export function errorUnknownHandle(nodeID: string, id: string) {
+    error(`Node '${nodeID}' does not have a handle named '${id}'`)
 }
 
 export function errorComponentOutsideContext(element: string, container: string) {

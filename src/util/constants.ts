@@ -26,6 +26,7 @@ export const NODE_HANDLE_BOX_CLASS = "react-grapher-node-handle-box"
 
 
 export const EDGE_CLASS = "react-grapher-edge"
+export const EDGE_IN_PROGRESS_CLASS = "react-grapher-edge-in-progress"
 export const EDGE_PATH_CLASS = "react-grapher-edge-path"
 export const EDGE_HANDLE_CLASS = "react-grapher-edge-handle" // TODO Handle source & target
 
